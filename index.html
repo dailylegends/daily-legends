@@ -28,7 +28,9 @@
 }
 *{ box-sizing:border-box; }
 html,body{ margin:0; }
-body{ background:var(--pedra) center bottom / cover no-repeat fixed; image-rendering:pixelated; color:var(--texto); font-family:var(--corpo); font-size:15px; line-height:1.35; min-height:100vh; }
+/* cenário numa camada fixa do tamanho da tela: no iPhone, background fixed + cover esticava a imagem pela página inteira (zoom enorme) */
+body::before{ content:''; position:fixed; inset:0; z-index:-1; pointer-events:none; background:var(--pedra) var(--cen, none) center bottom / cover no-repeat; image-rendering:pixelated; }
+body{ background:var(--pedra); image-rendering:pixelated; color:var(--texto); font-family:var(--corpo); font-size:15px; line-height:1.35; min-height:100vh; }
 img.px{ image-rendering:pixelated; width:16px; height:16px; vertical-align:middle; }
 img.vox{ display:block; width:100%; height:auto; image-rendering:auto; }
 button{ font:inherit; color:inherit; cursor:pointer; }
@@ -261,6 +263,39 @@ body.conectando::after{ content:'Conectando ao Google…'; position:fixed; inset
   .placa{ padding:8px 12px; } .pnome{ font-size:22px; }
 }
 @media (max-width: 600px){ .balao{ left:0; top:calc(100% + 8px); width:min(300px, 80vw); } .balao::before{ display:none; } .conf{ grid-template-columns:1fr; } .conf img{ max-width:180px; margin:0 auto; } .petbox{ grid-template-columns:1fr; } }
+
+/* celular: tudo numa tela só. Palco cheio, HUD enxuto em cima, barra de seções embaixo; cada seção abre numa folha por cima do palco */
+.folhaTopo{ display:none; }
+@media (max-width: 860px){
+  body:has(#jogo:not([hidden])){ overflow:hidden; height:100vh; height:100dvh; overscroll-behavior:none; }
+  #jogo{ display:flex; flex-direction:column; height:100vh; height:100dvh; min-height:0; overflow:hidden; }
+  .topo{ flex-wrap:nowrap; gap:6px; padding:6px 10px; padding-top:max(6px, env(safe-area-inset-top)); }
+  .marca{ display:none; }
+  .nivelG{ order:0; flex:1 1 auto; flex-basis:auto; min-width:0; gap:6px; }
+  .nivelG .lv{ font-size:20px; } .nivelG small{ font-size:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .stat{ font-size:14px; gap:3px; } .stat img.px{ width:18px !important; height:18px !important; }
+  .ib{ min-width:36px; min-height:36px; padding:2px; font-size:14px; } .ib img.px{ width:18px; height:18px; }
+  #btnNuvem{ min-height:32px; padding:2px 8px; font-size:12px; }
+  .main{ flex:1 1 auto; min-height:0; position:relative; display:block; padding:0; gap:0; }
+  .palco{ position:absolute; inset:0; height:auto; display:block; }
+  #palco3d{ position:absolute; inset:0; height:auto; min-height:0; }
+  .placa{ position:absolute; left:8px; right:8px; bottom:calc(66px + env(safe-area-inset-bottom)); width:auto; padding:6px 10px; gap:2px 10px; }
+  .placa .pnome{ font-size:18px; } .placa .plema{ margin-bottom:2px; font-size:11px; } .placa .trocar{ min-height:34px; padding:4px 10px; }
+  .petbox{ position:absolute; top:8px; left:8px; right:8px; bottom:auto; width:auto; padding:6px 10px; font-size:13px; z-index:3; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:6px; }
+  .petbox div{ flex-wrap:nowrap; } .petbox .btn{ min-height:34px; padding:4px 10px; font-size:12px; flex:0 0 auto; }
+  .painel{ position:absolute; left:0; right:0; bottom:0; display:flex; flex-direction:column; max-height:none; z-index:5; clip-path:none; border-width:3px 0 0; }
+  #tabs{ order:3; display:flex; gap:4px; overflow-x:auto; scrollbar-width:none; padding:6px 8px; padding-bottom:max(6px, env(safe-area-inset-bottom)); border-bottom:0; border-top:3px solid var(--linha); }
+  #tabs::-webkit-scrollbar{ display:none; }
+  .tab{ flex:0 0 62px; min-height:50px; padding:6px 2px 4px; font-size:9.5px; } .tab img{ width:20px; height:20px; }
+  #jogo:not(.folha) .tab.on{ background:#1e2524; color:var(--fraco); }
+  #conteudo, .folhaTopo{ display:none; }
+  #jogo.folha .painel{ top:34%; }
+  #jogo.folha .folhaTopo{ order:1; display:flex; align-items:center; justify-content:flex-end; position:relative; min-height:30px; padding:0 4px; background:#0c0f0f; border-bottom:2px solid #000; }
+  #jogo.folha .folhaTopo::before{ content:''; position:absolute; left:50%; top:12px; width:44px; height:5px; margin-left:-22px; background:var(--linha); }
+  #folhaNome{ display:none; } #btnFechaFolha{ min-height:30px; min-width:40px; font-size:16px; color:var(--fraco); }
+  #jogo.folha #conteudo{ order:2; display:block; flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; padding:12px; }
+  #jogo.folha .placa, #jogo.folha .petbox{ display:none; }
+}
 @media (prefers-reduced-motion: reduce){ *{ animation:none !important; transition:none !important; } }
 </style>
 </head>
@@ -299,6 +334,7 @@ body.conectando::after{ content:'Conectando ao Google…'; position:fixed; inset
       <div class="petbox moldura" id="petbox" hidden></div>
     </div>
     <div class="painel moldura">
+      <div class="folhaTopo"><span id="folhaNome"></span><button class="ib" id="btnFechaFolha" title="Fechar" aria-label="Fechar">✕</button></div>
       <nav id="tabs"></nav>
       <div id="conteudo"></div>
     </div>
@@ -363,7 +399,7 @@ const SAVE = {
  "mod": {},
  "rev": 0
 };
-const DL_VERSAO = "2026.10.12-0417";
+const DL_VERSAO = "2026.10.12-0456";
 
 /* ===== Voxel v2: bonecos esculpidos em meia resolução (voxel = 0,5 do mundo) ===== */
 const VS = 0.5;
@@ -1282,10 +1318,31 @@ function paintPetItem(m,tipo,it){
   if (it.id==='pElmo'){ for (let x=X-3;x<=X+3;x++) for (let z=Z-3;z<=Z+3;z++) for (let y=ty-1;y<=ty+2;y++){ const d=Math.hypot(x-X,z-Z); if (d<=3.2 && (y<ty+2 || d<=2.2)) m.set(T,x,y,z, y===ty-1? shade(c.a,-0.2) : c.a); } m.box(T,X,X,ty+3,ty+5,Z-1,Z+1,'#c0392b'); }
   if (it.id==='pCoroa'){ for (let x=X-2;x<=X+2;x++) for (let z=Z-2;z<=Z+2;z++){ if (Math.abs(x-X)<2 && Math.abs(z-Z)<2) continue; m.set(T,x,ty,z,c.a); if ((x+z)%2===0) m.set(T,x,ty+1,z,shade(c.a,0.2)); } m.set(T,X,ty+1,Z+2,'#c0392b'); }
 }
+// partes móveis de cada pet (pra animar): head = cabeça, armL/armR = rabo ou asas, legL/legR = patas, nadadeiras ou cauda
+// pivôs em voxel; a posição parada não muda com o pivô (só o giro)
+const PET_PIV = {
+  cachorro:{ head:[-0.5,12,5], armL:[0,12,-8.5], legL:[-0.5,6,4], legR:[-0.5,6,-7] },
+  gato:{ head:[-0.5,10,4], armL:[0,7,-6.5], legL:[-0.5,5,2.5], legR:[-0.5,5,-5.5] },
+  passaro:{ head:[0,12,1.5], armL:[-4.5,11.5,-1], armR:[4.5,11.5,-1], legR:[0,7.5,-4.5] },
+  peixe:{ armL:[0,14,-5.5], legL:[-3.5,13,0.5], legR:[3,13,0.5] }
+};
+function parteDoPet(tipo,x,y,z){
+  if (tipo==='cachorro'){ if (z<=-9) return 'armL'; if (y<=5) return z>=0 ? 'legL' : 'legR'; if (z>=4 && y>=11) return 'head'; }
+  if (tipo==='gato'){ if (z<=-7) return 'armL'; if (y<=4) return z>=0 ? 'legL' : 'legR'; if (z>=3 && y>=9) return 'head'; }
+  if (tipo==='passaro'){ if (x<=-5) return 'armL'; if (x>=4) return 'armR'; if (y>=13 && z>=-1) return 'head'; if (z<=-5 && y>=5 && y<=9) return 'legR'; }
+  if (tipo==='peixe'){ if (z<=-6) return 'armL'; if (x<=-4 && y<=13) return 'legL'; if (x>=3 && y<=13) return 'legR'; }
+  return 'torso';
+}
 function buildPetVModel(p, extra){
-  const m=new VModel(); paintPet(m,p.tipo,p.cor||PET[p.tipo].cores[0]);
+  const corpo=new VModel(); paintPet(corpo,p.tipo,p.cor||PET[p.tipo].cores[0]);
+  const m=new VModel(); m.pet=p.tipo;
+  corpo.parts.torso.forEach((c,k)=>{ const [x,y,z]=k.split(',').map(Number); m.parts[parteDoPet(p.tipo,x,y,z)].set(k,c); });
   const eq=Object.assign({}, p.equip||{}, extra||{});
-  for (const s of ['ppescoco','pcabeca']) if (eq[s] && PET_ITEM[eq[s]]) paintPetItem(m,p.tipo,PET_ITEM[eq[s]]);
+  for (const s of ['ppescoco','pcabeca']) if (eq[s] && PET_ITEM[eq[s]]){
+    const it=new VModel(); paintPetItem(it,p.tipo,PET_ITEM[eq[s]]);
+    const parte = s==='pcabeca' && PET_PIV[p.tipo].head ? 'head' : 'torso';
+    it.parts.torso.forEach((c,k)=>{ for (const q in m.parts) m.parts[q].delete(k); m.parts[parte].set(k,c); });
+  }
   return m;
 }
 function buildPetItemVModel(it){
@@ -1349,7 +1406,7 @@ function buildMesh(vm, o){
   const g = new THREE.Group(); const parts = {};
   const occ = new Set(); for (const name in vm.parts) for (const k of vm.parts[name].keys()) occ.add(k);
   for (const name in vm.parts){
-    const map = vm.parts[name], pv = o.pivot0 ? [0,0,0] : PIV[name];
+    const map = vm.parts[name], pv = o.pivot0 ? ((o.piv && o.piv[name]) || [0,0,0]) : PIV[name];
     const pg = new THREE.Group(); pg.position.set(pv[0]*sc, pv[1]*sc, pv[2]*sc); pg.userData.base = [pv[0]*sc, pv[1]*sc, pv[2]*sc];
     if (map.size){
       const mesh = new THREE.Mesh(meshPart(map, occ, pv, sc, o.sil), MAT);
@@ -1398,6 +1455,102 @@ function addLights(scene){
   const rim = new THREE.DirectionalLight(0x9ab8ff, 0.35); rim.position.set(-40,30,-40); scene.add(rim);
 }
 
+/* ---------- animações: quadros-chave suaves ---------- */
+const suave = x=> x<=0 ? 0 : x>=1 ? 1 : x*x*(3-2*x);
+function kf(t, pts){
+  if (t<=pts[0][0]) return pts[0][1];
+  for (let i=1;i<pts.length;i++) if (t<=pts[i][0]){ const a=pts[i-1], b=pts[i], u=(t-a[0])/((b[0]-a[0])||1); return a[1]+(b[1]-a[1])*suave(u); }
+  return pts[pts.length-1][1];
+}
+const VOLTA = Math.PI*2;
+// golpe de cada classe: dur em segundos; pose(t, p = partes, m = boneco inteiro, b = braço base, st = palco)
+const ANIM_HEROI = {
+  guerreiro:{ dur:1.3, pose(t,p,m,b,st){
+    p.armR.rotation.x = kf(t,[[0,b],[0.35,-2.25],[0.5,-0.15],[0.85,-0.35],[1.3,b]]);
+    p.armR.rotation.z = kf(t,[[0,0.04],[0.35,-0.25],[0.5,0.12],[1.3,0.04]]);
+    p.armL.rotation.x = kf(t,[[0,0],[0.4,-0.7],[0.9,-0.5],[1.3,0]]);
+    m.rotation.y = kf(t,[[0,0],[0.35,-0.4],[0.5,0.35],[0.85,0.35],[1.3,0]]);
+    m.position.z = kf(t,[[0,0],[0.35,-0.6],[0.5,1.6],[0.9,1.6],[1.3,0]]);
+    p.legL.rotation.x = kf(t,[[0,0],[0.45,-0.5],[0.9,-0.5],[1.3,0]]); p.legR.rotation.x = kf(t,[[0,0],[0.45,0.35],[0.9,0.35],[1.3,0]]);
+    if (st.uma(0.48)) st.corte(); } },
+  mago:{ dur:1.7, pose(t,p,m,b,st){
+    p.armR.rotation.x = kf(t,[[0,b],[0.4,-2.5],[1.3,-2.5],[1.7,b]]);
+    p.armL.rotation.x = kf(t,[[0,0],[0.4,-1.3],[1.3,-1.3],[1.7,0]]); p.armL.rotation.z = kf(t,[[0,-0.04],[0.4,-0.5],[1.3,-0.5],[1.7,-0.04]]);
+    m.position.y = kf(t,[[0,0],[0.5,0],[0.8,1.4],[1.3,1.4],[1.7,0]]);
+    m.rotation.y = kf(t,[[0.5,0],[1.3,VOLTA]]);
+    p.head.rotation.x = kf(t,[[0,0],[0.4,-0.2],[1.3,-0.2],[1.7,0]]);
+    if (t>0.35 && t<1.4) st.brilho('ponta', ['#7ad0ff','#b48aff','#ffffff'], 2); if (st.uma(1.25)) st.estouro('ponta', ['#7ad0ff','#b48aff','#fff2a8'], 22); } },
+  bardo:{ dur:1.6, pose(t,p,m,b,st){
+    const e = kf(t,[[0,0],[0.15,1],[1.3,1],[1.6,0]]);
+    p.armR.rotation.x = b + e*(-0.9 + Math.sin(t*30)*0.35); p.armR.rotation.z = 0.04 - e*0.55;
+    p.armL.rotation.x = -e*1.0; p.armL.rotation.z = -0.04 - e*0.35;
+    p.head.rotation.z = Math.sin(t*8)*0.15*e; m.position.y = Math.abs(Math.sin(t*8))*0.8*e;
+    if (st.cada(0.18) && t<1.3) st.nota(); } },
+  ladino:{ dur:1.15, pose(t,p,m,b,st){
+    m.position.y = kf(t,[[0,0],[0.15,-0.8],[0.32,2.6],[0.55,2.8],[0.75,0],[0.85,-0.5],[1.15,0]]);
+    m.rotation.y = kf(t,[[0.25,0],[0.72,VOLTA]]);
+    p.legL.rotation.x = kf(t,[[0.25,0],[0.45,-1.1],[0.72,0]]); p.legR.rotation.x = kf(t,[[0.25,0],[0.45,-0.6],[0.72,0]]);
+    p.armR.rotation.x = kf(t,[[0,b],[0.82,b],[0.92,-1.7],[1.15,b]]); p.armL.rotation.x = kf(t,[[0,0],[0.82,0],[0.92,-1.5],[1.15,0]]);
+    if (st.uma(0.05)) st.fumaca(0); if (st.uma(0.92)) st.fumaca(2.5); } },
+  arqueiro:{ dur:1.5, pose(t,p,m,b,st){
+    p.armL.rotation.x = kf(t,[[0,0],[0.3,-1.55],[1.15,-1.55],[1.5,0]]);
+    p.armR.rotation.x = kf(t,[[0,b],[0.3,-1.55],[0.8,-1.15],[0.84,-1.6],[1.15,-1.5],[1.5,b]]);
+    p.armR.rotation.z = kf(t,[[0,0.04],[0.3,-0.2],[0.8,0.35],[0.84,-0.2],[1.5,0.04]]);
+    m.rotation.y = kf(t,[[0,0],[0.3,0.35],[1.15,0.35],[1.5,0]]);
+    p.head.rotation.y = kf(t,[[0,0],[0.3,-0.3],[1.15,-0.3],[1.5,0]]);
+    if (st.uma(0.84)) st.flecha(); } },
+  artesao:{ dur:1.5, pose(t,p,m,b,st){
+    p.armR.rotation.x = kf(t,[[0,b],[0.25,-2.3],[0.4,-0.75],[0.6,-2.2],[0.75,-0.75],[1.05,-0.8],[1.5,b]]);
+    p.head.rotation.x = kf(t,[[0,0],[0.25,0.25],[1.05,0.25],[1.5,0]]);
+    m.position.y = kf(t,[[0,0],[0.38,-0.4],[0.5,0],[0.73,-0.4],[0.85,0],[1.5,0]]);
+    if (st.uma(0.4) || st.uma(0.75)) st.estouro('ponta', ['#ffb43a','#fff2a8','#e8572a'], 16); } },
+  orc:{ dur:1.6, pose(t,p,m,b,st){
+    const e = kf(t,[[0,0],[0.3,1],[1.2,1],[1.6,0]]);
+    p.armL.rotation.z = -0.04 - e*2.2; p.armR.rotation.z = 0.04 + e*2.2; p.armR.rotation.x = b*(1-e);
+    p.head.rotation.x = -e*0.45; m.position.x = (t>0.3 && t<1.2) ? Math.sin(t*55)*0.25 : 0;
+    if (st.uma(0.35)) st.poeira(); } },
+  lobo:{ dur:1.9, pose(t,p,m,b,st){
+    const e = kf(t,[[0,0],[0.4,1],[1.5,1],[1.9,0]]);
+    p.head.rotation.x = -e*0.75; p.armR.rotation.x = b + e*(-0.9-b); p.armL.rotation.z = -0.04 - e*0.4;
+    m.position.y = e*0.4;
+    if (t>0.4 && t<1.5 && st.cada(0.08)) st.brilho('cabeca', ['#dfe8ff','#9ab8ff','#ffffff'], 1); } },
+  _:{ dur:1.0, pose(t,p,m,b,st){
+    m.position.y = kf(t,[[0,0],[0.15,-0.4],[0.35,2],[0.55,0],[1,0]]);
+    p.armR.rotation.x = kf(t,[[0,b],[0.3,-2.4],[0.8,-2.4],[1,b]]); p.armR.rotation.z = 0.04 + Math.sin(t*20)*0.25*(t>0.3&&t<0.8?1:0); } }
+};
+// pets: brincadeira de cada tipo (toque) e jeitinho parado
+const ANIM_PET = {
+  cachorro:{ dur:1.4, pose(t,p,g,st){
+    const pulo = t<1.05 ? Math.abs(Math.sin(t*Math.PI/0.35)) : 0;
+    g.position.y = pulo*2.4; p.armL && (p.armL.rotation.y = Math.sin(t*32)*0.75);
+    p.head && (p.head.rotation.x = -pulo*0.3); p.legL && (p.legL.rotation.x = -pulo*0.6); p.legR && (p.legR.rotation.x = pulo*0.6); } },
+  gato:{ dur:1.7, pose(t,p,g,st){
+    p.head && (p.head.rotation.x = kf(t,[[0,0],[0.3,-0.35],[0.6,-0.35],[0.8,0]])); p.head && (p.head.rotation.z = kf(t,[[0,0],[0.3,0.2],[0.6,0.2],[0.8,0]]));
+    p.armL && (p.armL.rotation.x = kf(t,[[0,0],[0.3,-0.6],[1.4,-0.6],[1.7,0]])); p.armL && (p.armL.rotation.z = Math.sin(t*6)*0.3);
+    g.position.y = kf(t,[[0.8,0],[0.95,-0.3],[1.15,2],[1.35,0],[1.7,0]]);
+    p.legR && (p.legR.rotation.x = kf(t,[[0.8,0],[0.95,0.4],[1.2,-0.5],[1.4,0]])); p.legL && (p.legL.rotation.x = kf(t,[[0.8,0],[1.05,-0.7],[1.35,0]])); } },
+  passaro:{ dur:2.0, pose(t,p,g,st){
+    const voo = kf(t,[[0,0],[0.5,1],[1.5,1],[2,0]]), a = 0.3 + Math.abs(Math.sin(t*28))*1.1*Math.min(1, voo*3+ (t<0.5?0.4:0));
+    p.armL && (p.armL.rotation.z = -a); p.armR && (p.armR.rotation.z = a);
+    const ang = kf(t,[[0.5,0],[1.5,VOLTA]]);
+    g.position.y = voo*5; g.position.x = Math.sin(ang)*2.2*voo; g.position.z = (Math.cos(ang)-1)*2.2*voo; g.rotation.y = -ang*voo;
+    p.legR && (p.legR.rotation.x = -voo*0.4); } },
+  peixe:{ dur:1.4, pose(t,p,g,st,peixe){
+    peixe.rotation.y = kf(t,[[0,0],[0.9,VOLTA]]); peixe.position.y = kf(t,[[0,0],[0.35,1.6],[0.9,1.6],[1.4,0]]);
+    p.armL && (p.armL.rotation.y = Math.sin(t*22)*0.6); p.legL && (p.legL.rotation.z = Math.sin(t*25)*0.5); p.legR && (p.legR.rotation.z = -Math.sin(t*25)*0.5);
+    if (st.cada(0.12) && t<1.1) st.bolha(); } }
+};
+function petParado(tipo, p, s, fase){
+  const t = s + fase;
+  if (tipo==='cachorro'){ p.armL && (p.armL.rotation.y = Math.sin(t*9)*0.35); p.head && (p.head.rotation.z = Math.sin(t*0.9)*0.08); }
+  if (tipo==='gato'){ p.armL && (p.armL.rotation.z = Math.sin(t*1.5)*0.25); p.head && (p.head.rotation.y = Math.sin(t*0.45)*0.3); }
+  if (tipo==='passaro'){ const bate = (t%4.5)<0.45 ? Math.abs(Math.sin(t*30))*0.5 : 0; p.armL && (p.armL.rotation.z = -bate); p.armR && (p.armR.rotation.z = bate); p.head && (p.head.rotation.y = Math.round(Math.sin(t*1.3)*2)/2*0.35); }
+  if (tipo==='peixe'){ p.armL && (p.armL.rotation.y = Math.sin(t*6)*0.4); p.legL && (p.legL.rotation.z = Math.sin(t*4)*0.3); p.legR && (p.legR.rotation.z = -Math.sin(t*4)*0.3); }
+}
+// lugares dos pets em volta do herói: [x, z, giro]
+const PET_LUGAR = [[10.5,5.5,-0.45], [-10.5,5.5,0.45], [13,-4.5,-0.9]];
+const MAX_PETS_JUNTOS = PET_LUGAR.length;
+
 class Stage {
   constructor(el){
     this.el = el;
@@ -1410,38 +1563,119 @@ class Stage {
     addLights(this.scene);
     this.root = new THREE.Group(); this.scene.add(this.root);
     this.plat = platform(); this.scene.add(this.plat);
-    this.yaw = 0.35; this.autoT = 0; this.drag = null; this.t0 = performance.now();
+    this.fxG = new THREE.Group(); this.root.add(this.fxG); this.fx = []; this.fxGeo = new THREE.BoxGeometry(1,1,1); this.fxMat = {};
+    this.pets = []; this.anim = null; this.ray = new THREE.Raycaster();
+    this.yaw = 0.35; this.autoT = 0; this.drag = null; this.t0 = performance.now(); this.ult = this.t0; this.proxSozinho = this.t0 + 14000;
     const c = this.renderer.domElement; c.style.touchAction = 'pan-y';
-    c.addEventListener('pointerdown', e=>{ this.drag = { x:e.clientX, yaw:this.yaw }; c.setPointerCapture(e.pointerId); });
-    c.addEventListener('pointermove', e=>{ if (this.drag){ this.yaw = this.drag.yaw + (e.clientX-this.drag.x)*0.012; this.autoT = performance.now()+2500; } });
-    const up = ()=>{ this.drag = null; };
+    c.addEventListener('pointerdown', e=>{ this.drag = { x:e.clientX, y:e.clientY, yaw:this.yaw, t:performance.now(), moveu:false }; c.setPointerCapture(e.pointerId); });
+    c.addEventListener('pointermove', e=>{ if (this.drag){ if (Math.abs(e.clientX-this.drag.x)>7) this.drag.moveu=true; if (this.drag.moveu){ this.yaw = this.drag.yaw + (e.clientX-this.drag.x)*0.012; this.autoT = performance.now()+2500; } } });
+    const up = e=>{ const d=this.drag; this.drag = null; if (e.type==='pointerup' && d && !d.moveu && Math.abs(e.clientY-d.y)<9 && performance.now()-d.t<600) this.toque(e); };
     c.addEventListener('pointerup', up); c.addEventListener('pointercancel', up);
     new ResizeObserver(()=>this.resize()).observe(el);
     this.resize();
     const loop = (t)=>{ this.frame(t); requestAnimationFrame(loop); }; requestAnimationFrame(loop);
   }
-  setModel(vm){
+  setModel(vm, heroi){
     if (this.model){ this.root.remove(this.model); disposeGroup(this.model); }
     this.model = buildMesh(vm); this.root.add(this.model);
+    this.heroi = heroi || null; if (this.anim && this.anim.alvo==='heroi') this.anim = null;
     const k = vm.pose.armR;
     this.armBase = (k==='espada'||k==='espadaBase'||k==='adagas'||k==='adaga'||k==='baquetas'||k==='varinha'||k==='escudo'||k==='besta') ? -0.22 : (k==='pole'||k==='pincelBase'||k==='marteloBase'||k==='machadoBase'||k==='lanca') ? -0.08 : 0;
-    // limites do herói com QUALQUER item: altura e raio no chão (x e z, porque o palco gira), com folga pra animação
+    // ponta da arma (ou da mão): o ponto mais baixo do braço direito, no espaço do braço
+    let minY = -10; const pv = PIV.armR; vm.parts.armR.forEach((c,key)=>{ const y=Number(key.split(',')[1]); minY = Math.min(minY, (y-pv[1])*VS); });
+    this.ponta = new THREE.Vector3(0, minY, (GZ+0.5-pv[2])*VS);
+    // limites do herói com QUALQUER item: altura e raio no chão (x e z, porque o palco gira), com folga pra animação (pulo e braço erguido)
     const b = cellBounds(vm);
-    this.hb = { y0:Math.min(0,b.mn[1]), y1:b.mx[1]+0.6, r:Math.max(Math.hypot(b.mn[0],b.mn[2]), Math.hypot(b.mn[0],b.mx[2]), Math.hypot(b.mx[0],b.mn[2]), Math.hypot(b.mx[0],b.mx[2]))+0.8 };
+    this.hb = { y0:Math.min(0,b.mn[1]), y1:b.mx[1]+2.6, r:Math.max(Math.hypot(b.mn[0],b.mn[2]), Math.hypot(b.mn[0],b.mx[2]), Math.hypot(b.mx[0],b.mn[2]), Math.hypot(b.mx[0],b.mx[2]))+1.2 };
     this.resize();
   }
-  setPet(p, extra){
-    if (this.pet){ this.root.remove(this.pet); disposeGroup(this.pet); this.pet=null; }
-    this.petTipo = p ? p.tipo : null;
-    if (p){
-      const g = new THREE.Group(); const mesh = buildMesh(buildPetVModel(p, extra), { pivot0:true }); g.add(mesh);
+  setPet(p, extra){ this.setPets(p ? [p] : [], extra); }
+  // vários pets ao mesmo tempo; extra (itens provando na loja) vale pro primeiro
+  setPets(lista, extra){
+    this.pets.forEach(x=>{ this.root.remove(x.g); disposeGroup(x.g); }); this.pets = [];
+    if (this.anim && this.anim.alvo==='pet') this.anim = null;
+    const ry = this.root.rotation.y; this.root.rotation.y = 0;
+    let pb = null;
+    (lista||[]).slice(0, MAX_PETS_JUNTOS).forEach((p,i)=>{
+      const g = new THREE.Group(); const corpo = new THREE.Group(); g.add(corpo);
+      const mesh = buildMesh(buildPetVModel(p, i===0 ? extra : null), { pivot0:true, piv:PET_PIV[p.tipo] }); corpo.add(mesh);
       if (p.tipo==='peixe'){ const b = new THREE.Mesh(new THREE.SphereGeometry(4.4, 24, 16), new THREE.MeshLambertMaterial({ color:0xaee4ff, transparent:true, opacity:0.22, depthWrite:false })); b.position.set(0,7,0); g.add(b); }
-      g.position.set(10.5, 0, 5.5); g.rotation.y = -0.45; this.pet = g; this.root.add(g);
-      const ry = this.root.rotation.y; this.root.rotation.y = 0; this.root.updateMatrixWorld(true);
-      const bx = new THREE.Box3().setFromObject(g); this.root.rotation.y = ry; this.root.updateMatrixWorld(true); // caixa do pet no espaço do palco sem giro
-      this.pb = { y0:Math.min(0,bx.min.y), y1:bx.max.y+0.6, r:Math.max(Math.hypot(bx.min.x,bx.min.z), Math.hypot(bx.min.x,bx.max.z), Math.hypot(bx.max.x,bx.min.z), Math.hypot(bx.max.x,bx.max.z))+0.5 };
-    } else this.pb = null;
+      const L = PET_LUGAR[i]; g.position.set(L[0], 0, L[1]); g.rotation.y = L[2]; g.userData.pet = i; this.root.add(g);
+      this.pets.push({ g, corpo, parts:mesh.userData.parts, tipo:p.tipo, id:p.id, base:L, fase:i*1.7 });
+      this.root.updateMatrixWorld(true);
+      const bx = new THREE.Box3().setFromObject(g), folga = p.tipo==='passaro' ? 2.6 : 0.6;
+      const r = Math.max(Math.hypot(bx.min.x,bx.min.z), Math.hypot(bx.min.x,bx.max.z), Math.hypot(bx.max.x,bx.min.z), Math.hypot(bx.max.x,bx.max.z)) + folga;
+      const y1 = bx.max.y + (p.tipo==='passaro' ? 5.6 : p.tipo==='cachorro' ? 3 : 2.4);
+      pb = pb ? { y0:Math.min(pb.y0, bx.min.y, 0), y1:Math.max(pb.y1, y1), r:Math.max(pb.r, r) } : { y0:Math.min(0,bx.min.y), y1, r };
+    });
+    this.root.rotation.y = ry; this.root.updateMatrixWorld(true);
+    this.pb = pb;
     this.resize();
+  }
+  /* ----- toque no herói ou num pet ----- */
+  toque(e){
+    if (!this.model) return;
+    const r = this.renderer.domElement.getBoundingClientRect();
+    const v = new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1, -((e.clientY-r.top)/r.height)*2+1);
+    this.ray.setFromCamera(v, this.camera);
+    const alvos = [this.model, ...this.pets.map(x=>x.corpo)];
+    const hit = this.ray.intersectObjects(alvos, true)[0]; if (!hit) return;
+    let o = hit.object; while (o && o!==this.model && !this.pets.some(x=>x.corpo===o)) o = o.parent;
+    if (o===this.model) this.tocaHeroi(true);
+    else { const i = this.pets.findIndex(x=>x.corpo===o); if (i>=0) this.tocaPet(i, true); }
+  }
+  tocaHeroi(comSom){
+    if (this.anim && this.anim.alvo==='heroi' && this.anim.t < 0.35) return;
+    const cl = this.heroi && ANIM_HEROI[this.heroi.classe] ? this.heroi.classe : '_';
+    this.anim = { alvo:'heroi', cl, t:0, ant:-1 };
+    if (comSom && this.onToque) this.onToque({ tipo:'heroi', classe:cl, sexo:(this.heroi && this.heroi.sexo) || 'm', raca:this.heroi && this.heroi.raca });
+  }
+  tocaPet(i, comSom){
+    const pt = this.pets[i]; if (!pt) return;
+    if (this.anim && this.anim.alvo==='pet' && this.anim.i===i && this.anim.t < 0.35) return;
+    this.anim = { alvo:'pet', i, t:0, ant:-1 };
+    if (comSom && this.onToque) this.onToque({ tipo:'pet', pet:pt.tipo, id:pt.id });
+  }
+  // ajudas das animações: dispara uma vez quando o tempo passa do ponto, ou a cada intervalo
+  uma(tp){ const a=this.anim; return a && a.ant < tp && a.t >= tp; }
+  cada(iv){ const a=this.anim; return a && Math.floor(a.t/iv) !== Math.floor(Math.max(0,a.ant)/iv); }
+  /* ----- efeitos (partículas em voxel, no espaço do palco) ----- */
+  noPalco(obj, local){ obj.updateMatrixWorld(true); const v = local.clone(); obj.localToWorld(v); return this.root.worldToLocal(v); }
+  ponto(onde){
+    const p = this.model.userData.parts;
+    if (onde==='ponta') return this.noPalco(p.armR, this.ponta);
+    if (onde==='cabeca') return this.noPalco(p.head, new THREE.Vector3(0, 6.5, 3.5));
+    return this.noPalco(this.model, new THREE.Vector3(0, 14, 4));
+  }
+  particula(pos, vel, cor, vida, tam, grav){
+    let mat = this.fxMat[cor]; if (!mat) mat = this.fxMat[cor] = new THREE.MeshBasicMaterial({ color:cor });
+    const m = new THREE.Mesh(this.fxGeo, mat); m.position.copy(pos); m.scale.setScalar(tam); this.fxG.add(m);
+    this.fx.push({ m, vel, vida, total:vida, tam, grav:grav||0, gira:Math.random()*4 });
+  }
+  brilho(onde, cores, n){ const p = this.ponto(onde); for (let i=0;i<n;i++) this.particula(p.clone().add(new THREE.Vector3((Math.random()-.5)*1.2,(Math.random()-.5)*1.2,(Math.random()-.5)*1.2)), new THREE.Vector3((Math.random()-.5)*3, 2+Math.random()*3, (Math.random()-.5)*3), cores[(Math.random()*cores.length)|0], 0.7, 0.45+Math.random()*0.3, -1); }
+  estouro(onde, cores, n){ const p = this.ponto(onde); for (let i=0;i<n;i++){ const a=Math.random()*VOLTA, el=Math.random()*1.2; this.particula(p.clone(), new THREE.Vector3(Math.cos(a)*Math.cos(el)*9, Math.sin(el)*9+2, Math.sin(a)*Math.cos(el)*9), cores[(Math.random()*cores.length)|0], 0.55, 0.35+Math.random()*0.35, 18); } }
+  corte(){ const m = this.model; for (let i=0;i<16;i++){ const a = -0.2 + i/15*2.2, r = 14; const loc = new THREE.Vector3(9 - Math.cos(a)*2, 12 + Math.sin(a)*r*0.9, 6 + Math.cos(a)*3); this.particula(this.noPalco(m, loc), new THREE.Vector3(0,-2,2), i%3 ? '#e8eef2' : '#9ab8ff', 0.35 + i*0.012, 0.6, 0); } }
+  nota(){ const p = this.ponto('peito'); const cor = ['#e7b04a','#3ac08a','#ff8ab0','#7ad0ff'][(Math.random()*4)|0]; const v = new THREE.Vector3((Math.random()-.5)*4, 6, (Math.random()-.5)*4); this.particula(p.clone().add(new THREE.Vector3(0,0,1)), v, cor, 1.1, 0.8, -1.5); this.particula(p.clone().add(new THREE.Vector3(0.45,0.9,1)), v.clone(), cor, 1.1, 0.35, -1.5); }
+  fumaca(alt){ const p = this.noPalco(this.model, new THREE.Vector3(0, 1+alt*4, 0)); for (let i=0;i<18;i++){ const a=Math.random()*VOLTA; this.particula(p.clone(), new THREE.Vector3(Math.cos(a)*7, 1.5+Math.random()*3, Math.sin(a)*7), i%2 ? '#4a4458' : '#6a6478', 0.6, 0.9+Math.random()*0.6, -2); } }
+  poeira(){ const p = this.noPalco(this.model, new THREE.Vector3(0, 0.6, 0)); for (let i=0;i<26;i++){ const a=i/26*VOLTA; this.particula(p.clone().add(new THREE.Vector3(Math.cos(a)*4,0,Math.sin(a)*4)), new THREE.Vector3(Math.cos(a)*10, 2+Math.random()*2, Math.sin(a)*10), i%2 ? '#8a7a5a' : '#6a5a40', 0.7, 0.8+Math.random()*0.5, 4); } }
+  bolha(){ const pt = this.pets[this.anim.i]; if (!pt) return; const p = this.noPalco(pt.g, new THREE.Vector3((Math.random()-.5)*3, 6+Math.random()*2, 3)); this.particula(p, new THREE.Vector3((Math.random()-.5)*1.2, 4, 0), '#e8f8ff', 0.9, 0.35+Math.random()*0.25, -2); }
+  flecha(){
+    const m = this.model, p = this.noPalco(m.userData.parts.armL, new THREE.Vector3(0,-9,2));
+    const g = new THREE.Group();
+    const haste = new THREE.Mesh(this.fxGeo, this.fxMat['#8a5a2b'] || (this.fxMat['#8a5a2b'] = new THREE.MeshBasicMaterial({ color:'#8a5a2b' }))); haste.scale.set(0.25,0.25,5); g.add(haste);
+    const pena = new THREE.Mesh(this.fxGeo, this.fxMat['#f2efe6'] || (this.fxMat['#f2efe6'] = new THREE.MeshBasicMaterial({ color:'#f2efe6' }))); pena.scale.set(0.15,0.8,1); pena.position.z = -2.2; g.add(pena);
+    const pontaM = new THREE.Mesh(this.fxGeo, this.fxMat['#c9d1d6'] || (this.fxMat['#c9d1d6'] = new THREE.MeshBasicMaterial({ color:'#c9d1d6' }))); pontaM.scale.set(0.45,0.45,0.6); pontaM.position.z = 2.6; g.add(pontaM);
+    g.position.copy(p); g.rotation.y = m.rotation.y; this.fxG.add(g);
+    const dir = new THREE.Vector3(Math.sin(m.rotation.y), 0.05, Math.cos(m.rotation.y)).multiplyScalar(55);
+    this.fx.push({ m:g, vel:dir, vida:0.55, total:0.55, tam:1, grav:0, fixo:true });
+  }
+  animaFx(dt){
+    for (let i=this.fx.length-1;i>=0;i--){
+      const f = this.fx[i]; f.vida -= dt;
+      if (f.vida<=0){ this.fxG.remove(f.m); this.fx.splice(i,1); continue; }
+      f.vel.y -= f.grav*dt; f.m.position.addScaledVector(f.vel, dt);
+      if (!f.fixo){ f.m.scale.setScalar(f.tam * Math.min(1, f.vida/f.total*1.6)); f.m.rotation.x += f.gira*dt; f.m.rotation.y += f.gira*dt; }
+    }
   }
   // enquadra herói + pet inteiros em qualquer ângulo de giro, com qualquer item, em qualquer tela:
   // testa a distância da câmera (busca binária) projetando um cilindro que envolve tudo, e centraliza na faixa livre do palco
@@ -1453,7 +1687,9 @@ class Stage {
     const y0 = Math.min(hb.y0, pb ? pb.y0 : 0), y1 = Math.max(hb.y1, pb ? pb.y1 : 0), R = Math.max(hb.r, pb ? pb.r : 0, 8);
     // faixa livre (em NDC, -1..1): margem de 5% e, no layout largo, sem ficar atrás da placa do nome
     const mx = 0.92; let yb = -0.92, yt = 0.92;
-    const pl = this.livre ? this.livre(w,h) : null; if (pl!=null) yb = Math.max(yb, pl);
+    const pl = this.livre ? this.livre(w,h) : null;
+    if (pl!=null && typeof pl==='object'){ if (pl.yb!=null) yb = Math.max(yb, pl.yb); if (pl.yt!=null) yt = Math.min(yt, pl.yt); if (yt-yb < 0.5) yt = Math.min(0.92, yb+0.5); }
+    else if (pl!=null) yb = Math.max(yb, pl);
     const cy = (y0+y1)/2, pitch = 0.1;
     const pts = []; for (let i=0;i<24;i++){ const a=i/24*Math.PI*2; pts.push([Math.cos(a)*R, y0, Math.sin(a)*R], [Math.cos(a)*R, y1, Math.sin(a)*R]); }
     pts.push([0,y1,0],[0,y0,0]);
@@ -1469,20 +1705,45 @@ class Stage {
     this.fit = { d:z, off, R, y0, y1, yb, yt };
   }
   frame(t){
-    const s = (t-this.t0)/1000;
+    const s = (t-this.t0)/1000, dt = Math.min(0.05, Math.max(0, (t-this.ult)/1000)); this.ult = t;
     const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (!this.drag && t > this.autoT && !reduce) this.yaw += 0.0035;
     this.root.rotation.y = this.yaw; this.plat.rotation.y = this.yaw;
-    if (this.model && !reduce){
-      const p = this.model.userData.parts;
-      const br = Math.sin(s*1.6);
-      p.head.rotation.x = br*0.025; p.head.rotation.z = Math.sin(s*0.7)*0.03;
-      p.torso.position.y = br*0.12;
-      p.armL.rotation.x = br*0.05; p.armL.rotation.z = -0.04 - br*0.02;
-      p.armR.rotation.x = (this.armBase||0) - br*0.05; p.armR.rotation.z = 0.04 + br*0.02;
-      for (const k of ['head','armL','armR']) p[k].position.y = p[k].userData.base[1] + br*0.12;
-      if (this.pet){ const pt=this.petTipo; this.pet.position.y = pt==='peixe' ? 1+Math.sin(s*1.3)*0.5 : (pt==='passaro' ? Math.max(0,Math.sin(s*3))*0.35 : Math.abs(Math.sin(s*1.6))*0.15); }
+    // de vez em quando, sozinho e sem som: o herói ou um pet faz a sua graça
+    if (!reduce && !this.anim && !this.drag && t > this.proxSozinho && !document.hidden){
+      this.proxSozinho = t + 16000 + Math.random()*14000;
+      const n = this.pets.length; const k = Math.floor(Math.random()*(n+2));
+      if (k<n) this.tocaPet(k, false); else if (this.model) this.tocaHeroi(false);
     }
+    const a = this.anim; if (a){ a.ant = a.t; a.t += dt; }
+    if (this.model && !reduce){
+      const p = this.model.userData.parts, m = this.model;
+      const br = Math.sin(s*1.6);
+      p.head.rotation.set(br*0.025, 0, Math.sin(s*0.7)*0.03);
+      p.torso.position.y = br*0.12;
+      p.armL.rotation.set(br*0.05, 0, -0.04 - br*0.02);
+      p.armR.rotation.set((this.armBase||0) - br*0.05, 0, 0.04 + br*0.02);
+      p.legL.rotation.set(0,0,0); p.legR.rotation.set(0,0,0);
+      for (const k of ['head','armL','armR']) p[k].position.y = p[k].userData.base[1] + br*0.12;
+      m.position.set(0,0,0); m.rotation.set(0,0,0);
+      if (a && a.alvo==='heroi'){ const an = ANIM_HEROI[a.cl]; an.pose(a.t, p, m, this.armBase||0, this); if (a.t >= an.dur){ this.anim = null; m.position.set(0,0,0); m.rotation.set(0,0,0); } }
+      this.pets.forEach((pt,i)=>{
+        const g = pt.g, P = pt.parts;
+        for (const k in P) P[k].rotation.set(0,0,0);
+        g.position.set(pt.base[0], 0, pt.base[1]); g.rotation.y = pt.base[2]; pt.corpo.position.set(0,0,0); pt.corpo.rotation.set(0,0,0);
+        const tp = pt.tipo, ss = s + pt.fase;
+        g.position.y = tp==='peixe' ? 1+Math.sin(ss*1.3)*0.5 : (tp==='passaro' ? Math.max(0,Math.sin(ss*3))*0.35 : Math.abs(Math.sin(ss*1.6))*0.15);
+        petParado(tp, P, s, pt.fase);
+        if (a && a.alvo==='pet' && a.i===i){
+          const an = ANIM_PET[tp]; const y0 = g.position.y;
+          g.position.set(0,0,0); g.rotation.y = 0;
+          an.pose(a.t, P, g, this, pt.corpo);
+          g.position.x += pt.base[0]; g.position.z += pt.base[1]; g.position.y += y0; g.rotation.y += pt.base[2];
+          if (a.t >= an.dur) this.anim = null;
+        }
+      });
+    } else if (a && a.t > 2) this.anim = null;
+    this.animaFx(dt);
     this.renderer.render(this.scene, this.camera);
   }
 }
@@ -1575,7 +1836,7 @@ function telaPix(){
   return { W,H,g,rnd,px,faixas,serra,sol,chao,pinheiro,url:()=>cv.toDataURL() };
 }
 const CENARIOS = [
-  ['castelo','Castelo ao Luar'], ['neve','Picos Gelados'], ['deserto','Dunas do Sol'], ['floresta','Bosque Encantado'], ['mar','Costa do Poente'], ['vulcao','Terras de Fogo']
+  ['castelo','Castelo ao Luar'], ['neve','Picos Gelados'], ['deserto','Dunas do Sol'], ['floresta','Bosque Encantado'], ['mar','Costa do Poente'], ['vulcao','Terras de Fogo'], ['cerejeira','Jardim das Cerejeiras'], ['vila','Vila ao Anoitecer']
 ];
 const CENARIOS_FN = {
   neve(){ const t=telaPix(), {W,H,g,rnd,px}=t;
@@ -1623,6 +1884,39 @@ const CENARIOS_FN = {
     g.fillStyle='#2a2440'; g.fillRect(258,82,16,14); g.fillRect(270,88,12,10);
     t.chao(162,3,'#1a1a2a'); g.fillStyle='#d8b878'; for (let x=0;x<W;x++) if (x%5===0) px(x,Math.floor(162+Math.sin(x*0.05)*3+Math.sin(x*0.13)*1.2)-1,'#2a2a40');
     return t.url(); },
+  // o miolo (x de ~110 a ~210) é o que aparece no celular em pé: o principal fica no centro
+  cerejeira(){ const t=telaPix(), {W,H,g,rnd,px}=t;
+    t.faixas(['#3a2a5a','#5a3a72','#8a4a80','#c06a8a','#e8909a','#f6b8a8','#fcd8b8'],0.62);
+    t.sol(160,70,18,'#fff4e0','#ffd6c0');
+    t.serra(112,20,0.03,'#9a6a92'); t.serra(124,12,0.05,'#7a5078');
+    // lago com reflexo
+    g.fillStyle='#6a5a8a'; g.fillRect(0,128,W,H); for (let y=130;y<H;y+=2) for (let x=0;x<W;x++){ if (Math.sin(x*0.3+y*1.3)>0.88) px(x,y,'#8a7aaa'); }
+    g.fillStyle='rgba(255,230,210,0.35)'; for (let y=132;y<160;y+=3){ const w=30-(y-132)*0.6; g.fillRect(160-w/2+Math.floor(rnd()*6)-3,y,w,1); }
+    // torii no centro
+    g.fillStyle='#c0392b'; g.fillRect(140,84,4,48); g.fillRect(176,84,4,48); g.fillRect(132,80,56,4); g.fillRect(136,90,48,3);
+    g.fillStyle='#2a1a1a'; g.fillRect(130,77,60,3); g.fillStyle='#8a2420'; g.fillRect(140,128,4,4); g.fillRect(176,128,4,4);
+    // margem e cerejeiras
+    t.chao(150,3,'#3a2a3a');
+    const arvore=(x,y,r)=>{ g.fillStyle='#3a2420'; g.fillRect(x-1,y,3,150-y); g.fillRect(x-6,y+6,6,2); g.fillRect(x+1,y+3,6,2);
+      for (let i=0;i<r*14;i++){ const a=rnd()*Math.PI*2, d=Math.sqrt(rnd())*r; px(Math.round(x+Math.cos(a)*d*1.4), Math.round(y+Math.sin(a)*d*0.8), ['#f6b8c8','#ee9ab4','#ffd6e0','#d87a9a'][Math.floor(rnd()*4)]); } };
+    arvore(40,96,16); arvore(96,106,11); arvore(232,100,13); arvore(290,92,17);
+    for (let i=0;i<70;i++) px(Math.floor(rnd()*W),Math.floor(rnd()*H),rnd()>0.5?'#ffd6e0':'#f6b8c8');
+    g.fillStyle='#4a3a4a'; for (let i=0;i<30;i++) g.fillRect(Math.floor(rnd()*W),152+Math.floor(rnd()*26),4+Math.floor(rnd()*8),1);
+    return t.url(); },
+  vila(){ const t=telaPix(), {W,H,g,rnd,px}=t;
+    t.faixas(['#141a34','#1e2444','#2c2e54','#463a62','#6a4a6a','#94606a','#c07a64'],0.6);
+    for (let i=0;i<50;i++) px(Math.floor(rnd()*W),Math.floor(rnd()*60),rnd()>0.5?'#c8c8e0':'#8a8ab0');
+    t.sol(90,34,8,'#f4f0dc','#d8d4c0');
+    t.serra(104,18,0.035,'#2a2a48');
+    // casas em fileira, janelas acesas; torre da igreja no centro
+    const casa=(x,w,h,base,cor,tel)=>{ g.fillStyle=cor; g.fillRect(x,base-h,w,h); g.fillStyle=tel; for (let i=0;i<=Math.ceil(w/2)+1;i++) g.fillRect(x-1+i,base-h-i+0,w+2-2*i,1);
+      for (let yy=base-h+4;yy<base-4;yy+=7) for (let xx=x+3;xx<x+w-3;xx+=6) if (rnd()>0.3){ g.fillStyle=rnd()>0.3?'#ffcf6a':'#e8964a'; g.fillRect(xx,yy,2,3); } };
+    g.fillStyle='#3a3048'; g.fillRect(154,52,12,90); for (let i=0;i<9;i++){ g.fillRect(154+i/1.5|0,52-i*2,12-(i/0.75|0),2); } g.fillStyle='#ffcf6a'; g.fillRect(158,66,4,6); g.fillStyle='#e7b04a'; g.fillRect(159,30,2,6); g.fillRect(157,32,6,2);
+    let x=0; while (x<W){ const w=18+Math.floor(rnd()*16), h=22+Math.floor(rnd()*26); if (!(x+w>150 && x<170)) casa(x,w,h,140,['#4a3a4e','#3e3446','#54404a'][Math.floor(rnd()*3)],['#6a2a2e','#4a2a3a','#7a3a2a'][Math.floor(rnd()*3)]); x+=w+2; }
+    // rua de pedra e lampiões
+    g.fillStyle='#2a2630'; g.fillRect(0,140,W,H); for (let yy=142;yy<H;yy+=4) for (let xx=(yy/4%2)*4;xx<W;xx+=8){ g.fillStyle='#34303c'; g.fillRect(xx,yy,6,2); }
+    for (const lx of [60,124,196,262]){ g.fillStyle='#1a1820'; g.fillRect(lx,116,2,26); g.fillStyle='#ffd27a'; g.fillRect(lx-1,112,4,4); g.fillStyle='rgba(255,210,122,0.12)'; for (let r=4;r<22;r+=3) g.fillRect(lx-r,114-r/3,2*r+2,2*r/1.5); }
+    return t.url(); },
   vulcao(){ const t=telaPix(), {W,H,g,rnd,px}=t;
     t.faixas(['#120808','#1e0c0c','#2e1010','#461612','#5e2014','#7a2c16'],0.6);
     for (let x=0;x<W;x++){ const d=Math.abs(x-170); const h = d<14 ? 54+Math.floor(d*0.2) : 54+Math.floor((d-14)*0.62); g.fillStyle='#1a1010'; g.fillRect(x,Math.min(H,h),1,H); }
@@ -1669,10 +1963,74 @@ function pix(nome, escala){
 }
 const ico = (nome, cls)=> `<img class="px ${cls||''}" src="${pix(nome)}" alt="">`;
 
+/* ===== Ambiente: movimento leve por cima do cenário (pixel, 30 qps, pausa em segundo plano) ===== */
+const Ambiente = {
+  cv:null, g:null, id:null, ps:[], t0:0, ult:0, rodando:false, w:0, h:0,
+  tema(id){
+    if (!this.cv){
+      const cv=this.cv=document.createElement('canvas'); cv.id='ambiente'; cv.setAttribute('aria-hidden','true');
+      cv.style.cssText='position:fixed;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none;image-rendering:pixelated;';
+      document.body.prepend(cv); this.g=cv.getContext('2d');
+      window.addEventListener('resize', ()=>this.medir());
+      document.addEventListener('visibilitychange', ()=>{ if (!document.hidden) this.liga(); });
+      this.medir();
+    }
+    if (this.id===id) return; this.id=id; this.ps=[]; this.semear(); this.liga();
+  },
+  medir(){ const k=3; this.w=Math.max(80,Math.ceil(innerWidth/k)); this.h=Math.max(80,Math.ceil(innerHeight/k)); this.cv.width=this.w; this.cv.height=this.h; this.ps=[]; this.semear(); },
+  semear(){
+    const n = { castelo:40, neve:90, deserto:45, floresta:26, mar:40, vulcao:50, cerejeira:40, vila:40 }[this.id] || 30;
+    for (let i=0;i<n;i++) this.ps.push(this.nova(true));
+  },
+  nova(inicio){
+    const W=this.w, H=this.h, r=Math.random, id=this.id;
+    if (id==='neve') return { x:r()*W, y:inicio?r()*H:-2, vy:6+r()*10, f:r()*6, a:0.5+r()*0.5, s:r()>0.8?2:1, c:'#ffffff' };
+    if (id==='cerejeira') return { x:inicio?r()*W:r()*W*1.2, y:inicio?r()*H:-2, vy:7+r()*7, vx:-6-r()*8, f:r()*6, a:0.9, s:2, c:['#ffd6e0','#f6b8c8','#ee9ab4'][r()*3|0], gira:true };
+    if (id==='vulcao') return { x:r()*W, y:inicio?r()*H:H+2, vy:-(8+r()*16), f:r()*6, a:1, s:r()>0.7?2:1, c:r()>0.5?'#ffb03a':'#ff6a1a', vida:true };
+    if (id==='deserto') return { x:inicio?r()*W:-4, y:H*0.55+r()*H*0.45, vx:14+r()*24, vy:0, f:r()*6, a:0.45, s:1, c:'#f0d8a8', risco:true };
+    if (id==='floresta' || (id==='vila' && r()>0.55)) return { x:r()*W, y:H*(id==='vila'?0.6:0.25)+r()*H*0.7, vx:(r()-.5)*6, vy:(r()-.5)*6, f:r()*6, a:1, s:1, c:'#d8ff8a', vaga:true };
+    if (id==='mar') return { x:r()*W, y:H*0.62+r()*H*0.38, f:r()*6, a:1, s:r()>0.7?2:1, c:'#fff0b0', pisca:1.2+r()*2 };
+    return { x:r()*W, y:r()*H*0.45, f:r()*6, a:1, s:1, c:r()>0.5?'#e8eedc':'#a8b4c0', pisca:0.5+r()*1.5 };
+  },
+  liga(){
+    if (this.rodando || document.hidden) return;
+    if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches){ this.g && this.g.clearRect(0,0,this.w,this.h); return; }
+    this.rodando=true; this.ult=performance.now();
+    const passo=(t)=>{
+      if (document.hidden){ this.rodando=false; return; }
+      requestAnimationFrame(passo);
+      if (t-this.ult < 33) return; const dt=Math.min(0.1,(t-this.ult)/1000); this.ult=t; this.desenha(dt, t/1000);
+    };
+    requestAnimationFrame(passo);
+  },
+  desenha(dt, s){
+    const g=this.g, W=this.w, H=this.h; g.clearRect(0,0,W,H);
+    for (let i=0;i<this.ps.length;i++){
+      const p=this.ps[i]; p.f+=dt;
+      let a=p.a;
+      if (p.pisca!=null) a = Math.max(0, Math.sin(p.f*p.pisca)*0.5+0.5) ** 2;
+      if (p.vaga){ p.vx+=(Math.random()-.5)*12*dt; p.vy+=(Math.random()-.5)*12*dt; p.vx=Math.max(-6,Math.min(6,p.vx)); p.vy=Math.max(-5,Math.min(5,p.vy)); p.x+=p.vx*dt; p.y+=p.vy*dt; a = Math.max(0, Math.sin(p.f*1.7))**1.5; if (p.x<0||p.x>W||p.y<H*0.2||p.y>H) this.ps[i]=this.nova(true); }
+      if (p.vy!=null && !p.vaga){ p.y+=p.vy*dt; p.x+=(p.vx||0)*dt + (p.vx==null ? Math.sin(p.f*1.3)*4*dt : Math.sin(p.f*2)*3*dt); }
+      else if (p.vx!=null && !p.vaga) p.x+=p.vx*dt;
+      if (p.vida) a = Math.max(0, Math.min(1, (p.y/H)*1.6)) * (0.6+Math.random()*0.4);
+      if (p.y>H+3 || p.y<-4 || p.x>W+4 || p.x<-6){ this.ps[i]=this.nova(false); continue; }
+      g.globalAlpha=a; g.fillStyle=p.c;
+      if (p.risco) g.fillRect(Math.round(p.x),Math.round(p.y),3,1);
+      else if (p.gira){ const v=Math.sin(p.f*4)>0; g.fillRect(Math.round(p.x),Math.round(p.y), v?2:1, v?1:2); }
+      else g.fillRect(Math.round(p.x),Math.round(p.y),p.s,p.s);
+      if (p.vaga && a>0.5){ g.globalAlpha=a*0.25; g.fillRect(Math.round(p.x)-1,Math.round(p.y)-1,3,3); }
+    }
+    // estrela cadente de vez em quando no castelo e na vila
+    if ((this.id==='castelo'||this.id==='vila') && !this.cad && Math.random()<dt*0.05) this.cad={ x:Math.random()*W*0.8, y:Math.random()*H*0.25, t:0 };
+    if (this.cad){ const c=this.cad; c.t+=dt; c.x+=90*dt; c.y+=35*dt; g.fillStyle='#ffffff'; for (let k=0;k<6;k++){ g.globalAlpha=(1-k/6)*(1-c.t/0.8); g.fillRect(Math.round(c.x-k*2.5),Math.round(c.y-k),1,1); } if (c.t>0.8) this.cad=null; }
+    g.globalAlpha=1;
+  }
+};
+
 /* ===== Música: 3 faixas compostas aqui mesmo (Web Audio) ===== */
 const Som = (()=>{
   let ctx=null, master, musicBus, musicVol, sfxBus, revIn, noiseBuf, timer=null, step=0, nextT=0;
-  let volMusica=0.6, volSom=0.7, mudo=false, tocando=false, faixa=0;
+  let palcoBus=null, volMusica=0.6, volSom=0.7, volChiado=1, chiadoG=null, mudo=false, tocando=false, faixa=0;
   let S16=60/72/4;
   const mtof = m=>440*Math.pow(2,(m-69)/12);
 
@@ -1745,7 +2103,7 @@ const Som = (()=>{
     musicBus.connect(lp); lp.connect(comp); comp.connect(musicVol); musicVol.connect(master);
     const rev = ctx.createConvolver(); rev.buffer = impulse(3.2,2.4); revIn = ctx.createGain(); revIn.gain.value=0.32;
     revIn.connect(rev); rev.connect(lp);
-    sfxBus = ctx.createGain(); sfxBus.connect(master);
+    sfxBus = ctx.createGain(); sfxBus.connect(master); palcoBus = ctx.createGain(); palcoBus.gain.value = 0.38; palcoBus.connect(sfxBus);
     noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate); const nd=noiseBuf.getChannelData(0); for (let i=0;i<nd.length;i++) nd[i]=Math.random()*2-1;
     vinil(); aplicar();
   }
@@ -1753,13 +2111,14 @@ const Som = (()=>{
     if (!ctx) return; const t=ctx.currentTime;
     musicVol.gain.setTargetAtTime(mudo?0:volMusica*volMusica*0.9, t, 0.08);
     sfxBus.gain.setTargetAtTime(volSom*volSom*0.8, t, 0.03);
+    if (chiadoG) chiadoG.gain.setTargetAtTime(0.5*volChiado*volChiado, t, 0.05);
   }
   function vinil(){
     const sec=5, buf=ctx.createBuffer(1, ctx.sampleRate*sec, ctx.sampleRate), d=buf.getChannelData(0);
     for (let i=0;i<d.length;i++){ d[i]=(Math.random()*2-1)*0.006; if (Math.random()<0.00045) d[i]+= (Math.random()*2-1)*0.5; }
     const src=ctx.createBufferSource(); src.buffer=buf; src.loop=true;
     const hp=ctx.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=900;
-    const g=ctx.createGain(); g.gain.value=0.5; src.connect(hp); hp.connect(g); g.connect(musicBus); src.start();
+    const g=ctx.createGain(); g.gain.value=0.5*volChiado; chiadoG=g; src.connect(hp); hp.connect(g); g.connect(musicBus); src.start();
   }
   function noise(t, dur, filt, f, q, vol, out){
     const s=ctx.createBufferSource(); s.buffer=noiseBuf; const bf=ctx.createBiquadFilter(); bf.type=filt; bf.frequency.value=f; bf.Q.value=q||0.7;
@@ -1923,11 +2282,115 @@ const Som = (()=>{
     if (tipo==='bau'){ [523,659,784,1047,1319].forEach((f,i)=>tom(f,0.3,'triangle',0.07,i*0.07)); }
     if (tipo==='nivel'){ [[74,0],[77,0.15],[81,0.3],[86,0.45]].forEach(([n,d])=>tom(mtof(n),0.5,'triangle',0.08,d)); }
   }
+  /* ----- efeitos do herói e dos pets (toque no palco) ----- */
+  // vogais (formantes F1, F2, F3 em Hz)
+  const VOG = { a:[800,1200,2500], e:[500,1850,2500], i:[320,2250,2900], o:[520,900,2400], u:[360,780,2300] };
+  let distCurva=null;
+  function curvaDist(){ if (distCurva) return distCurva; const n=1024, c=new Float32Array(n); for (let i=0;i<n;i++){ const x=i/n*2-1; c[i]=Math.tanh(x*3.2); } return distCurva=c; }
+  // voz sintetizada: dente de serra + sopro passando por 3 formantes (homem e mulher mudam o tom e as formantes)
+  function voz(at, o){
+    const t0 = ctx.currentTime+0.01+at, d = o.dur||0.25, fm = o.fm||1;
+    const os = ctx.createOscillator(); os.type='sawtooth';
+    os.frequency.setValueAtTime(o.f0, t0);
+    if (o.f0meio) os.frequency.linearRampToValueAtTime(o.f0meio, t0+d*0.45);
+    os.frequency.exponentialRampToValueAtTime(Math.max(30,o.f0fim||o.f0*0.85), t0+d);
+    if (o.vib){ const l=ctx.createOscillator(), lg=ctx.createGain(); l.frequency.value=o.vib; lg.gain.value=o.f0*0.025; l.connect(lg); lg.connect(os.frequency); l.start(t0); l.stop(t0+d+0.1); }
+    const fonte = ctx.createGain(); fonte.gain.value = 1;
+    os.connect(fonte);
+    if (o.sopro){ const s=ctx.createBufferSource(); s.buffer=noiseBuf; const sg=ctx.createGain(); sg.gain.value=o.sopro; s.connect(sg); sg.connect(fonte); s.start(t0, Math.random()*0.5); s.stop(t0+d+0.1); }
+    let entrada = fonte;
+    if (o.rouco){ const ws=ctx.createWaveShaper(); ws.curve=curvaDist(); const pg=ctx.createGain(); pg.gain.value=o.rouco; fonte.connect(pg); pg.connect(ws); entrada=ws; }
+    const env = ctx.createGain(), v = o.vol||0.5;
+    env.gain.setValueAtTime(0, t0); env.gain.linearRampToValueAtTime(v, t0+(o.ataque||0.02));
+    env.gain.setValueAtTime(v, t0+d*0.6); env.gain.exponentialRampToValueAtTime(0.001, t0+d+0.08);
+    const vi = VOG[o.v||'a'], vf = VOG[o.vfim||o.v||'a'], ganhos=[1, 0.55, 0.25];
+    vi.forEach((f,k)=>{ const bp=ctx.createBiquadFilter(); bp.type='bandpass'; bp.Q.value=k? 9 : 5;
+      bp.frequency.setValueAtTime(f*fm, t0); bp.frequency.linearRampToValueAtTime(vf[k]*fm, t0+d*0.8);
+      const g=ctx.createGain(); g.gain.value=ganhos[k]*3.2; entrada.connect(bp); bp.connect(g); g.connect(env); });
+    env.connect(palcoBus); if (o.eco) env.connect(revIn);
+    os.start(t0); os.stop(t0+d+0.15);
+  }
+  // sopro filtrado com varredura (golpe no ar, asa, fumaça)
+  function vento(at, dur, f1, f2, vol, q){
+    const t0=ctx.currentTime+0.01+at, s=ctx.createBufferSource(); s.buffer=noiseBuf;
+    const bf=ctx.createBiquadFilter(); bf.type='bandpass'; bf.Q.value=q||1.2; bf.frequency.setValueAtTime(f1,t0); bf.frequency.exponentialRampToValueAtTime(f2,t0+dur);
+    const g=ctx.createGain(); g.gain.setValueAtTime(0.0001,t0); g.gain.exponentialRampToValueAtTime(vol,t0+dur*0.35); g.gain.exponentialRampToValueAtTime(0.0008,t0+dur);
+    s.connect(bf); bf.connect(g); g.connect(palcoBus); s.start(t0, Math.random()*0.4); s.stop(t0+dur+0.05);
+  }
+  function nota(at, f, dur, tipo, vol, f2, eco){
+    const t0=ctx.currentTime+0.01+at, o=ctx.createOscillator(), g=ctx.createGain(); o.type=tipo||'sine';
+    o.frequency.setValueAtTime(f,t0); if (f2) o.frequency.exponentialRampToValueAtTime(f2,t0+dur*0.8);
+    g.gain.setValueAtTime(0,t0); g.gain.linearRampToValueAtTime(vol||0.08,t0+0.004); g.gain.exponentialRampToValueAtTime(0.0008,t0+dur);
+    o.connect(g); g.connect(palcoBus); if (eco) g.connect(revIn); o.start(t0); o.stop(t0+dur+0.03);
+  }
+  function metal(at, f, vol, dur){ [1,2.76,5.4,8.93].forEach((k,i)=>nota(at, f*k, (dur||0.9)/(1+i*0.6), 'sine', (vol||0.07)/(1+i*0.8))); vento(at, 0.05, 4000, 3000, (vol||0.07)*2.5, 0.8); }
+  function corda(at, f, vol){ // corda dedilhada
+    nota(at, f, 0.7, 'triangle', vol||0.06); nota(at, f*2, 0.35, 'sine', (vol||0.06)*0.5); nota(at, f*3.01, 0.18, 'sine', (vol||0.06)*0.3);
+  }
+  function baque(at, f, vol){ nota(at, f, 0.35, 'sine', vol||0.2, f*0.45); vento(at, 0.12, 300, 120, (vol||0.2)*0.8, 0.7); }
+  // herói: arma da classe + voz do herói (homem mais grave, mulher mais aguda)
+  function heroi(classe, sexo, raca){
+    if (!ctx || ctx.state!=='running') return;
+    const f = sexo==='f', f0 = f ? 225 : 118, fm = f ? 1.17 : 1;
+    const V = (at,o)=>voz(at, Object.assign({ f0:o.f0||f0, fm }, o));
+    if (classe==='guerreiro'){
+      V(0.38,{ v:'a', f0:f0*1.35, f0fim:f0*0.9, dur:0.24, vol:0.55, sopro:0.15 });
+      vento(0.36, 0.22, 500, 3200, 0.35); metal(0.5, f?1900:1700, 0.06);
+    } else if (classe==='mago'){
+      V(0.25,{ v:'o', vfim:'a', f0:f0*1.05, f0fim:f0*1.2, dur:0.45, vol:0.35, eco:true, vib:5.5 });
+      const esc=[72,76,79,84,88,91,96]; esc.forEach((n,i)=>nota(0.4+i*0.11, mtof(n+(f?2:0)), 0.6, 'sine', 0.05, null, true));
+      [96,100,103].forEach(n=>nota(1.25, mtof(n), 1.1, 'triangle', 0.035, null, true)); vento(1.2, 0.5, 6000, 1500, 0.12, 0.6);
+    } else if (classe==='bardo'){
+      V(0.05,{ v:'e', f0:f0*1.25, f0fim:f0*1.6, dur:0.22, vol:0.5 });
+      const ac = f ? [64,67,71,76] : [57,64,69,73];
+      for (let k=0;k<7;k++){ const base = k%2 ? 2 : 0; ac.forEach((n,i)=>corda(0.18+k*0.18+i*0.018, mtof(n+base), 0.05)); }
+    } else if (classe==='ladino'){
+      vento(0, 0.35, 300, 900, 0.18, 0.6);
+      V(0.15,{ v:'u', f0:f0*1.3, f0fim:f0*1.05, dur:0.13, vol:0.45, sopro:0.2 });
+      vento(0.3, 0.35, 900, 2600, 0.28); vento(0.55, 0.25, 2600, 900, 0.22);
+      vento(0.9, 0.08, 7000, 5000, 0.25, 2); nota(0.9, 3600, 0.35, 'sine', 0.04, 3300); vento(0.92, 0.4, 600, 200, 0.18, 0.6);
+    } else if (classe==='arqueiro'){
+      V(0.28,{ v:'u', vfim:'o', f0:f0*0.95, f0fim:f0*0.9, dur:0.3, vol:0.25, sopro:0.4 });
+      nota(0.3, 70, 0.5, 'sawtooth', 0.025, 95);
+      nota(0.84, 196, 0.45, 'triangle', 0.12, 180); nota(0.84, 392, 0.25, 'sine', 0.05);
+      vento(0.84, 0.32, 3500, 700, 0.3, 2.5);
+      V(0.86,{ v:'a', f0:f0*1.2, f0fim:f0*0.95, dur:0.16, vol:0.4 });
+    } else if (classe==='artesao'){
+      V(0.12,{ v:'u', vfim:'a', f0:f0*1.15, f0fim:f0*1.0, dur:0.16, vol:0.4 });
+      metal(0.4, f?620:560, 0.1, 0.8); metal(0.75, f?660:600, 0.1, 0.8);
+      V(0.72,{ v:'a', f0:f0*1.25, f0fim:f0*0.95, dur:0.14, vol:0.35 });
+    } else if (classe==='orc'){
+      V(0.25,{ v:'a', vfim:'o', f0:f*130||68, f0meio:f*160||82, f0fim:f*110||55, dur:1.0, vol:0.42, rouco:6, sopro:0.6, fm:f?1.05:0.85, vib:9 });
+      baque(0.35, 70, 0.3);
+    } else if (classe==='lobo'){
+      V(0.35,{ v:'u', vfim:'o', f0:(f?1.5:1)*320, f0meio:(f?1.5:1)*640, f0fim:(f?1.5:1)*470, dur:1.3, vol:0.35, vib:5, eco:true, ataque:0.15 });
+      vento(0.4, 1.2, 1200, 600, 0.06, 0.5);
+    } else {
+      V(0.2,{ v:'e', vfim:'i', f0:f0*1.2, f0fim:f0*1.6, dur:0.3, vol:0.45 });
+      [79,83,86].forEach((n,i)=>nota(0.35+i*0.08, mtof(n), 0.3, 'triangle', 0.05));
+    }
+  }
+  function pet(tipo){
+    if (!ctx || ctx.state!=='running') return;
+    if (tipo==='cachorro'){
+      [0, 0.36].forEach(at=>{ voz(at,{ v:'a', vfim:'u', f0:520, f0fim:330, dur:0.13, vol:0.32, rouco:2.5, sopro:0.5, fm:1.25, ataque:0.006 }); });
+      for (let k=0;k<4;k++) vento(0.3*k, 0.07, 400, 250, 0.1, 0.8);
+    } else if (tipo==='gato'){
+      voz(0.05,{ v:'i', vfim:'u', f0:560, f0meio:820, f0fim:470, dur:0.7, vol:0.9, fm:1.35, ataque:0.08, vib:6 });
+    } else if (tipo==='passaro'){
+      for (let k=0;k<6;k++){ const b=2600+Math.random()*900; nota(0.05+k*0.11+(k>2?0.15:0), b, 0.08, 'sine', 0.4, b*1.45); }
+      for (let k=0;k<12;k++) vento(0.45+k*0.085, 0.07, 900, 500, 0.35, 0.7);
+    } else if (tipo==='peixe'){
+      [0,0.16,0.34,0.6].forEach((at,i)=>nota(at, 260+i*60, 0.11, 'sine', 0.5, 900+i*150));
+      for (let k=0;k<5;k++) nota(0.2+k*0.17, 1400+Math.random()*900, 0.04, 'sine', 0.1, 2400);
+    }
+  }
   return {
-    tocar, sfx, trocar, FAIXAS,
+    tocar, sfx, trocar, FAIXAS, heroi, pet,
     get faixa(){ return faixa; },
     set musica(v){ volMusica=v; aplicar(); }, get musica(){ return volMusica; },
     set som(v){ volSom=v; aplicar(); }, get som(){ return volSom; },
+    set chiado(v){ volChiado=v; aplicar(); }, get chiado(){ return volChiado; },
     set mudo(v){ mudo=v; aplicar(); try { if (navigator.audioSession) navigator.audioSession.type = mudo ? 'ambient' : 'playback'; } catch(e){} if (tagMuda){ if (mudo) tagMuda.pause(); else if (!document.hidden){ const p=tagMuda.play(); if (p&&p.catch) p.catch(()=>{}); } } }, get mudo(){ return mudo; },
     get estado(){ return ctx ? ctx.state : 'sem contexto'; }, get diag(){ return { estado:ctx?ctx.state:'sem contexto', passo:step, tocando, tag:!!(tagMuda && !tagMuda.paused), sessao:navigator.audioSession?navigator.audioSession.type:'-', ios:ehIOS }; }, destravar
   };
@@ -2467,6 +2930,10 @@ const Versao = {
 
 /* ===== Lógica do jogo e interface ===== */
 let S = lerLocal() || novoSave();
+// celular: seção aberta numa folha por cima do palco (fechada = só o palco e a barra de seções)
+let folha = false; const ehMovel = ()=> window.matchMedia && matchMedia('(max-width: 860px)').matches;
+function abreFolha(v){ folha=!!v; const j=$('#jogo'); if (j) j.classList.toggle('folha', folha); const n=$('#folhaNome'), a=ABAS.find(x=>x[0]===aba); if (n && a) n.textContent=a[1];
+  document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on', b.dataset.aba===aba)); if (stage) requestAnimationFrame(()=>stage.resize()); }
 let sujo = false, aba = 'equip', selItem = null, filtroSlot = null, filtroLoja = 'cabeca', confirmando = null, stage = null, threeOk = false;
 let prova = {};   // itens sendo provados na loja (slot -> id), não salva
 let provaPet = {}; let petDispensado = {}; let cria = null; let filtroLojaIni = true;
@@ -2557,7 +3024,15 @@ function estrelas(n){ let s=''; for (let i=1;i<=3;i++) s+=ico(i<=n?'star':'starO
 function marcaSujo(){ sujo=true; Nuvem.mudou(); }
 function heroAtivo(){ return HEROI[S.herois.ativo]; }
 function nomeH(id){ return (S.herois.nomes||{})[id] || HEROI[id].nome; }
-function petAtivo(){ return S.pets && S.pets.possui.find(p=>p.id===S.pets.ativo); }
+// pets que estão com o herói (até MAX_PETS_JUNTOS); o primeiro é o principal (prova itens na loja)
+function petsJuntos(){ if (!S.pets) return []; const j=S.pets.juntos||[]; return j.map(id=>S.pets.possui.find(p=>p.id===id)).filter(Boolean); }
+function petAtivo(){ return petsJuntos()[0] || null; }
+function arrumaJuntos(){
+  const P=S.pets; if (!P) return; const ids=new Set((P.possui||[]).map(p=>p.id));
+  if (!Array.isArray(P.juntos)) P.juntos = P.ativo ? [P.ativo] : [];
+  P.juntos = [...new Set(P.juntos)].filter(id=>ids.has(id)).slice(0, MAX_PETS_JUNTOS);
+  P.ativo = P.juntos[0] || null;
+}
 function cuidouHoje(p, acao){ return S.log.some(e=>e.tipo==='petReal' && e.pet===p.id && e.acao===acao && e.d===S.hoje); }
 function eqAtivo(){ return S.herois.equip[S.herois.ativo] || (S.herois.equip[S.herois.ativo]={}); }
 function itemImg(it, cls, sil){ return `<img class="vox ${cls||''}" src="${Shots.item(it, sil)}" alt="">`; }
@@ -2566,25 +3041,27 @@ function itemImg(it, cls, sil){ return `<img class="vox ${cls||''}" src="${Shots
 function atualizaPalco(){
   const h=heroAtivo(); if (!h) return;
   const provando = aba==='loja' ? Object.values(prova) : [];
-  const pet = petAtivo(), pprova = aba==='loja' ? Object.values(provaPet) : [];
-  if (stage){ stage.setModel(buildVModel(h, provando.length ? Object.assign({}, eqAtivo(), prova) : eqAtivo())); stage.setPet(pet || null, pprova.length ? provaPet : null); }
+  const juntos = petsJuntos(), pet = juntos[0], pprova = aba==='loja' ? Object.values(provaPet) : [];
+  if (stage){ stage.setModel(buildVModel(h, provando.length ? Object.assign({}, eqAtivo(), prova) : eqAtivo()), h); stage.setPets(juntos, pprova.length ? provaPet : null); }
   const c=calc(), lv=nivelDe(c.heroi[h.id]||0);
   const nomes = [...provando.map(id=>ITEM[id].nome), ...pprova.map(id=>PET_ITEM[id].nome)];
-  $('#placa').innerHTML = `<div class="pnome">${esc(nomeH(h.id))}</div><div class="plema">${nomeH(h.id)!==h.nome?`<b>${esc(h.nome)}</b> `:''}${esc(h.lema)}${pet?`<span class="ppet">${esc(pet.nome)} ao seu lado</span>`:''}</div>
+  $('#placa').innerHTML = `<div class="pnome">${esc(nomeH(h.id))}</div><div class="plema">${nomeH(h.id)!==h.nome?`<b>${esc(h.nome)}</b> `:''}${esc(h.lema)}${pet?`<span class="ppet">${esc(juntos.map(p=>p.nome).join(juntos.length>2?', ':' e ').replace(/, ([^,]*)$/,' e $1'))} ao seu lado</span>`:''}</div>
     <div class="pnv"><b>Nv ${lv.n}</b>${barra(lv.r,lv.p,'xp')}<span class="pfr">${num(lv.r)}/${num(lv.p)}</span></div>
     <button class="btn trocar" data-ir="herois">Trocar</button>
     ${nomes.length ? `<div class="provabar"><span>Provando: ${nomes.map(esc).join(', ')}</span><button class="btn" data-acao="tirarProva">Tirar</button></div>` : ''}`;
   petBox(); if (stage) stage.resize(); // a placa pode ter mudado de altura
 }
 function petBox(){
-  const el=$('#petbox'), p=petAtivo();
-  if (!p || !p.real){ el.hidden=true; return; }
-  let q=null;
-  if (!cuidouHoje(p,'alimentar') && !petDispensado[p.id+':alimentar']) q=['alimentar', p.tipo==='peixe' ? `Já deu comida pro ${esc(p.nome)} hoje?` : `Já alimentou ${esc(p.nome)} hoje?`];
-  else if (p.tipo==='cachorro' && !cuidouHoje(p,'passear') && !petDispensado[p.id+':passear']) q=['passear', `Já passeou com ${esc(p.nome)} hoje?`];
-  if (!q){ el.hidden=true; return; }
+  const el=$('#petbox'); let q=null, p=null;
+  for (const x of petsJuntos().filter(x=>x.real)){
+    p=x;
+    if (!cuidouHoje(p,'alimentar') && !petDispensado[p.id+':alimentar']) q=['alimentar', p.tipo==='peixe' ? `Já deu comida pro ${esc(p.nome)} hoje?` : `Já alimentou ${esc(p.nome)} hoje?`];
+    else if (p.tipo==='cachorro' && !cuidouHoje(p,'passear') && !petDispensado[p.id+':passear']) q=['passear', `Já passeou com ${esc(p.nome)} hoje?`];
+    if (q) break;
+  }
+  if (!q){ if (!el.hidden){ el.hidden=true; if (stage) stage.resize(); } return; }
   el.innerHTML = `<span>${q[1]}</span><div><button class="btn ouro" data-cuidar="${q[0]}" data-pet="${p.id}">Sim, +${XP_PET_CUIDADO} XP</button><button class="btn" data-dispensar="${q[0]}" data-pet="${p.id}">Ainda não</button></div>`;
-  el.hidden=false;
+  el.hidden=false; if (stage) stage.resize();
 }
 function cuidar(petId, acao){
   const p=S.pets.possui.find(x=>x.id===petId); if (!p || cuidouHoje(p,acao)) return;
@@ -2613,6 +3090,7 @@ function topo(){
 /* ---------- abas ---------- */
 function render(){
   document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on', b.dataset.aba===aba));
+  const fn=$('#folhaNome'), ab=ABAS.find(x=>x[0]===aba); if (fn && ab) fn.textContent=ab[1];
   checaRevelados(calc());
   const f = { equip:vEquip, atrib:vAtrib, missoes:vMissoes, chefoes:vChefoes, loja:vLoja, herois:vHerois, conq:vConq, diario:vDiario, guia:vGuia, opcoes:vOpcoes }[aba];
   $('#conteudo').innerHTML = f();
@@ -2740,7 +3218,7 @@ function vLoja(){
     }).join('');
   }
   const np = Object.keys(prova).length + Object.keys(provaPet).length;
-  const dica = filtroLoja==='pets' ? 'Cada pet dá +'+XP_PET_DIA+' XP por dia. A cor você escolhe na adoção e não muda depois.' : (np ? `Provando ${np} ${np>1?'itens':'item'}. <button class="link" data-acao="tirarProva">Tirar tudo</button>` : (filtroLoja==='petitens' ? 'Toque num item pra provar no seu pet.' : 'Toque num item pra provar no herói antes de comprar.'));
+  const dica = filtroLoja==='pets' ? 'Ter pet ao seu lado dá +'+XP_PET_DIA+' XP por dia. Até '+MAX_PETS_JUNTOS+' pets ficam com você ao mesmo tempo. A cor você escolhe na adoção e não muda depois.' : (np ? `Provando ${np} ${np>1?'itens':'item'}. <button class="link" data-acao="tirarProva">Tirar tudo</button>` : (filtroLoja==='petitens' ? 'Toque num item pra provar no seu pet.' : 'Toque num item pra provar no herói antes de comprar.'));
   return `<div class="sec"><h3>Loja</h3><span class="saldo">${ico('coin','st')} ${num(c.ouro)}</span></div>
     <div class="chips">${chips}</div><p class="fraco dica">${dica}</p><div class="lgrid">${itens}</div>`;
 }
@@ -2759,13 +3237,14 @@ function vHerois(){
       ${tem?`<span class="hnv">Nv ${lv.n}</span>`:ico('lock','cad')}<div class="hn">${esc(tem?nomeH(h.id):h.nome)}</div><div class="hl">${tem&&nomeH(h.id)!==h.nome?esc(h.nome)+'. ':''}${esc(h.lema)}</div>${btn}${tem?`<button class="link" data-renomear="${h.id}">Renomear</button>`:''}</div>`;
   }).join('');
   const meusItens = PET_ITENS.filter(i=>S.mochila.includes(i.id));
-  const pets = S.pets.possui.map(p=>{ const ativo=S.pets.ativo===p.id;
+  const nJ = petsJuntos().length;
+  const pets = S.pets.possui.map(p=>{ const ativo=(S.pets.juntos||[]).includes(p.id);
     const itens = meusItens.map(it=>{ const on=(p.equip||{})[it.slot]===it.id; return `<button class="pit ${on?'on':''}" data-peteq="${it.id}" data-pet="${p.id}" title="${esc(it.nome)}"><img src="${Shots.petItem(it)}" alt="${esc(it.nome)}"></button>`; }).join('');
     return `<div class="hcard ${ativo?'ativo':''}"><img src="${Shots.pet(p)}" alt=""><div class="hn">${esc(p.nome)}</div><div class="hl">${PET[p.tipo].nome}${p.real?', de verdade':''}</div>
-      ${ativo?`<span class="tem">Com você</span>`:`<button class="btn" data-levar="${p.id}">Levar</button>`}${itens?`<div class="pits">${itens}</div>`:''}<button class="link" data-renomearpet="${p.id}">Renomear</button></div>`; }).join('');
+      ${ativo?`<span class="tem">Com você</span><button class="link" data-deixar="${p.id}">Deixar em casa</button>`:`<button class="btn ${nJ>=MAX_PETS_JUNTOS?'off':''}" data-levar="${p.id}">Levar junto</button>`}${itens?`<div class="pits">${itens}</div>`:''}<button class="link" data-renomearpet="${p.id}">Renomear</button></div>`; }).join('');
   return `<div class="sec"><h3>Heróis</h3><span class="fraco">${S.herois.possui.length} de ${HEROIS.length}</span></div><div class="hgrid">${cards}</div>
-    <div class="sec"><h3>Pets</h3><button class="chip" data-ir="loja" data-floja2="pets">Adotar na loja</button></div>
-    ${pets?`<div class="hgrid">${pets}</div>`:'<p class="fraco">Nenhum pet ainda. Adote um na loja: cada um dá +'+XP_PET_DIA+' XP por dia.</p>'}`;
+    <div class="sec"><h3>Pets</h3><span class="fraco">${nJ} de ${MAX_PETS_JUNTOS} com você</span><button class="chip" data-ir="loja" data-floja2="pets">Adotar na loja</button></div>
+    ${pets?`<div class="hgrid">${pets}</div>`:'<p class="fraco">Nenhum pet ainda. Adote um na loja: ter pet ao seu lado dá +'+XP_PET_DIA+' XP por dia.</p>'}`;
 }
 
 function vConq(){
@@ -2792,10 +3271,10 @@ const GUIA = [
   ['Tarefa x diária', `Diária é hábito que se repete e tem meta (versão mínima e versão 3★), então dá pra medir o quanto você foi bem: por isso ganha de 1 a 3 estrelas. Tarefa é de uma vez só e não tem meta: ou fez, ou não fez. Por isso vale XP fixo.`],
   ['Nível', `Todo XP soma no nível geral e nunca é gasto. O nível 2 pede 100 XP, e cada nível seguinte pede 50 a mais. Área parada 7 dias cai 1 nível.`],
   ['Ouro e loja', `Cada XP ganho vira 1 de ouro. A loja é dividida por seções (cabeça, peito, mãos, pernas, arma, acessório, pets e itens de pet), sempre do mais barato pro mais caro. Toque num item pra provar antes de comprar. Lendários aparecem pretos e só se revelam quando o seu ouro alcança o preço, ou quando caem num baú.`],
-  ['Pets', `Cachorro, gato, pássaro e peixe. Cada pet ao seu lado dá +${XP_PET_DIA} XP por dia. A cor é escolhida uma vez, na adoção. Se você tem o bicho na vida real, o primeiro vem de graça na criação; os outros você adota com ouro. Pet de verdade ganha uma caixinha perguntando se você já alimentou (e passeou, no caso do cachorro): cada cuidado dá +${XP_PET_CUIDADO} XP por dia.`],
+  ['Pets', `Cachorro, gato, pássaro e peixe. Ter pet ao seu lado dá +${XP_PET_DIA} XP por dia. Até ${MAX_PETS_JUNTOS} pets andam com você ao mesmo tempo (em Heróis, toque em Levar junto ou Deixar em casa). A cor é escolhida uma vez, na adoção. Se você tem o bicho na vida real, o primeiro vem de graça na criação; o segundo em diante você adota com ouro na loja. Toque no herói ou num pet no palco: cada classe tem o seu golpe e cada bicho a sua brincadeira, com som. Pet de verdade ganha uma caixinha perguntando se você já alimentou (e passeou, no caso do cachorro): cada cuidado dá +${XP_PET_CUIDADO} XP por dia.`],
   ['Chefões', `As metas grandes, montadas com o agente: uma prova, uma compra, um número. Cada chefão tem barra de vida e uma história (passe o mouse ou toque nele). Derrotar dá +300 XP.`],
   ['Heróis', `6 classes (Guerreiro, Mago, Bardo, Ladino, Arqueiro, Artesão), homem e mulher, e dois lendários. Cada herói tem nome e nível próprios.`],
-  ['Música e cenário', `3 trilhas e 6 cenários, grátis, pra trocar a qualquer hora em Opções ou na tela inicial.`],
+  ['Música e cenário', `3 trilhas e 8 cenários, grátis, pra trocar a qualquer hora em Opções ou na tela inicial.`],
   ['Extras', `Sequência: dias seguidos com pelo menos uma diária. Baú: fechou o dia com todas as diárias, ganha item surpresa. Conquistas: medalhas por marcos. Diário: o histórico de cada dia.`],
   ['Salvar', `Salva sozinho. Tudo o que você faz fica guardado primeiro no aparelho (funciona sem internet) e depois sobe pro seu Google Drive, numa pasta Daily Legends que o próprio jogo cria. O botão no topo mostra se está tudo na nuvem. Em outro celular ou no computador, é só entrar com a mesma conta Google.`],
   ['Jogar no King Bot', `1. Instale o jogo na tela inicial e entre com Google.<br>2. Crie um agente novo no King Bot e cole o prompt do guia em PDF.<br>3. Conecte o plugin Google Sheets nesse agente (e Todoist, Google Tasks ou Gmail, se quiser lembretes).<br>4. O agente acha a planilha Daily Legends - Save no seu Drive, monta diárias e chefões com você e, todo dia, escreve o que você fez na aba dele. O jogo junta tudo quando você abre.`]
@@ -2808,6 +3287,7 @@ function vOpcoes(){
   return `<div class="opc">
     <label class="sl2"><span>Música</span><input type="range" min="0" max="1" step="0.05" value="${Som.musica}" data-vol="musica"></label>
     <label class="sl2"><span>Som</span><input type="range" min="0" max="1" step="0.05" value="${Som.som}" data-vol="som"></label>
+    <label class="sl2"><span>Chiado de vinil na música</span><input type="range" min="0" max="1" step="0.05" value="${Som.chiado}" data-vol="chiado"></label>
     <div class="escolhas"><span class="fraco">Faixa</span>${Som.FAIXAS.map((f,i)=>`<button class="chip ${Som.faixa===i?'on':''}" data-faixa="${i}">${f.nome}</button>`).join('')}</div>
     <div class="escolhas"><span class="fraco">Cenário</span>${CENARIOS.map(([id,n])=>`<button class="chip ${(S.config.cenario||'castelo')===id?'on':''}" data-cenario="${id}">${n}</button>`).join('')}</div>
     <button class="btn" data-acao="mudo">${Som.mudo?'Ligar música':'Mutar música'}</button>
@@ -2897,9 +3377,9 @@ function carregar(file){
   fr.onload=()=>{ try{ const t=String(fr.result).trim(); const d = /^DL[12]:/.test(t) ? decodificaCodigo(t) : JSON.parse(t); if (!['daily-legends','saga-diaria','zaza-quest'].includes(d.jogo)) throw 0; importaSave(d); } catch(e){ Som.sfx('erro'); toast('Esse arquivo não é um save do Daily Legends','ruim'); } };
   fr.readAsText(file);
 }
-function aplicaConfig(){ const c=S.config||{}; Som.musica = c.musica!=null?c.musica:0.6; Som.som = c.som!=null?c.som:0.7; Som.mudo=!!c.mudo; Som.trocar(c.faixa||0); aplicaCenario(); }
+function aplicaConfig(){ const c=S.config||{}; Som.musica = c.musica!=null?c.musica:0.6; Som.som = c.som!=null?c.som:0.7; Som.chiado = c.chiado!=null?c.chiado:1; Som.mudo=!!c.mudo; Som.trocar(c.faixa||0); aplicaCenario(); }
 const CEN_CACHE={};
-function aplicaCenario(){ const id=(S.config&&S.config.cenario)||'castelo'; document.body.style.backgroundImage = `url(${CEN_CACHE[id] || (CEN_CACHE[id]=cenario(id))})`; const n=$('#tCen'); if (n) n.textContent=(CENARIOS.find(c=>c[0]===id)||CENARIOS[0])[1]; const f=$('#tFaixa'); if (f) f.textContent=Som.FAIXAS[Som.faixa].nome; }
+function aplicaCenario(){ const id=(S.config&&S.config.cenario)||'castelo'; Ambiente.tema(id); document.body.style.setProperty('--cen', `url(${CEN_CACHE[id] || (CEN_CACHE[id]=cenario(id))})`); const n=$('#tCen'); if (n) n.textContent=(CENARIOS.find(c=>c[0]===id)||CENARIOS[0])[1]; const f=$('#tFaixa'); if (f) f.textContent=Som.FAIXAS[Som.faixa].nome; }
 
 /* ---------- recomeçar do zero (dupla confirmação) ---------- */
 const PALAVRA_ZERAR = 'RECOMEÇAR';
@@ -2973,7 +3453,7 @@ function passoCria(){
 function fimCria(){
   const c=cria, id=c.heroi;
   S.herois.possui=[id]; S.herois.ativo=id; S.herois.equip[id]={}; S.herois.nomes=S.herois.nomes||{}; if (c.nome) S.herois.nomes[id]=c.nome;
-  if (c.pet){ S.pets.possui=[{ id:'pet1', tipo:c.pet, cor:c.petCor||PET[c.pet].cores[0], nome:c.petNome||PET[c.pet].nome, real:true, gratis:true, equip:{}, d:S.hoje }]; S.pets.ativo='pet1'; S.pets.desde=S.hoje; }
+  if (c.pet){ S.pets.possui=[{ id:'pet1', tipo:c.pet, cor:c.petCor||PET[c.pet].cores[0], nome:c.petNome||PET[c.pet].nome, real:true, gratis:true, equip:{}, d:S.hoje }]; S.pets.ativo='pet1'; S.pets.juntos=['pet1']; S.pets.desde=S.hoje; }
   S.config.faixa=c.faixa; cria=null;
   Som.sfx('nivel'); marcaSujo(); fechaModal(); $('#modal').classList.remove('largo'); entrar(); toast(`${nomeH(id)} pronto pra jornada.`);
 }
@@ -2994,7 +3474,7 @@ function fimAdocao(){
   const id='pet'+(S.pets.possui.length+1)+'_'+Date.now().toString(36).slice(-3);
   S.pets.possui.push({ id, tipo:c.pet, cor:c.petCor, nome:($('#petNome').value.trim()||pt.nome), real:$('#petReal').checked, equip:{}, d:S.hoje });
   S.compras.push({ uid:uid('c'), tipo:'pet', id:c.pet, preco:pt.preco, d:S.hoje });
-  if (!S.pets.desde) S.pets.desde=S.hoje; if (!S.pets.ativo) S.pets.ativo=id;
+  if (!S.pets.desde) S.pets.desde=S.hoje; arrumaJuntos(); if (S.pets.juntos.length<MAX_PETS_JUNTOS) S.pets.juntos.push(id); arrumaJuntos();
   cria=null; Som.sfx('nivel'); marcaSujo(); fechaModal(); atualizaPalco(); render(); toast(`${S.pets.possui.at(-1).nome} chegou!`);
 }
 function pedeNome(tipo, id){
@@ -3021,7 +3501,7 @@ function marcaTarefa(id, feita){
   Som.sfx(t.feita===true?'moeda':'clique'); marcaSujo(); render();
 }
 function normaliza(){
-  S.herois.nomes = S.herois.nomes || {}; S.pets = S.pets || { possui:[], ativo:null }; S.tarefas = S.tarefas || []; S.revelados = S.revelados || [];
+  S.herois.nomes = S.herois.nomes || {}; S.pets = S.pets || { possui:[], ativo:null }; arrumaJuntos(); S.tarefas = S.tarefas || []; S.revelados = S.revelados || [];
   S.config = S.config || {}; if (S.config.faixa==null) S.config.faixa=0; if (!S.config.cenario) S.config.cenario='castelo';
   S.hoje = hojeReal(); // o dia do jogo é sempre o dia do aparelho (antes só andava pra frente e ficava preso no dia do servidor, em UTC)
   consertaDatas(S); // registros gravados com o dia errado (futuro) voltam pro dia local em que foram feitos
@@ -3040,8 +3520,12 @@ function entrar(){
   $('#titulo').hidden=true; $('#jogo').hidden=false;
   if (!stage && threeOk){ try { stage = new Stage($('#palco3d'));
     // layout largo: a placa do nome fica por cima do palco; o herói é enquadrado acima dela
-    stage.livre = (w,h)=>{ const pl=$('#placa'); if (!pl || getComputedStyle(pl).position!=='absolute') return null; const c=$('#palco3d').getBoundingClientRect(), p=pl.getBoundingClientRect();
+    stage.livre = (w,h)=>{
+      if (ehMovel()){ const c=$('#palco3d').getBoundingClientRect(), r={}; const baixo = folha ? $('.painel') : $('#placa'), pb=baixo.getBoundingClientRect();
+        if (pb.height) r.yb = 1 - 2*((pb.top-c.top)-6)/h; const px=$('#petbox'); if (!folha && px && !px.hidden){ const q=px.getBoundingClientRect(); if (q.height) r.yt = 1 - 2*((q.bottom-c.top)+6)/h; } return r; }
+      const pl=$('#placa'); if (!pl || getComputedStyle(pl).position!=='absolute') return null; const c=$('#palco3d').getBoundingClientRect(), p=pl.getBoundingClientRect();
       if (!p.height || p.right-c.left < w*0.3) return null; return 1 - 2*((p.top-c.top)-8)/h; };
+    stage.onToque = (a)=>{ Som.tocar(); if (a.tipo==='heroi') Som.heroi(a.classe, a.sexo, a.raca); else Som.pet(a.pet); };
     stage.resize(); } catch(e){ $('#palco3d').innerHTML='<p class="fraco">Não deu pra abrir o 3D neste aparelho.</p>'; } }
   if (!S.herois.ativo){ escolha(); return; }
   atualizaPalco(); render();
@@ -3066,7 +3550,7 @@ function liga(){
     const t=e.target.closest('button, [data-ir], summary'); if (!t) return;
     const d=t.dataset;
     if (t.id==='btnComecar'){ Som.tocar(); Som.sfx('aba'); entrar(); return; }
-    if (t.id==='btnGuiaT'){ Som.tocar(); Som.sfx('aba'); aba='guia'; entrar(); if (S.herois.ativo){ render(); } else { modal(`<div class="lista guia">${GUIA.map(([t,x])=>`<details class="area"><summary><span class="anome">${t}</span></summary><div class="gtxt">${x}</div></details>`).join('')}</div><div class="acoes"><button class="btn ouro" data-acao="escolher">Escolher herói</button></div>`,'Como jogar'); } return; }
+    if (t.id==='btnGuiaT'){ Som.tocar(); Som.sfx('aba'); aba='guia'; entrar(); if (S.herois.ativo){ render(); if (ehMovel()) abreFolha(true); } else { modal(`<div class="lista guia">${GUIA.map(([t,x])=>`<details class="area"><summary><span class="anome">${t}</span></summary><div class="gtxt">${x}</div></details>`).join('')}</div><div class="acoes"><button class="btn ouro" data-acao="escolher">Escolher herói</button></div>`,'Como jogar'); } return; }
     if (d.acao==='escolher'){ fechaModal(); escolha(); return; }
     if (d.criaHeroi){ cria.heroi=d.criaHeroi; cria.passo='confirma'; Som.sfx('clique'); passoCria(); return; }
     if (d.cria){ if (d.cria==='fim'){ fimCria(); return; } if (d.cria==='nome' && $('#criaNome')) {} cria.passo=d.cria; Som.sfx('clique'); passoCria(); return; }
@@ -3079,7 +3563,8 @@ function liga(){
     if (d.adotar){ adotar(d.adotar); return; }
     if (d.comprarpet){ comprarPetItem(d.comprarpet); return; }
     if (d.provarpet){ if (!petAtivo()){ Som.sfx('erro'); toast('Adote um pet primeiro pra provar'); return; } const it=PET_ITEM[d.provarpet]; if (provaPet[it.slot]===it.id) delete provaPet[it.slot]; else provaPet[it.slot]=it.id; Som.sfx('equipar'); atualizaPalco(); render(); return; }
-    if (d.levar){ S.pets.ativo=d.levar; provaPet={}; Som.sfx('equipar'); marcaSujo(); atualizaPalco(); render(); return; }
+    if (d.levar){ arrumaJuntos(); if (S.pets.juntos.length>=MAX_PETS_JUNTOS){ Som.sfx('erro'); toast(`Cabem ${MAX_PETS_JUNTOS} pets com você. Deixe um em casa primeiro.`); return; } S.pets.juntos.push(d.levar); arrumaJuntos(); provaPet={}; Som.sfx('equipar'); marcaSujo(); atualizaPalco(); render(); return; }
+    if (d.deixar){ arrumaJuntos(); S.pets.juntos=S.pets.juntos.filter(x=>x!==d.deixar); arrumaJuntos(); provaPet={}; Som.sfx('clique'); marcaSujo(); atualizaPalco(); render(); return; }
     if (d.peteq){ const p=S.pets.possui.find(x=>x.id===d.pet), it=PET_ITEM[d.peteq]; p.equip=p.equip||{}; if (p.equip[it.slot]===it.id) delete p.equip[it.slot]; else p.equip[it.slot]=it.id; Som.sfx('equipar'); marcaSujo(); atualizaPalco(); render(); return; }
     if (d.renomear){ pedeNome('heroi', d.renomear); return; }
     if (d.renomearpet){ pedeNome('pet', d.renomearpet); return; }
@@ -3088,11 +3573,12 @@ function liga(){
     if (t.id==='btnFaixaT'){ Som.tocar(); const i=(Som.faixa+1)%Som.FAIXAS.length; Som.trocar(i); S.config.faixa=i; aplicaCenario(); return; }
     if (t.id==='btnCenT'){ const i=(CENARIOS.findIndex(c=>c[0]===S.config.cenario)+1)%CENARIOS.length; S.config.cenario=CENARIOS[i][0]; Som.sfx('clique'); aplicaCenario(); return; }
     if (d.fecha && !d.acao){ Som.sfx('clique'); fechaModal(); return; }
-    if (d.aba){ const saiu = aba==='loja' && d.aba!=='loja' && Object.keys(prova).length; aba=d.aba; confirmando=null; if (saiu){ prova={}; atualizaPalco(); } Som.sfx('aba'); render(); $('#conteudo').scrollTop=0; return; }
+    if (d.aba && ehMovel() && folha && d.aba===aba){ abreFolha(false); Som.sfx('aba'); return; }
+    if (d.aba){ const saiu = aba==='loja' && d.aba!=='loja' && Object.keys(prova).length; aba=d.aba; confirmando=null; if (saiu){ prova={}; atualizaPalco(); } Som.sfx('aba'); render(); $('#conteudo').scrollTop=0; if (ehMovel()) abreFolha(true); return; }
     if (d.slot){ filtroSlot = filtroSlot===d.slot ? null : d.slot; const id=eqAtivo()[d.slot]; selItem = id || null; Som.sfx('clique'); render(); return; }
     if (d.item){ selItem=d.item; Som.sfx('clique'); render(); return; }
     if (d.floja2) filtroLoja=d.floja2;
-    if (d.ir){ const saiu = aba==='loja' && d.ir!=='loja' && Object.keys(prova).length; aba=d.ir; if (saiu){ prova={}; atualizaPalco(); } Som.sfx('aba'); render(); return; }
+    if (d.ir){ const saiu = aba==='loja' && d.ir!=='loja' && Object.keys(prova).length; aba=d.ir; if (saiu){ prova={}; atualizaPalco(); } Som.sfx('aba'); render(); $('#conteudo').scrollTop=0; if (ehMovel()) abreFolha(true); return; }
     if (d.floja){ filtroLoja=d.floja; confirmando=null; Som.sfx('clique'); render(); return; }
     if (d.comprar){ comprar(d.comprar); return; }
     if (d.provar){ provar(d.provar); return; }
@@ -3104,6 +3590,7 @@ function liga(){
     if (t.id==='btnBau'){ abrirBau(); return; }
     if (t.id==='btnMudo' || d.acao==='mudo'){ Som.tocar(); Som.mudo=!Som.mudo; S.config.mudo=Som.mudo; marcaSujo(); topo(); if (aba==='opcoes') render(); return; }
     if (t.id==='btnNuvem'){ Nuvem.tocar(); return; }
+    if (t.id==='btnFechaFolha'){ abreFolha(false); Som.sfx('aba'); return; }
     if (t.id==='btnEntrarT' || d.acao==='entrarGoogle'){ fechaModal(); Nuvem.irParaGoogle(false); return; }
     if (d.acao==='sincronizar'){ fechaModal(); Nuvem.sincronizar('botao'); toast('Sincronizando…'); return; }
     if (d.acao==='sairConta'){ Nuvem.sair(); render(); return; }

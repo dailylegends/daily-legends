@@ -465,7 +465,8 @@ const SAVE = {
  "mod": {},
  "rev": 0
 };
-const DL_VERSAO = "2026.10.12-1651";
+const DL_VERSAO = "2026.10.12-1811";
+const DL_RETRATOS = "240016001d";
 
 /* ===== Voxel v2: bonecos esculpidos em meia resolução (voxel = 0,5 do mundo) ===== */
 const VS = 0.5;
@@ -2104,9 +2105,15 @@ const Shots = {
     this.r = new THREE.WebGLRenderer({ antialias:true, alpha:true, preserveDrawingBuffer:true });
     this.r.setSize(160,160); this.scene = new THREE.Scene(); addLights(this.scene);
     this.cam = new THREE.OrthographicCamera(-10,10,10,-10,0.1,500);
+    const toque = ()=>{ this.ultToque = performance.now(); };
+    ['pointerdown','keydown','wheel'].forEach(ev=>window.addEventListener(ev, toque, { capture:true, passive:true }));
+    this.abreDB();
   },
-  // pede um retrato: devolve o pronto ou um marcador; o desenho sai em segundo plano (um por vez) e troca a imagem sozinho
-  fila:[], rodando:false,
+  // pede um retrato: devolve o pronto ou um marcador; o desenho sai em segundo plano (um por vez) e troca a imagem sozinho.
+  // Desenhar trava a tela um tiquinho (a placa de vídeo tem que entregar a imagem), então:
+  //  - o que já foi desenhado fica guardado no aparelho (IndexedDB) e volta na hora nas próximas vezes;
+  //  - a fila espera o jogador parar de clicar e só desenha nos intervalos livres.
+  fila:[], rodando:false, ultToque:0,
   shot(key, vm, frame, sil){
     if (this.cache[key]) return this.cache[key];
     if (!this.r) return '';
@@ -2114,14 +2121,40 @@ const Shots = {
     if (!this.fila.some(x=>x.key===key)) this.fila.push({ key, vm, frame, sil, ph });
     this.agenda(); return ph;
   },
+  troca(ph, url){ document.querySelectorAll('img').forEach(im=>{ if (im.getAttribute('src')===ph) im.src = url; }); },
   agenda(){
-    if (this.rodando) return; this.rodando = true;
-    const passo = ()=>{ const j = this.fila.shift(); if (!j){ this.rodando = false; return; }
-      let url = ''; try { url = this.desenha(j.key, typeof j.vm==='function' ? j.vm() : j.vm, j.frame, j.sil); } catch(e){ console.error(e); }
-      if (url) document.querySelectorAll('img').forEach(im=>{ if (im.getAttribute('src')===j.ph) im.src = url; });
-      setTimeout(passo, 16); };
-    setTimeout(passo, 30);
+    if (this.rodando || !this.carregado) return; this.rodando = true;
+    const livre = (fn)=> window.requestIdleCallback ? requestIdleCallback(fn, { timeout:600 }) : setTimeout(fn, 30);
+    const passo = ()=>{
+      if (!this.fila.length){ this.rodando = false; return; }
+      // clicou agora há pouco: deixa a interface responder primeiro
+      if (performance.now() - this.ultToque < 450){ setTimeout(()=>livre(passo), 150); return; }
+      const j = this.fila.shift();
+      let url = this.cache[j.key] || ''; if (!url){ try { url = this.desenha(j.key, typeof j.vm==='function' ? j.vm() : j.vm, j.frame, j.sil); this.guarda(j.key, url); } catch(e){ console.error(e); } }
+      if (url) this.troca(j.ph, url);
+      setTimeout(()=>livre(passo), 40); };
+    setTimeout(()=>livre(passo), 60);
   },
+  // guardados no aparelho: chave = versão dos modelos + retrato
+  db:null, carregado:false,
+  abreDB(){
+    const ver = typeof DL_RETRATOS!=='undefined' ? DL_RETRATOS : 'dev';
+    const fim = ()=>{ this.carregado = true; this.fila = this.fila.filter(j=>{ if (this.cache[j.key]){ this.troca(j.ph, this.cache[j.key]); return false; } return true; }); this.agenda(); };
+    try {
+      if (!window.indexedDB) return fim();
+      const rq = indexedDB.open('dl-retratos', 1);
+      rq.onupgradeneeded = ()=> rq.result.createObjectStore('r');
+      rq.onerror = fim;
+      rq.onsuccess = ()=>{ const db = this.db = rq.result; const st = db.transaction('r','readwrite').objectStore('r');
+        const cur = st.openCursor(); const t0 = Date.now();
+        cur.onsuccess = ()=>{ const c = cur.result; if (!c){ fim(); return; }
+          const k = String(c.key), i = k.indexOf('|');
+          if (k.slice(0,i)===ver){ if (!this.cache[k.slice(i+1)]) this.cache[k.slice(i+1)] = c.value; } else c.delete();
+          c.continue(); };
+        cur.onerror = fim; setTimeout(()=>{ if (!this.carregado) fim(); }, 4000); };
+    } catch(e){ fim(); }
+  },
+  guarda(key, url){ if (!this.db || !url) return; try { const ver = typeof DL_RETRATOS!=='undefined' ? DL_RETRATOS : 'dev'; this.db.transaction('r','readwrite').objectStore('r').put(url, ver+'|'+key); } catch(e){} },
   desenha(key, vm, frame, sil){
     const g = buildMesh(vm, { sil, leve: true, so: frame==='busto' ? ['torso','head','armL','armR'] : null }); const b = cellBounds(vm);
     let cx=(b.mn[0]+b.mx[0])/2, cy=(b.mn[1]+b.mx[1])/2, cz=(b.mn[2]+b.mx[2])/2;
@@ -3551,7 +3584,7 @@ const ANIM_PET3 = (()=>{
 /* ===== Pixel art: cenário e ícones 8x8 ===== */
 function cenario(tema){
   if (tema && tema!=='castelo' && CENARIOS_FN[tema]) return CENARIOS_FN[tema]();
-  const W=320, H=180, cv=document.createElement('canvas'); cv.width=W; cv.height=H; const g=cv.getContext('2d');
+  const W=320, H=180, cv=document.createElement('canvas'); cv.width=W; cv.height=H; const g=cv.getContext('2d', { willReadFrequently:true }); // canvas na CPU: toDataURL sem esperar a placa de vídeo
   let seed=7; const rnd=()=>{ seed=(seed*16807)%2147483647; return seed/2147483647; };
   const px=(x,y,c)=>{ g.fillStyle=c; g.fillRect(x,y,1,1); };
   // céu em faixas com pontilhado
@@ -3592,7 +3625,7 @@ function cenario(tema){
 
 /* ----- outros cenários ----- */
 function telaPix(){
-  const W=320, H=180, cv=document.createElement('canvas'); cv.width=W; cv.height=H; const g=cv.getContext('2d');
+  const W=320, H=180, cv=document.createElement('canvas'); cv.width=W; cv.height=H; const g=cv.getContext('2d', { willReadFrequently:true }); // canvas na CPU: toDataURL sem esperar a placa de vídeo
   let seed=11; const rnd=()=>{ seed=(seed*16807)%2147483647; return seed/2147483647; };
   const px=(x,y,c)=>{ g.fillStyle=c; g.fillRect(x,y,1,1); };
   const faixas=(cores,ate)=>{ const fx=H*ate/cores.length; for (let i=0;i<cores.length;i++){ g.fillStyle=cores[i]; g.fillRect(0,Math.floor(i*fx),W,Math.ceil(fx)+1); if (i>0) for (let x=0;x<W;x++) if ((x+i)%2===0) px(x,Math.floor(i*fx),cores[i-1]); } g.fillStyle=cores[cores.length-1]; g.fillRect(0,Math.floor(H*ate),W,H); };
@@ -3724,7 +3757,7 @@ const PIX = {
 const _pixCache = {};
 function pix(nome, escala){
   const k=nome; if (_pixCache[k]) return _pixCache[k];
-  const def=PIX[nome]; const cv=document.createElement('canvas'); cv.width=8; cv.height=8; const g=cv.getContext('2d');
+  const def=PIX[nome]; const cv=document.createElement('canvas'); cv.width=8; cv.height=8; const g=cv.getContext('2d', { willReadFrequently:true }); // canvas na CPU: toDataURL sem esperar a placa de vídeo
   def.d.forEach((row,y)=>{ for (let x=0;x<8;x++){ const ch=row[x]; if (!ch||ch==='.') continue; const c=def.p[ch]; if (!c) continue; g.fillStyle=c; g.fillRect(x,y,1,1); } });
   return (_pixCache[k]=cv.toDataURL());
 }

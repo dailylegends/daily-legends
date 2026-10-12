@@ -205,6 +205,11 @@ body.conectando::after{ content:'Conectando ao Google…'; position:fixed; inset
 
 /* opções */
 .opc{ display:grid; gap:12px; max-width:360px; }
+.perigo{ margin-top:18px; padding-top:14px; border-top:2px solid #3a2020; display:grid; gap:8px; } .perigo h3{ color:var(--ruim); margin:0; }
+.btn.ruim{ background:#5a1414; box-shadow: inset -3px -3px 0 #0006, inset 3px 3px 0 #ffffff1a, 0 0 0 2px #000a, 0 0 0 4px #8a2a2e; }
+.btn.ruim[disabled]{ opacity:.45; filter:grayscale(.6); cursor:not-allowed; }
+.zlista{ margin:6px 0 10px; padding-left:20px; display:grid; gap:2px; } .zaviso{ color:var(--ruim); font-weight:700; }
+#zerarTxt{ width:100%; font-size:18px; letter-spacing:2px; text-transform:uppercase; padding:10px; background:#0c0f0f; color:var(--texto); border:0; box-shadow: inset 0 0 0 2px #000, inset 0 0 0 3px #8a2a2e; }
 
 /* modal e aviso */
 #modal{ position:fixed; inset:0; background:#000b; display:grid; place-items:center; padding:16px; z-index:20; }
@@ -309,7 +314,7 @@ body.conectando::after{ content:'Conectando ao Google…'; position:fixed; inset
 const SAVE = {
  "jogo": "daily-legends",
  "versao": 1,
- "hoje": "2026-10-12",
+ "hoje": null,
  "herois": {
   "possui": [],
   "ativo": null,
@@ -342,7 +347,7 @@ const SAVE = {
  "log": [
   {
    "id": "inicio",
-   "d": "2026-10-12",
+   "d": null,
    "area": "mente",
    "txt": "A jornada começou",
    "xp": 0,
@@ -357,7 +362,7 @@ const SAVE = {
  "mod": {},
  "rev": 0
 };
-const DL_VERSAO = "2026.10.12-0031";
+const DL_VERSAO = "2026.10.12-0321";
 
 /* ===== Voxel v2: bonecos esculpidos em meia resolução (voxel = 0,5 do mundo) ===== */
 const VS = 0.5;
@@ -1419,7 +1424,9 @@ class Stage {
     this.model = buildMesh(vm); this.root.add(this.model);
     const k = vm.pose.armR;
     this.armBase = (k==='espada'||k==='espadaBase'||k==='adagas'||k==='adaga'||k==='baquetas'||k==='varinha'||k==='escudo'||k==='besta') ? -0.22 : (k==='pole'||k==='pincelBase'||k==='marteloBase'||k==='machadoBase'||k==='lanca') ? -0.08 : 0;
-    const b = cellBounds(vm); this.top = b.mx[1]; this.wide = Math.max(Math.abs(b.mn[0]), Math.abs(b.mx[0]));
+    // limites do herói com QUALQUER item: altura e raio no chão (x e z, porque o palco gira), com folga pra animação
+    const b = cellBounds(vm);
+    this.hb = { y0:Math.min(0,b.mn[1]), y1:b.mx[1]+0.6, r:Math.max(Math.hypot(b.mn[0],b.mn[2]), Math.hypot(b.mn[0],b.mx[2]), Math.hypot(b.mx[0],b.mn[2]), Math.hypot(b.mx[0],b.mx[2]))+0.8 };
     this.resize();
   }
   setPet(p, extra){
@@ -1429,20 +1436,36 @@ class Stage {
       const g = new THREE.Group(); const mesh = buildMesh(buildPetVModel(p, extra), { pivot0:true }); g.add(mesh);
       if (p.tipo==='peixe'){ const b = new THREE.Mesh(new THREE.SphereGeometry(4.4, 24, 16), new THREE.MeshLambertMaterial({ color:0xaee4ff, transparent:true, opacity:0.22, depthWrite:false })); b.position.set(0,7,0); g.add(b); }
       g.position.set(10.5, 0, 5.5); g.rotation.y = -0.45; this.pet = g; this.root.add(g);
-    }
+      const ry = this.root.rotation.y; this.root.rotation.y = 0; this.root.updateMatrixWorld(true);
+      const bx = new THREE.Box3().setFromObject(g); this.root.rotation.y = ry; this.root.updateMatrixWorld(true); // caixa do pet no espaço do palco sem giro
+      this.pb = { y0:Math.min(0,bx.min.y), y1:bx.max.y+0.6, r:Math.max(Math.hypot(bx.min.x,bx.min.z), Math.hypot(bx.min.x,bx.max.z), Math.hypot(bx.max.x,bx.min.z), Math.hypot(bx.max.x,bx.max.z))+0.5 };
+    } else this.pb = null;
     this.resize();
   }
+  // enquadra herói + pet inteiros em qualquer ângulo de giro, com qualquer item, em qualquer tela:
+  // testa a distância da câmera (busca binária) projetando um cilindro que envolve tudo, e centraliza na faixa livre do palco
   resize(){
     const w = this.el.clientWidth||300, h = this.el.clientHeight||300;
-    this.renderer.setSize(w,h,false); this.renderer.domElement.style.width='100%'; this.renderer.domElement.style.height='100%';
-    this.camera.aspect = w/h;
-    const top = Math.max(32, this.top||32), half = (top+8)/2, cy = (top-4)/2;
-    const tanV = Math.tan(this.camera.fov*Math.PI/360);
-    const wide = Math.max(this.pet ? 17 : 14, (this.wide||10)+3);
-    const d = Math.max(half/tanV, wide/(tanV*this.camera.aspect));
-    this.camera.position.set(0, cy+9, d*1.04); this.camera.lookAt(0, cy, 0);
-    this.camera.setViewOffset(w, h, 0, Math.round(h*(w<600?0.05:0.08)), w, h);
-    this.camera.updateProjectionMatrix();
+    if (this.renderer.domElement.parentNode){ this.renderer.setSize(w,h,false); this.renderer.domElement.style.width='100%'; this.renderer.domElement.style.height='100%'; }
+    const cam = this.camera; cam.aspect = w/h; cam.clearViewOffset();
+    const hb = this.hb || { y0:0, y1:32, r:10 }, pb = this.pb;
+    const y0 = Math.min(hb.y0, pb ? pb.y0 : 0), y1 = Math.max(hb.y1, pb ? pb.y1 : 0), R = Math.max(hb.r, pb ? pb.r : 0, 8);
+    // faixa livre (em NDC, -1..1): margem de 5% e, no layout largo, sem ficar atrás da placa do nome
+    const mx = 0.92; let yb = -0.92, yt = 0.92;
+    const pl = this.livre ? this.livre(w,h) : null; if (pl!=null) yb = Math.max(yb, pl);
+    const cy = (y0+y1)/2, pitch = 0.1;
+    const pts = []; for (let i=0;i<24;i++){ const a=i/24*Math.PI*2; pts.push([Math.cos(a)*R, y0, Math.sin(a)*R], [Math.cos(a)*R, y1, Math.sin(a)*R]); }
+    pts.push([0,y1,0],[0,y0,0]);
+    const v = new THREE.Vector3();
+    const poe = d=>{ cam.position.set(0, cy + Math.sin(pitch)*d, Math.cos(pitch)*d); cam.lookAt(0, cy, 0); cam.updateProjectionMatrix(); cam.updateMatrixWorld(true); };
+    const mede = ()=>{ let ax=0, lo=9, hi=-9; for (const p of pts){ v.set(p[0],p[1],p[2]).project(cam); ax=Math.max(ax,Math.abs(v.x)); lo=Math.min(lo,v.y); hi=Math.max(hi,v.y); } return { ax, lo, hi }; };
+    let a = R*1.2+2, z = 4000;
+    for (let k=0;k<32;k++){ const d=(a+z)/2; poe(d); const m=mede(); if (m.ax<=mx && (m.hi-m.lo)<=(yt-yb)) z=d; else a=d; }
+    poe(z); const m = mede();
+    // desloca a imagem pra centralizar o conteúdo na faixa livre (setViewOffset move em pixels; 1 NDC = h/2 px)
+    const off = Math.round((((yt+yb)/2) - ((m.hi+m.lo)/2)) * h/2);
+    cam.setViewOffset(w, h, 0, off, w, h); cam.updateProjectionMatrix();
+    this.fit = { d:z, off, R, y0, y1, yb, yt };
   }
   frame(t){
     const s = (t-this.t0)/1000;
@@ -1711,7 +1734,9 @@ const Som = (()=>{
   }
   function init(){
     if (ctx) return;
-    ctx = new (window.AudioContext||window.webkitAudioContext)();
+    const AC = window.AudioContext||window.webkitAudioContext; if (!AC) return;
+    try { ctx = new AC({ latencyHint:'playback' }); } catch(e){ ctx = new AC(); }
+    ctx.onstatechange = ()=>{ if (ctx && ctx.state!=='running' && !document.hidden) precisaToque = true; };
     master = ctx.createGain(); master.connect(ctx.destination);
     const lp = ctx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=3300; lp.Q.value=0.4;
     const comp = ctx.createDynamicsCompressor(); comp.threshold.value=-20; comp.ratio.value=3;
@@ -1828,12 +1853,66 @@ const Som = (()=>{
       }
     }
   }
-  function agendar(){ while (nextT < ctx.currentTime+0.15){ passo(step,nextT); nextT+=S16; step++; } }
+  function agendar(){
+    if (!ctx || ctx.state!=='running') return;
+    const agora=ctx.currentTime;
+    // relógio pulou (app voltou do fundo, contexto recriado): recomeça o compasso em vez de despejar notas atrasadas
+    if (nextT < agora-0.3 || nextT > agora+2){ nextT = agora+0.08; }
+    while (nextT < agora+0.2){ passo(step,nextT); nextT+=S16; step++; }
+  }
 
-  function tocar(){ init(); if (ctx.state==='suspended') ctx.resume(); if (tocando) return; tocando=true; S16=60/FAIXAS[faixa].bpm/4; step=0; nextT=ctx.currentTime+0.1; timer=setInterval(agendar,25); }
+  /* ----- iPhone/iPad (Safari e app instalado na tela de início) -----
+     1) o som só liga dentro de um toque: todo toque/clique tenta destravar (resume + buffer mudo), não só o botão Começar;
+     2) o iOS deixa o contexto em "suspended" ou "interrupted" (estado só do iOS) depois de ir pro fundo, ligação, Siri, outra
+        música: ao voltar, tenta retomar e, se não der, retoma no próximo toque; se o contexto travar, cria um novo;
+     3) chave de silencioso: Web Audio no iOS fica mudo nela. navigator.audioSession='playback' (iOS 17+) e um <audio> mudo
+        tocando em loop colocam a página na categoria "reprodução", que toca mesmo com a chave no silencioso. */
+  let precisaToque=true, querTocar=false, tagMuda=null, tentativa=0;
+  const ehIOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+  function wavMudo(){
+    const sr=44100, n=sr/2, b=new ArrayBuffer(44+n*2), v=new DataView(b);
+    const w=(o,t)=>{ for (let i=0;i<t.length;i++) v.setUint8(o+i,t.charCodeAt(i)); };
+    w(0,'RIFF'); v.setUint32(4,36+n*2,true); w(8,'WAVE'); w(12,'fmt '); v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,1,true);
+    v.setUint32(24,sr,true); v.setUint32(28,sr*2,true); v.setUint16(32,2,true); v.setUint16(34,16,true); w(36,'data'); v.setUint32(40,n*2,true);
+    return URL.createObjectURL(new Blob([b],{ type:'audio/wav' }));
+  }
+  function sessaoPlayback(){
+    // com a música mutada fica "ambient" (não pausa o Spotify de ninguém por causa de um clique)
+    try { const tp = mudo ? 'ambient' : 'playback'; if (navigator.audioSession && navigator.audioSession.type!==tp) navigator.audioSession.type=tp; } catch(e){}
+    if (!ehIOS || mudo) return;
+    try {
+      if (!tagMuda){ tagMuda=document.createElement('audio'); tagMuda.setAttribute('playsinline',''); tagMuda.setAttribute('x-webkit-airplay','deny'); tagMuda.loop=true; tagMuda.preload='auto'; tagMuda.src=wavMudo(); tagMuda.volume=0.01; }
+      if (tagMuda.paused){ const p=tagMuda.play(); if (p && p.catch) p.catch(()=>{}); }
+    } catch(e){}
+  }
+  function recriar(){
+    try { if (ctx) ctx.close(); } catch(e){}
+    ctx=null; init(); if (tocando){ step=0; nextT=ctx ? ctx.currentTime+0.1 : 0; }
+  }
+  // chamado em TODO toque/clique/tecla (fase de captura): é o único momento em que o iOS deixa o som ligar
+  function destravar(){
+    sessaoPlayback();
+    init(); if (!ctx) return;
+    if (ctx.state!=='running'){
+      try { const r=ctx.resume(); if (r && r.then) r.then(()=>{ precisaToque=false; tentativa=0; }).catch(()=>{}); } catch(e){}
+      // contexto travado (iOS às vezes não sai de "interrupted" depois de muito tempo no fundo): troca por um novo no toque seguinte
+      const c=ctx; setTimeout(()=>{ if (ctx===c && c.state!=='running' && !document.hidden){ tentativa++; if (tentativa>=2){ tentativa=0; recriar(); try { ctx.resume(); } catch(e){} } } }, 400);
+    } else precisaToque=false;
+    // buffer mudo de 1 amostra tocado dentro do toque: destrava o áudio no Safari antigo
+    try { const b=ctx.createBuffer(1,1,22050), src=ctx.createBufferSource(); src.buffer=b; src.connect(ctx.destination); src.start(0); } catch(e){}
+    if (querTocar && !tocando) comecar();
+  }
+  function comecar(){ if (!ctx || tocando) return; tocando=true; S16=60/FAIXAS[faixa].bpm/4; step=0; nextT=ctx.currentTime+0.1; clearInterval(timer); timer=setInterval(agendar,25); }
+  function tocar(){ querTocar=true; destravar(); comecar(); }
+  ['pointerdown','touchend','click','keydown'].forEach(ev=>document.addEventListener(ev, ()=>{ if (precisaToque || !ctx || ctx.state!=='running' || (ehIOS && tagMuda && tagMuda.paused && !mudo)) destravar(); }, { capture:true, passive:true }));
+  document.addEventListener('visibilitychange', ()=>{
+    if (document.hidden){ if (tagMuda && !tagMuda.paused) tagMuda.pause(); if (ctx && ctx.state==='running' && ctx.suspend) ctx.suspend().catch(()=>{}); precisaToque=true; return; }
+    if (ctx && querTocar){ try { const r=ctx.resume(); if (r && r.then) r.then(()=>{ if (ctx.state==='running') precisaToque=false; }).catch(()=>{}); } catch(e){} if (ehIOS && !mudo && tagMuda){ const p=tagMuda.play(); if (p && p.catch) p.catch(()=>{}); } }
+  });
+  window.addEventListener('pageshow', e=>{ if (e.persisted){ precisaToque=true; if (ctx && querTocar) try { ctx.resume(); } catch(_){} } });
   function trocar(i){ faixa=i; S16=60/FAIXAS[i].bpm/4; if (ctx && tocando){ step=0; nextT=ctx.currentTime+0.15; } }
   function sfx(tipo){
-    if (!ctx) return; const t=ctx.currentTime+0.01;
+    if (!ctx || ctx.state!=='running') return; const t=ctx.currentTime+0.01;
     const tom=(f,d,tp,v,at)=>{ const o=ctx.createOscillator(), g=ctx.createGain(); o.type=tp||'square'; o.frequency.value=f; g.gain.setValueAtTime(0,t+(at||0)); g.gain.linearRampToValueAtTime(v||0.08,t+(at||0)+0.005); g.gain.exponentialRampToValueAtTime(0.001,t+(at||0)+d); o.connect(g); g.connect(sfxBus); o.start(t+(at||0)); o.stop(t+(at||0)+d+0.02); };
     if (tipo==='clique') tom(880,0.05,'square',0.04);
     if (tipo==='aba') { tom(660,0.05,'square',0.035); tom(990,0.06,'square',0.03,0.04); }
@@ -1848,7 +1927,8 @@ const Som = (()=>{
     get faixa(){ return faixa; },
     set musica(v){ volMusica=v; aplicar(); }, get musica(){ return volMusica; },
     set som(v){ volSom=v; aplicar(); }, get som(){ return volSom; },
-    set mudo(v){ mudo=v; aplicar(); }, get mudo(){ return mudo; }
+    set mudo(v){ mudo=v; aplicar(); try { if (navigator.audioSession) navigator.audioSession.type = mudo ? 'ambient' : 'playback'; } catch(e){} if (tagMuda){ if (mudo) tagMuda.pause(); else if (!document.hidden){ const p=tagMuda.play(); if (p&&p.catch) p.catch(()=>{}); } } }, get mudo(){ return mudo; },
+    get estado(){ return ctx ? ctx.state : 'sem contexto'; }, get diag(){ return { estado:ctx?ctx.state:'sem contexto', passo:step, tocando, tag:!!(tagMuda && !tagMuda.paused), sessao:navigator.audioSession?navigator.audioSession.type:'-', ios:ehIOS }; }, destravar
   };
 })();
 
@@ -1879,6 +1959,34 @@ function garanteIds(arr, pref, chave){
 }
 const chaveDe = k=> k==='compras' ? 'uid' : 'id';
 
+/* ---------- datas: o dia do jogo é SEMPRE o dia local do aparelho (nunca UTC/toISOString) ---------- */
+function diaLocal(ms){ const d = ms==null ? new Date() : new Date(ms); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function horaLocal(ms){ const d = ms==null ? new Date() : new Date(ms); const o=-d.getTimezoneOffset(), oh=Math.floor(Math.abs(o)/60), om=Math.abs(o)%60;
+  return diaLocal(d.getTime())+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+' (UTC'+(o<0?'-':'+')+oh+(om?':'+String(om).padStart(2,'0'):'')+')'; }
+// save novo, zerado, com o dia de hoje do aparelho (o build não grava data nenhuma)
+function novoSave(){
+  const s = JSON.parse(JSON.stringify(SAVE)), h = diaLocal();
+  s.hoje = h; (s.log||[]).forEach(e=>{ e.d = h; });
+  return s;
+}
+// momento em que um id foi criado (uid() = prefixo + Date.now() em base 36 + 4 letras; tarefa = 't' + Date.now() em base 36)
+function tsDeId(id, pref, semSufixo){
+  if (typeof id!=='string' || !id.startsWith(pref)) return null;
+  const m = id.slice(pref.length).match(semSufixo ? /^([0-9a-z]{8})$/ : /^([0-9a-z]{8})[0-9a-z]{4}$/); if (!m) return null;
+  const t = parseInt(m[1],36); return (t>1.75e12 && t<Date.now()+864e5) ? t : null;
+}
+// conserta datas no futuro gravadas pela versão que usava a data do servidor (UTC): cada registro volta pro dia local em que foi criado
+function consertaDatas(s){
+  const hoje = diaLocal(); let n=0;
+  const fix = (e, t)=>{ if (!e || !e.d) return; const certo = t ? diaLocal(t) : hoje; if (e.d > certo && (t || e.d > hoje)){ e.d = certo; n++; } };
+  (s.log||[]).forEach(e=>fix(e, tsDeId(e.id,'l')));
+  (s.tarefas||[]).forEach(t=>fix(t, tsDeId(t.id,'t',true)));
+  (s.compras||[]).forEach(c=>{ if (c.d) { const t=tsDeId(c.uid,'c'); if (c.d > (t?diaLocal(t):hoje)){ c.d = t?diaLocal(t):hoje; n++; } } });
+  (s.bausAbertos||[]).forEach(b=>fix(b, tsDeId(b.id,'b')));
+  if (s.pets){ (s.pets.possui||[]).forEach(p=>fix(p, null)); if (s.pets.desde && s.pets.desde > hoje){ s.pets.desde = hoje; n++; } }
+  return n;
+}
+
 /* ---------- mesclagem: nada de um lado apaga o progresso do outro ---------- */
 const DL_UNIAO_ID = ['log','compras','bausAbertos','bausGanhos','habilidades','derrotados','tarefas'];
 const DL_UNIAO_VAL = ['mochila','revelados','aplicados','removidos'];
@@ -1901,6 +2009,14 @@ function uneId(a, b, k){
 function mesclar(local, remoto, primeiraVez){
   if (!remoto) return local;
   const L=JSON.parse(JSON.stringify(local)), R=JSON.parse(JSON.stringify(remoto));
+  // "Recomeçar do zero": cada recomeço é uma geração nova (zerado = quando). Gerações diferentes não se misturam:
+  // vale a mais nova inteira, pra o progresso antigo de outro aparelho ou do Drive não voltar.
+  // Exceção: aparelho que nunca sincronizou com conta nenhuma junta o que tem com a conta, como antes.
+  const zl=L.zerado||0, zr=R.zerado||0;
+  if (zl!==zr){
+    if (primeiraVez && !zl && !L.nuvem) L.zerado = zr;
+    else return zl>zr ? L : R;
+  }
   [L,R].forEach(s=>{ s.mod=s.mod||{}; DL_UNIAO_ID.forEach(k=>garanteIds(s[k], k[0]+':', chaveDe(k))); });
   const out = Object.assign({}, L);
   out.mod = Object.assign({}, L.mod);
@@ -1969,6 +2085,7 @@ function aplicaUma(l, d){
   switch (l.tipo){
     case 'registro': { obj(d,['area','txt']); areaOk(d.area); const xp=Number(d.xp||0); if (!isFinite(xp)) throw new Error('xp inválido');
       const e=Object.assign({ d:d.d||hoje, tipo:'extra' }, d, { area:d.area, xp, id:'ag:'+l.id }); if (!e.heroi && heroi) e.heroi=heroi;
+      if (d.ouro!=null){ const o=Number(d.ouro); if (!isFinite(o)) throw new Error('ouro inválido (use número, ex.: "ouro":500)'); e.ouro=o; }
       S.log.push(e); return; }
     case 'tarefa': { obj(d,['txt']); const id=d.id||('ag'+hashTxt(l.id)); if (!S.tarefas.some(t=>t.id===id)) S.tarefas.push({ id, d:d.d||hoje, txt:String(d.txt), area:d.area&&AREA[d.area]?d.area:undefined, feita:null, em:agora }); return; }
     case 'tarefa_feita': { obj(d,['id']); const t=S.tarefas.find(x=>x.id===d.id); if (!t) throw new Error('tarefa "'+d.id+'" não existe'); t.feita = d.feita===false ? false : true; t.em=agora;
@@ -1998,6 +2115,7 @@ function importaSave(d, silencioso){
   if (!d.log && !d.herois) throw new Error('não é um save do Daily Legends');
   const base = { jogo:'daily-legends', log:[], compras:[], mochila:[], bausAbertos:[], habilidades:[], derrotados:[], tarefas:[] };
   const imp = Object.assign(base, JSON.parse(JSON.stringify(d)), { jogo:'daily-legends' });
+  imp.zerado = S.zerado || 0; delete imp.ignorarAgente; // save importado entra na geração atual (não desfaz um recomeço)
   if (imp.bausGanhos==null){ imp.bausGanhos=[]; const n=(imp.baus||0)+(imp.bausAbertos||[]).length; for (let i=0;i<n;i++) imp.bausGanhos.push({ id:'leg'+i, d:imp.hoje||hojeReal() }); }
   const agora=Date.now(); imp.mod={};
   DL_ULTIMO.forEach(k=>{ if (!vazio(k, imp[k])) imp.mod[k]=agora+1; });
@@ -2142,7 +2260,11 @@ const Nuvem = {
       const primeiraVez = !lsGet(DL_LS.sinc);
       if (remoto) S = mesclar(S, remoto, primeiraVez);
       normaliza(); rastreia(true);
-      const novasAg = aplicaAgente(linhasAgente(va));
+      const linhasAg = linhasAgente(va);
+      // depois de "Recomeçar do zero": tudo o que já estava na aba agente fica como aplicado e não volta (ex.: ouro de teste)
+      if (S.ignorarAgente){ S.aplicados = [...new Set([...(S.aplicados||[]), ...linhasAg.map(l=>l.id)])]; S.agenteErros=[]; delete S.ignorarAgente; S.mod.agenteErros=Date.now(); }
+      const novasAg = aplicaAgente(linhasAg);
+      S.nuvem = true;
       normaliza(); rastreia(true);
       const mudouAqui = JSON.stringify(S)!==antes;
       // escreve save (uma chamada só, com sobra em branco pra apagar pedaços antigos) e resumo
@@ -2151,13 +2273,19 @@ const Nuvem = {
       const linhas = [['NÃO EDITE ESTA ABA. Save do Daily Legends (o jogo reescreve). O agente escreve só na aba "agente".'], [JSON.stringify({ v:2, rev:S.rev||0, em:new Date().toISOString(), partes:partes.length })], ...partes];
       while (linhas.length < this.partesAntes) linhas.push(['']);
       const res = linhasResumo(); while (res.length<400) res.push(['','','','','','']);
-      await this.api(SH+'/values:batchUpdate', { method:'POST', body:JSON.stringify({ valueInputOption:'RAW', data:[
+      const dados = [
         { range:`'${ABA.save}'!A1:A${linhas.length}`, values:linhas },
         { range:`'${ABA.resumo}'!A1:F400`, values:res.slice(0,400).map(r=>{ const x=r.slice(0,6).map(v=>v==null?'':String(v)); while (x.length<6) x.push(''); return x; }) }
-      ] }) });
+      ];
+      // leia-me desatualizado (planilha criada por versão antiga): reescreve com as instruções novas
+      const leiaChave = id+':'+LEIA_VER;
+      if (lsGet('dl.leiaVer')!==leiaChave){ const lm=LEIA_ME.map(l=>[l]); while (lm.length<90) lm.push(['']); dados.push({ range:`'${ABA.leia}'!A1:A${lm.length}`, values:lm }); }
+      await this.api(SH+'/values:batchUpdate', { method:'POST', body:JSON.stringify({ valueInputOption:'RAW', data:dados }) });
+      lsSet('dl.leiaVer', leiaChave);
       this.salvarLocal(); lsSet(DL_LS.sinc, Date.now()); lsSet('dl.pendente', false); lsSet('dl.precisaEntrar', null);
       this.ultimoPull=Date.now(); this.estado='ok'; this.erro='';
-      if ((mudouAqui || novasAg) && !$('#jogo').hidden && typeof cria!=='undefined' && !cria){ aplicaConfig(); atualizaPalco(); topo(); render(); if (S.novidades && S.novidades.length && $('#modal').hidden) entrar(); }
+      if (!S.herois.ativo && !$('#jogo').hidden && typeof cria!=='undefined' && !cria){ aplicaConfig(); topo(); toast('O jogo foi recomeçado do zero.'); entrar(); }
+      else if ((mudouAqui || novasAg) && !$('#jogo').hidden && typeof cria!=='undefined' && !cria){ aplicaConfig(); atualizaPalco(); topo(); render(); if (S.novidades && S.novidades.length && $('#modal').hidden) entrar(); }
       else if (!$('#titulo').hidden){ $('#btnComecar').textContent = S.herois.ativo ? 'Continuar' : 'Começar'; $('#tData').textContent='Atualizado em '+fmtD(S.hoje); }
     } catch(e){
       if (e.token){ this.estado='reconectar'; }
@@ -2218,7 +2346,7 @@ const Nuvem = {
 function linhasResumo(){
   const c=calc(), g=nivelDe(c.xpTotal), h=heroAtivo(), R=[];
   R.push(['Daily Legends: resumo pro agente. O jogo reescreve esta aba a cada sincronização; não edite. Pra mudar algo, escreva na aba "agente" (veja leia-me).']);
-  R.push(['atualizado em', new Date().toISOString(), 'dia do jogo', S.hoje]);
+  R.push(['atualizado em', horaLocal(), 'dia do jogo', S.hoje, 'recomeçou do zero em', S.zerado ? horaLocal(S.zerado) : 'nunca']);
   R.push(['herói', h ? nomeH(h.id) : '(ainda não criado)', 'classe', h ? h.nome : '', 'nível do herói', h ? nivelDe(c.heroi[h.id]||0).n : '']);
   R.push(['nível geral', g.n, 'XP total', c.xpTotal, 'ouro', c.ouro]);
   R.push(['sequência (dias)', c.seq, 'baús fechados', S.baus, 'pets', (S.pets.possui||[]).map(p=>p.nome+' ('+p.tipo+(p.real?', real':'')+')').join(', ')]);
@@ -2241,42 +2369,56 @@ function linhasResumo(){
   return R;
 }
 
+const LEIA_VER = 2; // subir quando mudar o texto: o jogo reescreve a aba leia-me das planilhas antigas
 const LEIA_ME = [
-  'DAILY LEGENDS: planilha de save',
+  'DAILY LEGENDS: planilha de save (instruções versão '+LEIA_VER+')',
   '',
   'Esta planilha foi criada pelo jogo Daily Legends no Drive do jogador. Não mude o nome dela nem das abas.',
   '',
   'ABAS',
   'save: o save completo do jogo (JSON). Só o jogo escreve. Não edite.',
-  'resumo: retrato do jogo em linhas legíveis (nível, áreas, diárias, chefões, tarefas, erros). Só o jogo escreve. O agente LÊ daqui.',
+  'resumo: retrato do jogo em linhas legíveis (dia do jogo, nível, ouro, áreas, diárias, chefões, tarefas, erros). Só o jogo escreve. O agente LÊ daqui.',
   'agente: onde o agente do King Bot ESCREVE. Sempre linha nova no fim, nunca apagar nem editar linhas antigas.',
+  'leia-me: estas instruções. O jogo reescreve quando atualiza.',
   '',
   'COMO O AGENTE ESCREVE (aba agente, colunas A a E)',
-  'A id: texto único da linha (ex.: 2026-10-12-agua). Linha com id repetido é ignorada.',
+  'A id: texto único da linha (ex.: 2026-10-12-agua). Linha com id repetido é ignorada. Use sempre um id novo, com a data.',
   'B quando: data e hora em que o agente escreveu (ex.: 2026-10-12 23:40).',
   'C tipo: um dos tipos abaixo.',
   'D dados: JSON numa linha só, com aspas duplas.',
   'E nota: texto livre (opcional).',
-  'O jogo lê as linhas novas quando abre e a cada sincronização, aplica uma vez só e registra no resumo. Linha com erro aparece no resumo como ERRO.',
+  'O jogo lê as linhas novas quando abre e a cada sincronização, aplica cada linha uma vez só e registra no resumo. Linha com erro aparece no resumo como ERRO: corrija com uma linha nova (id novo).',
+  'DATAS: "d" é o dia LOCAL do jogador (AAAA-MM-DD, fuso do aparelho dele). Sem "d", vale o dia de hoje no aparelho. O dia do jogo está no resumo ("dia do jogo").',
   '',
   'TIPOS',
-  'registro: {"d":"2026-10-12","area":"saude","txt":"Beber 2 litros de água","xp":10,"estrelas":2,"tipo":"diaria","diaria":"agua"}  (falha: xp -5, estrelas 0; extra: "tipo":"extra")',
+  'registro: XP (e ouro) de algo que a pessoa fez. Campos: area e txt obrigatórios; xp, estrelas, d, tipo, diaria, extra, ouro opcionais.',
+  '   diária feita: {"d":"2026-10-12","area":"saude","txt":"Beber 2 litros de água","xp":10,"estrelas":2,"tipo":"diaria","diaria":"agua"}',
+  '   diária não feita: {"d":"2026-10-12","area":"saude","txt":"Beber 2 litros de água","xp":-5,"estrelas":0,"tipo":"diaria","diaria":"agua"}',
+  '   missão extra: {"area":"trab","txt":"Entregou um lote","xp":15,"tipo":"extra","extra":"lote"}',
+  'OURO: cada XP vira 1 de ouro sozinho. Pra dar (ou tirar) ouro, use registro com "ouro":N. Quando a linha tem "ouro", ela vale esse ouro no lugar do ouro do XP.',
+  '   só ouro, sem XP: {"area":"fin","txt":"Prêmio: 500 de ouro","xp":0,"ouro":500,"tipo":"bonus"}',
+  '   tirar ouro: {"area":"fin","txt":"Correção de ouro","xp":0,"ouro":-200,"tipo":"bonus"}',
+  '   XP e ouro diferentes: {"area":"saude","txt":"Desafio da semana","xp":20,"ouro":100}',
   'tarefa: {"id":"t-relatorio","d":"2026-10-12","txt":"Entregar o relatório","area":"trab"}',
-  'tarefa_feita: {"id":"t-relatorio","feita":true}  (dá +5 XP; false desfaz)',
+  'tarefa_feita: {"id":"t-relatorio","feita":true}  (dá +5 XP; "feita":false marca como não feita e tira o XP)',
   'diaria: {"id":"agua","area":"saude","nome":"Beber 2 litros de água","minima":"1 litro","tres":"3 litros"}  (mesmo id = atualiza; "semanal":3 pra metas por semana)',
-  'diaria_remover: {"id":"agua"}',
-  'extra: {"id":"lote","area":"trab","nome":"Entregou um lote","xp":15}  (atividade que não é diária)',
+  'diaria_remover: {"id":"agua"}  (tira a diária da lista; o XP que ela já deu continua)',
+  'extra: {"id":"lote","area":"trab","nome":"Entregou um lote","xp":15}  (atividade que não é diária; o XP entra com registro "tipo":"extra","extra":"lote")',
   'chefao: {"id":"ingles-b2","nome":"O Dragão do B2","meta":"Inglês B2","area":"idiomas","historia":"2 ou 3 frases de lenda","tipo":"valor","base":0,"atual":10,"alvo":100}',
   '   tipos de chefão: "valor" (base/atual/alvo, "moeda":true se for dinheiro), "fases" ("fases":[{"n":"Matrícula","ok":false}]), "data" ("data":"2026-11-19"). Mesmo id = atualiza (use pra mudar atual ou marcar fase).',
-  'chefao_remover: {"id":"ingles-b2"}',
-  'chefao_derrotado: {"id":"ingles-b2"}  (dá +300 XP)',
+  'chefao_remover: {"id":"ingles-b2"}  (tira o chefão da lista sem derrotar; não dá nem tira XP)',
+  'chefao_derrotado: {"id":"ingles-b2"}  (dá +300 XP; "xp":N muda o valor)',
   'habilidade: {"area":"idiomas","nome":"Espanhol B1"}',
   'bau: {}  (1 baú pra abrir; dar quando o dia fechou com todas as diárias)',
   'novidade: {"txt":"Saúde subiu pro nível 3"}  (aparece no jogo quando a pessoa abrir)',
-  'save_importar: o JSON inteiro de um save antigo (migração; uma vez só)',
+  'save_importar: o JSON inteiro de um save antigo do Daily Legends (com "log", "herois" etc.), numa linha só. Junta com o progresso atual. Uso: migração, uma vez só.',
+  '',
+  'RECOMEÇAR DO ZERO',
+  'O jogador pode recomeçar o jogo inteiro em Opções. Aí o save volta pra criação de personagem, e TODAS as linhas que já estavam na aba agente ficam como já aplicadas e não valem mais (nem ouro, nem diárias, nem chefões).',
+  'Depois de um recomeço (o resumo mostra "recomeçou do zero em"), monte tudo de novo com linhas novas e ids novos. Não apague as linhas antigas.',
   '',
   'ÁREAS (id): fin, saude, trab, redes, idiomas, arte, mente, casa',
-  'XP: 1 estrela (mínimo ou atrasada) +4 | 2 estrelas (normal) +10 | 3 estrelas (dobro da meta ou antes do meio-dia) +15 | não fez -5 | tarefa +5 | chefão +300'
+  'XP: 1 estrela (mínimo ou atrasada) +4 | 2 estrelas (normal) +10 | 3 estrelas (dobro da meta ou antes do meio-dia) +15 | não fez -5 | tarefa +5 | chefão +300 | ouro = XP, a não ser que a linha tenha "ouro"'
 ];
 
 /* ---------- atualização do app (service worker) ---------- */
@@ -2302,7 +2444,7 @@ const Versao = {
 };
 
 /* ===== Lógica do jogo e interface ===== */
-let S = lerLocal() || JSON.parse(JSON.stringify(SAVE));
+let S = lerLocal() || novoSave();
 let sujo = false, aba = 'equip', selItem = null, filtroSlot = null, filtroLoja = 'cabeca', confirmando = null, stage = null, threeOk = false;
 let prova = {};   // itens sendo provados na loja (slot -> id), não salva
 let provaPet = {}; let petDispensado = {}; let cria = null; let filtroLojaIni = true;
@@ -2320,7 +2462,7 @@ const ABAS = [
 ];
 const custo = L => 50 + 50*L;
 const XP_PET_DIA = 2, XP_PET_CUIDADO = 3, XP_TAREFA = 5;
-const hojeReal = ()=> { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+const hojeReal = ()=> diaLocal(); // dia LOCAL do aparelho (nunca UTC)
 function nivelDe(xp){ let L=1, r=Math.max(0,xp); while (r>=custo(L)){ r-=custo(L); L++; } return { n:L, r, p:custo(L) }; }
 const dt = s=>{ const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); };
 const iso = d=> d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
@@ -2402,7 +2544,7 @@ function atualizaPalco(){
     <div class="pnv"><b>Nv ${lv.n}</b>${barra(lv.r,lv.p,'xp')}<span class="pfr">${num(lv.r)}/${num(lv.p)}</span></div>
     <button class="btn trocar" data-ir="herois">Trocar</button>
     ${nomes.length ? `<div class="provabar"><span>Provando: ${nomes.map(esc).join(', ')}</span><button class="btn" data-acao="tirarProva">Tirar</button></div>` : ''}`;
-  petBox();
+  petBox(); if (stage) stage.resize(); // a placa pode ter mudado de altura
 }
 function petBox(){
   const el=$('#petbox'), p=petAtivo();
@@ -2607,7 +2749,7 @@ function vDiario(){
   return dias.map(d=>{
     const es=c.porDia[d], tot=es.reduce((s,e)=>s+(e.xp||0),0);
     return `<div class="dia"><div class="dh"><span>${DSEM[dt(d).getDay()]}, ${fmtD(d)}</span><b class="${tot<0?'neg':''}">${tot>=0?'+':''}${tot} XP</b></div>
-      ${es.map(e=>`<div class="de">${ico(AREA[e.area]?AREA[e.area].ico:'scroll','st')}<span class="dt">${esc(e.txt)}</span>${e.estrelas?estrelas(e.estrelas):''}<b class="${(e.xp||0)<0?'neg':''}">${e.xp?((e.xp>0?'+':'')+e.xp):''}</b></div>`).join('')}</div>`;
+      ${es.map(e=>`<div class="de">${ico(AREA[e.area]?AREA[e.area].ico:'scroll','st')}<span class="dt">${esc(e.txt)}</span>${e.estrelas?estrelas(e.estrelas):''}<b class="${(e.xp||0)<0||(e.ouro||0)<0?'neg':''}">${e.xp?((e.xp>0?'+':'')+e.xp):''}${e.ouro!=null&&e.ouro!==(e.xp||0)?` ${e.ouro>0?'+':''}${num(e.ouro)} ouro`:''}</b></div>`).join('')}</div>`;
   }).join('');
 }
 
@@ -2638,13 +2780,16 @@ function vOpcoes(){
     <div class="escolhas"><span class="fraco">Faixa</span>${Som.FAIXAS.map((f,i)=>`<button class="chip ${Som.faixa===i?'on':''}" data-faixa="${i}">${f.nome}</button>`).join('')}</div>
     <div class="escolhas"><span class="fraco">Cenário</span>${CENARIOS.map(([id,n])=>`<button class="chip ${(S.config.cenario||'castelo')===id?'on':''}" data-cenario="${id}">${n}</button>`).join('')}</div>
     <button class="btn" data-acao="mudo">${Som.mudo?'Ligar música':'Mutar música'}</button>
+    <button class="btn" data-acao="testarSom">Testar som</button>
     <p class="fraco tConta"></p>
     ${Nuvem.conta() ? `<button class="btn ouro" data-acao="sincronizar">Sincronizar agora</button><button class="btn" data-acao="sairConta">Sair da conta Google</button>` : `<button class="btn ouro" data-acao="entrarGoogle">Entrar com Google</button>`}
     <button class="btn" data-acao="salvar">Baixar cópia do save</button>
     <label class="btn arquivo">Importar save antigo (arquivo)<input type="file" accept=".json,application/json,text/plain" data-acao="carregar"></label>
     <button class="btn" data-acao="colarCodigo">Importar save antigo (código)</button>
     <button class="btn" data-acao="titulo">Tela inicial</button>
-    <p class="fraco">Atualizado em ${fmtD(S.hoje)} · versão ${DL_VERSAO}</p></div>`;
+    <p class="fraco">Dia do jogo ${fmtD(S.hoje)} · versão ${DL_VERSAO}</p>
+    <div class="perigo"><h3>Recomeçar do zero</h3><p class="fraco">Apaga todo o progresso (neste aparelho e no seu Google Drive) e volta pra criação do herói.</p>
+    <button class="btn ruim" data-acao="zerar1">Recomeçar do zero</button></div></div>`;
 }
 
 /* ---------- ações ---------- */
@@ -2693,11 +2838,14 @@ function abrirBau(){
 function modal(html, titulo){ $('#modal .mc').innerHTML = (titulo?`<h2>${titulo}</h2>`:'') + html; $('#modal').hidden=false; }
 function fechaModal(){ $('#modal').hidden=true; }
 
-function salvar(){
+function baixarCopia(){
   const dados = JSON.stringify(Object.assign({}, S, { salvoEm:new Date().toISOString() }), null, 1);
   const nome = 'daily-legends-save-'+iso(new Date())+'.json';
   if (window.kingbot && window.kingbot.download) window.kingbot.download(nome, dados, 'application/json');
   else { const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([dados],{type:'application/json'})); a.download=nome; a.click(); }
+}
+function salvar(){
+  baixarCopia();
   const cod = codigoSave();
   modal(`<p>Baixei uma cópia do save. Ela é só um backup: o jogo já salva sozinho no aparelho e no seu Google Drive.</p><p class="fraco">O código abaixo tem o save inteiro. Dá pra colar em Opções › Importar save antigo (código) em outro aparelho.</p>
     <textarea id="codSave" class="cod" readonly rows="5" aria-label="Código do save">${esc(cod)}</textarea>
@@ -2721,6 +2869,41 @@ function carregar(file){
 function aplicaConfig(){ const c=S.config||{}; Som.musica = c.musica!=null?c.musica:0.6; Som.som = c.som!=null?c.som:0.7; Som.mudo=!!c.mudo; Som.trocar(c.faixa||0); aplicaCenario(); }
 const CEN_CACHE={};
 function aplicaCenario(){ const id=(S.config&&S.config.cenario)||'castelo'; document.body.style.backgroundImage = `url(${CEN_CACHE[id] || (CEN_CACHE[id]=cenario(id))})`; const n=$('#tCen'); if (n) n.textContent=(CENARIOS.find(c=>c[0]===id)||CENARIOS[0])[1]; const f=$('#tFaixa'); if (f) f.textContent=Som.FAIXAS[Som.faixa].nome; }
+
+/* ---------- recomeçar do zero (dupla confirmação) ---------- */
+const PALAVRA_ZERAR = 'RECOMEÇAR';
+const semAcento = t=> String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toUpperCase();
+function zerarPasso1(){
+  const c=calc(), nuvem=Nuvem.conta();
+  modal(`<p>Isso apaga <b>todo</b> o seu progresso e o jogo volta pra tela de criação do herói:</p>
+    <ul class="zlista"><li>nível, XP e ${num(c.ouro)} de ouro</li><li>heróis, itens, pets e baús</li><li>diárias, chefões, tarefas, conquistas e diário</li></ul>
+    <p class="fraco">${nuvem ? `Vale pra este aparelho e pro save no seu Google Drive (${esc(nuvem.email||'sua conta')}). A planilha e a pasta continuam lá, só o save é zerado. O que o agente já tinha escrito não volta.` : 'Vale pra este aparelho.'}</p>
+    <p class="fraco">Quer guardar uma cópia antes? <button class="link" data-acao="baixarCopia">Baixar cópia do save</button></p>
+    <div class="acoes"><button class="btn" data-fecha="1">Cancelar</button><button class="btn ruim" data-acao="zerar2">Continuar</button></div>`, 'Recomeçar do zero?');
+}
+function zerarPasso2(){
+  modal(`<form class="campo" data-form="zerar"><p class="zaviso">Última confirmação. Não tem como desfazer.</p>
+    <label for="zerarTxt">Pra apagar tudo, digite <b>${PALAVRA_ZERAR}</b></label>
+    <input id="zerarTxt" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="${PALAVRA_ZERAR}">
+    <div class="acoes"><button type="button" class="btn" data-fecha="1">Cancelar</button><button class="btn ruim" id="zerarOk" disabled>Apagar tudo e recomeçar</button></div></form>`, 'Tem certeza?');
+  setTimeout(()=>{ const i=$('#zerarTxt'); i && i.focus(); }, 50);
+}
+function zerarJogo(){
+  const conf = S.config || {};
+  const novo = novoSave();
+  novo.zerado = Date.now();     // geração nova: o progresso antigo (Drive ou outro aparelho) não volta na mesclagem
+  novo.ignorarAgente = true;    // na próxima sincronização, as linhas que já estão na aba agente ficam como aplicadas
+  novo.nuvem = !!S.nuvem;
+  novo.rev = (S.rev||0) + 1;
+  novo.config = Object.assign({}, novo.config, { musica:conf.musica, som:conf.som, mudo:conf.mudo }); // só volume e mudo continuam
+  S = novo; DL_SNAP = {}; normaliza(); rastreia(true);
+  prova={}; provaPet={}; petDispensado={}; selItem=null; filtroSlot=null; confirmando=null; aba='equip'; cria=null;
+  Nuvem.mudou();
+  if (Nuvem.conta() && Nuvem.token()){ clearTimeout(Nuvem.timer); Nuvem.sincronizar('zerar'); }
+  fechaModal(); aplicaConfig(); topo(); Som.sfx('bau');
+  toast(Nuvem.conta() ? (Nuvem.token() ? 'Jogo zerado. Apagando o save do Drive…' : 'Jogo zerado. O Drive é zerado quando você reconectar.') : 'Jogo zerado.');
+  entrar();
+}
 
 /* ---------- criação do personagem: herói, confirmação, nome, pet real, música ---------- */
 function escolha(){ cria = { passo:'heroi', faixa:Som.faixa }; passoCria(); }
@@ -2809,7 +2992,8 @@ function marcaTarefa(id, feita){
 function normaliza(){
   S.herois.nomes = S.herois.nomes || {}; S.pets = S.pets || { possui:[], ativo:null }; S.tarefas = S.tarefas || []; S.revelados = S.revelados || [];
   S.config = S.config || {}; if (S.config.faixa==null) S.config.faixa=0; if (!S.config.cenario) S.config.cenario='castelo';
-  const h=hojeReal(); if (h > S.hoje) S.hoje = h;
+  S.hoje = hojeReal(); // o dia do jogo é sempre o dia do aparelho (antes só andava pra frente e ficava preso no dia do servidor, em UTC)
+  consertaDatas(S); // registros gravados com o dia errado (futuro) voltam pro dia local em que foram feitos
   ['log','compras','mochila','bausAbertos','habilidades','derrotados','diarias','extras','chefoes','novidades','revelados'].forEach(k=>{ if (!Array.isArray(S[k])) S[k]=[]; });
   S.removidos = S.removidos || []; S.aplicados = S.aplicados || []; S.agenteErros = S.agenteErros || []; S.mod = S.mod || {};
   if (!Array.isArray(S.bausGanhos)){ S.bausGanhos=[]; const n=(S.baus||0)+S.bausAbertos.length; for (let i=0;i<n;i++) S.bausGanhos.push({ id:'leg'+i, d:S.hoje }); }
@@ -2821,7 +3005,11 @@ function normaliza(){
 function entrar(){
   normaliza();
   $('#titulo').hidden=true; $('#jogo').hidden=false;
-  if (!stage && threeOk){ try { stage = new Stage($('#palco3d')); } catch(e){ $('#palco3d').innerHTML='<p class="fraco">Não deu pra abrir o 3D neste aparelho.</p>'; } }
+  if (!stage && threeOk){ try { stage = new Stage($('#palco3d'));
+    // layout largo: a placa do nome fica por cima do palco; o herói é enquadrado acima dela
+    stage.livre = (w,h)=>{ const pl=$('#placa'); if (!pl || getComputedStyle(pl).position!=='absolute') return null; const c=$('#palco3d').getBoundingClientRect(), p=pl.getBoundingClientRect();
+      if (!p.height || p.right-c.left < w*0.3) return null; return 1 - 2*((p.top-c.top)-8)/h; };
+    stage.resize(); } catch(e){ $('#palco3d').innerHTML='<p class="fraco">Não deu pra abrir o 3D neste aparelho.</p>'; } }
   if (!S.herois.ativo){ escolha(); return; }
   atualizaPalco(); render();
   if (S.novidades && S.novidades.length){
@@ -2889,6 +3077,10 @@ function liga(){
     if (t.id==='avisoVersaoBtn'){ Versao.atualizar(); return; }
     if (d.acao==='colarCodigo'){ modal(`<form class="campo" data-form="codigo"><label for="codImp">Cole o código do save (começa com DL1 ou DL2)</label><textarea id="codImp" class="cod" rows="5"></textarea><div class="acoes"><button type="button" class="btn" data-fecha="1">Cancelar</button><button class="btn ouro">Importar</button></div></form>`,'Importar save'); return; }
     if (d.acao==='salvar'){ salvar(); return; }
+    if (d.acao==='testarSom'){ Som.tocar(); Som.sfx('moeda'); setTimeout(()=>{ const e=Som.estado; toast(e==='running' ? (Som.mudo ? 'Som ligado (música mutada)' : 'Som ligado. Sem som? Suba o volume do aparelho.') : 'Som travado ('+e+'). Toque de novo.', e==='running'?'':'ruim'); }, 450); return; }
+    if (d.acao==='baixarCopia'){ baixarCopia(); toast('Cópia baixada.'); return; }
+    if (d.acao==='zerar1'){ Som.sfx('erro'); zerarPasso1(); return; }
+    if (d.acao==='zerar2'){ Som.sfx('erro'); zerarPasso2(); return; }
     if (d.acao==='equipar'){ equipar(d.id); if (d.fecha) fechaModal(); return; }
     if (d.acao==='remover'){ remover(d.id); return; }
     if (d.acao==='copiar'){ copiarCodigo(); return; }
@@ -2896,6 +3088,7 @@ function liga(){
   });
   document.addEventListener('input', e=>{
     const t=e.target;
+    if (t.id==='zerarTxt'){ const b=$('#zerarOk'); if (b) b.disabled = semAcento(t.value)!==semAcento(PALAVRA_ZERAR); return; }
     if (t.dataset.corlivre && cria){ cria.petCor=t.value; document.querySelectorAll('.swc').forEach(b=>b.classList.remove('on')); t.parentElement.classList.add('on'); $('#petPrev').src=Shots.pet({tipo:cria.pet, cor:t.value}); return; }
     if (t.dataset.vol || t.id==='volM' || t.id==='volS'){
       const k = t.dataset.vol || (t.id==='volM'?'musica':'som'); Som[k]=parseFloat(t.value); S.config[k]=Som[k];
@@ -2908,10 +3101,20 @@ function liga(){
     if (k==='cria-pet'){ cria.petNome=$('#petNome').value.trim()||PET[cria.pet].nome; cria.passo='musica'; Som.sfx('clique'); passoCria(); }
     if (k==='adotar') fimAdocao();
     if (k==='nome'){ const v=$('#nomeNovo').value.trim(); if (v){ if (f.dataset.tipo==='heroi') S.herois.nomes[f.dataset.id]=v; else S.pets.possui.find(p=>p.id===f.dataset.id).nome=v; marcaSujo(); } fechaModal(); atualizaPalco(); render(); }
+    if (k==='zerar'){ if (semAcento($('#zerarTxt').value)!==semAcento(PALAVRA_ZERAR)){ Som.sfx('erro'); toast('Digite '+PALAVRA_ZERAR+' pra confirmar','ruim'); return; } zerarJogo(); return; }
     if (k==='codigo'){ try { const d=decodificaCodigo($('#codImp').value); fechaModal(); importaSave(d); } catch(err){ Som.sfx('erro'); toast('Código inválido','ruim'); } return; }
     if (k==='tarefa'){ const i=$('#novaTarefa'), v=i.value.trim(); if (!v) return; S.tarefas.push({ id:'t'+Date.now().toString(36), d:S.hoje, txt:v, feita:null, em:Date.now() }); Som.sfx('clique'); marcaSujo(); render(); setTimeout(()=>{ const n=$('#novaTarefa'); n && n.focus(); },30); }
   });
   document.addEventListener('change', e=>{ const t=e.target; if (t.dataset.acao==='carregar' || t.id==='arqTitulo'){ if (t.files[0]) carregar(t.files[0]); t.value=''; } });
+  // virada do dia com o app aberto (ou voltando do fundo): meia-noite do aparelho, não do servidor
+  const viraDia = ()=>{
+    if (S.hoje===hojeReal()) return;
+    normaliza(); petDispensado={}; $('#tData').textContent='Atualizado em '+fmtD(S.hoje);
+    if (!$('#jogo').hidden && S.herois.ativo && !cria){ const f=document.activeElement, digitando = f && /INPUT|TEXTAREA/.test(f.tagName); atualizaPalco(); topo(); if (!digitando) render(); }
+  };
+  setInterval(viraDia, 30000);
+  document.addEventListener('visibilitychange', ()=>{ if (!document.hidden) viraDia(); });
+  window.addEventListener('pageshow', viraDia);
   $('#modal').addEventListener('click', e=>{ if (e.target.id==='modal' && S.herois.ativo && !(cria && !cria.adocao)) fechaModal(); });
   document.addEventListener('keydown', e=>{ if (e.key==='Escape' && S.herois.ativo) fechaModal(); });
 }

@@ -2,7 +2,7 @@
    Único lugar que você precisa editar. Troque o texto entre aspas pelo seu Client ID do Google
    (termina com .apps.googleusercontent.com). Guia: parte 2. */
 window.DL_CONFIG = {
-  googleClientId: 'COLE_AQUI_O_CLIENT_ID.apps.googleusercontent.com',
+  googleClientId: '184613695060-pqa6vnio1kshqkokbpa1l4ks4uli4m5c.apps.googleusercontent.com',
 
   // nomes da pasta e da planilha que o jogo cria no Drive de cada jogador (o agente procura por este nome)
   nomePasta: 'Daily Legends',

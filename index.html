@@ -355,6 +355,7 @@ const SAVE = {
   }
  ],
  "bausGanhos": [],
+ "areas": [],
  "revelados": [],
  "aplicados": [],
  "removidos": [],
@@ -362,7 +363,7 @@ const SAVE = {
  "mod": {},
  "rev": 0
 };
-const DL_VERSAO = "2026.10.12-0321";
+const DL_VERSAO = "2026.10.12-0417";
 
 /* ===== Voxel v2: bonecos esculpidos em meia resolução (voxel = 0,5 do mundo) ===== */
 const VS = 0.5;
@@ -1990,7 +1991,7 @@ function consertaDatas(s){
 /* ---------- mesclagem: nada de um lado apaga o progresso do outro ---------- */
 const DL_UNIAO_ID = ['log','compras','bausAbertos','bausGanhos','habilidades','derrotados','tarefas'];
 const DL_UNIAO_VAL = ['mochila','revelados','aplicados','removidos'];
-const DL_ULTIMO = ['herois','pets','config','diarias','extras','chefoes','novidades','agenteErros'];
+const DL_ULTIMO = ['herois','pets','config','areas','diarias','extras','chefoes','novidades','agenteErros'];
 function vazio(k, v){
   if (v==null) return true;
   if (k==='herois') return !v.ativo && !(v.possui||[]).length;
@@ -2078,7 +2079,7 @@ function aplicaAgente(linhas){
   return mudou;
 }
 function obj(d, campos){ if (!d || typeof d!=='object' || Array.isArray(d)) throw new Error('dados precisa ser um JSON {…}'); (campos||[]).forEach(c=>{ if (d[c]==null || d[c]==='') throw new Error('faltou "'+c+'"'); }); return d; }
-function areaOk(a){ if (!AREA[a]) throw new Error('área "'+a+'" não existe (use: '+AREAS.map(x=>x.id).join(', ')+')'); return a; }
+function areaOk(a){ if (!AREA[a]) throw new Error('área "'+a+'" não existe ('+(areasJogo().length ? 'use: '+areasJogo().map(x=>x.id).join(', ') : 'ainda não há áreas: crie com tipo area')+')'); return a; }
 function upsert(lista, item){ const i=lista.findIndex(x=>x.id===item.id); if (i>=0) lista[i]=Object.assign({}, lista[i], item); else lista.push(item); }
 function aplicaUma(l, d){
   const agora=Date.now(), hoje=hojeReal(), heroi=S.herois.ativo||null;
@@ -2089,15 +2090,18 @@ function aplicaUma(l, d){
       S.log.push(e); return; }
     case 'tarefa': { obj(d,['txt']); const id=d.id||('ag'+hashTxt(l.id)); if (!S.tarefas.some(t=>t.id===id)) S.tarefas.push({ id, d:d.d||hoje, txt:String(d.txt), area:d.area&&AREA[d.area]?d.area:undefined, feita:null, em:agora }); return; }
     case 'tarefa_feita': { obj(d,['id']); const t=S.tarefas.find(x=>x.id===d.id); if (!t) throw new Error('tarefa "'+d.id+'" não existe'); t.feita = d.feita===false ? false : true; t.em=agora;
-      S.log=S.log.filter(e=>!(e.tipo==='tarefa'&&e.tarefa===t.id)); if (t.feita) S.log.push({ id:'ag:'+l.id, d:t.d, area:t.area||'mente', txt:t.txt, xp:XP_TAREFA, tipo:'tarefa', tarefa:t.id, heroi }); return; }
+      S.log=S.log.filter(e=>!(e.tipo==='tarefa'&&e.tarefa===t.id)); if (t.feita) S.log.push({ id:'ag:'+l.id, d:t.d, area:t.area||null, txt:t.txt, xp:XP_TAREFA, tipo:'tarefa', tarefa:t.id, heroi }); return; }
+    case 'area': { obj(d,['id','nome']); const id=String(d.id).trim(); if (!/^[a-z0-9_-]{1,24}$/.test(id)) throw new Error('id da área: só letras minúsculas, números, - ou _ (ex.: "saude")');
+      const ico = ICOS_AREA.includes(d.ico) ? d.ico : 'star'; const novo=!AREA[id]; upsert(S.areas, { id, nome:String(d.nome).slice(0,24), ico }); S.mod.areas=agora; return novo ? { novidade:'Atributo novo: '+d.nome } : null; }
+    case 'area_remover': { obj(d,['id']); S.areas=S.areas.filter(x=>x.id!==d.id); S.mod.areas=agora; return; }
     case 'diaria': { obj(d,['id','area','nome']); areaOk(d.area); upsert(S.diarias, d); S.mod.diarias=agora; return; }
     case 'diaria_remover': { obj(d,['id']); S.diarias=S.diarias.filter(x=>x.id!==d.id); S.mod.diarias=agora; return; }
     case 'extra': { obj(d,['id','area','nome']); areaOk(d.area); upsert(S.extras, d); S.mod.extras=agora; return; }
     case 'chefao': { obj(d,['id','nome','meta','area']); areaOk(d.area); const novo=!S.chefoes.some(c=>c.id===d.id); upsert(S.chefoes, d); S.mod.chefoes=agora; return novo ? { novidade:'Chefão novo: '+d.nome } : null; }
     case 'chefao_remover': { obj(d,['id']); S.chefoes=S.chefoes.filter(x=>x.id!==d.id); S.mod.chefoes=agora; return; }
     case 'chefao_derrotado': { obj(d,['id']); if (!S.derrotados.some(x=>x.id===d.id)){ const c=S.chefoes.find(x=>x.id===d.id); S.derrotados.push({ id:d.id, d:d.d||hoje });
-      S.log.push({ id:'ag:'+l.id, d:d.d||hoje, area:(c&&c.area)||'mente', txt:'Chefão derrotado: '+((c&&c.nome)||d.id), xp:d.xp!=null?Number(d.xp):300, tipo:'chefao', heroi }); return { novidade:'Chefão derrotado: '+((c&&c.nome)||d.id) }; } return; }
-    case 'habilidade': { const h = typeof d==='string' ? { nome:d, area:'mente' } : obj(d,['nome','area']); areaOk(h.area); S.habilidades.push({ id:'ag:'+l.id, area:h.area, nome:String(h.nome), d:h.d||hoje }); return { novidade:'Habilidade nova: '+h.nome }; }
+      S.log.push({ id:'ag:'+l.id, d:d.d||hoje, area:(c&&c.area)||null, txt:'Chefão derrotado: '+((c&&c.nome)||d.id), xp:d.xp!=null?Number(d.xp):300, tipo:'chefao', heroi }); return { novidade:'Chefão derrotado: '+((c&&c.nome)||d.id) }; } return; }
+    case 'habilidade': { const h = obj(d,['nome','area']); areaOk(h.area); S.habilidades.push({ id:'ag:'+l.id, area:h.area, nome:String(h.nome), d:h.d||hoje }); return { novidade:'Habilidade nova: '+h.nome }; }
     case 'bau': { S.bausGanhos.push({ id:'ag:'+l.id, d:(d&&d.d)||hoje }); return { novidade:'Novo baú pra abrir' }; }
     case 'novidade': { const t = typeof d==='string' ? d : obj(d,['txt']).txt; return { novidade:String(t) }; }
     case 'save_importar': { obj(d,['log']); importaSave(d, true); return; }
@@ -2350,8 +2354,8 @@ function linhasResumo(){
   R.push(['herói', h ? nomeH(h.id) : '(ainda não criado)', 'classe', h ? h.nome : '', 'nível do herói', h ? nivelDe(c.heroi[h.id]||0).n : '']);
   R.push(['nível geral', g.n, 'XP total', c.xpTotal, 'ouro', c.ouro]);
   R.push(['sequência (dias)', c.seq, 'baús fechados', S.baus, 'pets', (S.pets.possui||[]).map(p=>p.nome+' ('+p.tipo+(p.real?', real':'')+')').join(', ')]);
-  R.push([]); R.push(['ÁREAS', 'id', 'nível', 'XP', 'último dia com XP']);
-  AREAS.forEach(a=>R.push([a.nome, a.id, nivelDe(c.area[a.id]||0).n, c.area[a.id]||0, c.ultima[a.id]||'']));
+  R.push([]); R.push(['ÁREAS', 'id', 'nível', 'XP', 'último dia com XP']); if (!areasJogo().length) R.push(['(nenhuma ainda: crie com tipo area)']);
+  areasJogo().forEach(a=>R.push([a.nome, a.id, nivelDe(c.area[a.id]||0).n, c.area[a.id]||0, c.ultima[a.id]||'']));
   R.push([]); R.push(['DIÁRIAS', 'id', 'área', 'nome', 'mínima', '3 estrelas']);
   S.diarias.forEach(m=>R.push(['', m.id, m.area, m.nome+(m.semanal?` (${m.semanal}x/semana)`:''), m.minima||'', m.tres||'']));
   R.push([]); R.push(['EXTRAS', 'id', 'área', 'nome', 'xp']);
@@ -2369,7 +2373,7 @@ function linhasResumo(){
   return R;
 }
 
-const LEIA_VER = 2; // subir quando mudar o texto: o jogo reescreve a aba leia-me das planilhas antigas
+const LEIA_VER = 3; // subir quando mudar o texto: o jogo reescreve a aba leia-me das planilhas antigas
 const LEIA_ME = [
   'DAILY LEGENDS: planilha de save (instruções versão '+LEIA_VER+')',
   '',
@@ -2391,6 +2395,23 @@ const LEIA_ME = [
   'DATAS: "d" é o dia LOCAL do jogador (AAAA-MM-DD, fuso do aparelho dele). Sem "d", vale o dia de hoje no aparelho. O dia do jogo está no resumo ("dia do jogo").',
   '',
   'TIPOS',
+  'area: cria (ou atualiza) uma área da vida, que no jogo aparece como atributo com nível próprio. O jogo começa SEM áreas: crie as do jogador antes de diárias, chefões e registros.',
+  '   Na montagem, proponha o kit inicial abaixo, ajustado ao que você já sabe da pessoa, e pergunte o que ela quer tirar, adicionar ou mudar. Só depois escreva as linhas.',
+  '   kit inicial: saude/Saúde/heart, mente/Mente/pawn, estudos/Estudos/book, trab/Trabalho/sword, fin/Finanças/coin, casa/Casa/house',
+  '',
+  'MONTAGEM (quiz por área)',
+  'Depois das áreas, passe UMA área por vez num quiz: 3 diárias sugeridas (com mínima e 3 estrelas) + a opção "outra" pra pessoa escrever a dela. Ela pode escolher mais de uma. Adapte as sugestões ao que você já sabe dela. Área nova criada pela pessoa: invente 3 sugestões do mesmo jeito.',
+  'No fim de cada área, pergunte se tem alguma meta grande ali (vira chefão) e dê a ideia da lista como exemplo.',
+  'QUEM VIRA O QUÊ: se repete (todo dia ou X vezes por semana) = diária. De uma vez só, sem meta = tarefa. Meta grande que dá pra medir (um número, uma prova, uma data) = chefão. Você classifica sozinho, propõe e só escreve depois que a pessoa confirmar.',
+  'Saúde: Beber 2 L de água (mín. 1 L | 3★ 3 L) / 30 min de exercício (mín. 10 min de alongamento | 3★ 1 h ou antes do meio-dia) / Dormir até 23h (mín. sem celular na cama até 0h | 3★ até 22h30). Chefão: correr 5 km sem parar.',
+  'Mente: Meditar 10 min (mín. 3 min | 3★ 20 min) / Ler 10 páginas (mín. 2 páginas | 3★ 30 páginas) / Escrever no diário (mín. 1 frase | 3★ 1 página). Chefão: ler 12 livros no ano.',
+  'Estudos: 20 min de estudo (mín. 5 min | 3★ 40 min ou antes do meio-dia) / Revisar flashcards (mín. 10 cartas | 3★ zerar a fila) / 15 min de idioma (mín. 1 música com letra | 3★ 30 min). Chefão: passar numa prova ou terminar um curso.',
+  'Trabalho: 1 bloco de foco de 25 min (mín. 10 min | 3★ 2 blocos) / Planejar o dia (mín. escolher 1 prioridade | 3★ lista pronta antes das 9h) / Zerar pendências (mín. resolver 1 | 3★ zerar a caixa de entrada). Chefão: primeiro cliente, promoção ou projeto entregue.',
+  'Finanças: Anotar os gastos do dia (mín. olhar o extrato | 3★ anotar e separar por categoria) / Guardar dinheiro (mín. R$ 1 | 3★ o dobro da meta do dia) / 10 min aprendendo sobre dinheiro (mín. 1 vídeo curto | 3★ 30 min). Chefão: reserva de emergência.',
+  'Casa: 10 min arrumando (mín. tirar o lixo | 3★ um cômodo inteiro) / Louça em dia (mín. lavar o que usou | 3★ pia vazia antes de dormir) / Arrumar a cama (mín. esticar o lençol | 3★ quarto todo arrumado). Chefão: casa toda organizada.',
+  '   {"id":"saude","nome":"Saúde","ico":"heart"}  (id: minúsculas sem acento; nome até 24 letras; mesmo id = renomeia)',
+  '   ícones: coin, heart, sword, phone, bubble, brush, pawn, house, star, scroll, skull, chest, helm, trophy, mapa, book, flame, note',
+  'area_remover: {"id":"saude"}  (tira a área da lista; o XP que ela já deu continua no nível geral)',
   'registro: XP (e ouro) de algo que a pessoa fez. Campos: area e txt obrigatórios; xp, estrelas, d, tipo, diaria, extra, ouro opcionais.',
   '   diária feita: {"d":"2026-10-12","area":"saude","txt":"Beber 2 litros de água","xp":10,"estrelas":2,"tipo":"diaria","diaria":"agua"}',
   '   diária não feita: {"d":"2026-10-12","area":"saude","txt":"Beber 2 litros de água","xp":-5,"estrelas":0,"tipo":"diaria","diaria":"agua"}',
@@ -2417,7 +2438,8 @@ const LEIA_ME = [
   'O jogador pode recomeçar o jogo inteiro em Opções. Aí o save volta pra criação de personagem, e TODAS as linhas que já estavam na aba agente ficam como já aplicadas e não valem mais (nem ouro, nem diárias, nem chefões).',
   'Depois de um recomeço (o resumo mostra "recomeçou do zero em"), monte tudo de novo com linhas novas e ids novos. Não apague as linhas antigas.',
   '',
-  'ÁREAS (id): fin, saude, trab, redes, idiomas, arte, mente, casa',
+  'ÁREAS: as do jogador estão no resumo (seção ÁREAS). Use só esses ids em "area"; pra área nova, primeiro uma linha tipo area. Tarefa pode ir sem área (o XP soma só no nível geral).',
+  'TAREFA x DIÁRIA: diária é hábito que se repete e tem meta (mínima e 3 estrelas), por isso ganha estrelas. Tarefa é de uma vez só, sem meta: feita vale +5 fixo, sem estrela.',
   'XP: 1 estrela (mínimo ou atrasada) +4 | 2 estrelas (normal) +10 | 3 estrelas (dobro da meta ou antes do meio-dia) +15 | não fez -5 | tarefa +5 | chefão +300 | ouro = XP, a não ser que a linha tenha "ouro"'
 ];
 
@@ -2449,13 +2471,19 @@ let sujo = false, aba = 'equip', selItem = null, filtroSlot = null, filtroLoja =
 let prova = {};   // itens sendo provados na loja (slot -> id), não salva
 let provaPet = {}; let petDispensado = {}; let cria = null; let filtroLojaIni = true;
 
-const AREAS = [
+// Áreas da vida (atributos): não vêm prontas. O agente cria com o jogador (tipo "area" na aba agente) e ficam em S.areas.
+// Saves antigos, de antes disso, recuperam só as áreas antigas que eles já usavam (ver normaliza()).
+const AREAS_LEGADO = [
   { id:'fin', nome:'Finanças', ico:'coin' }, { id:'saude', nome:'Saúde', ico:'heart' },
   { id:'trab', nome:'Trabalho', ico:'sword' }, { id:'redes', nome:'Redes', ico:'phone' },
   { id:'idiomas', nome:'Idiomas', ico:'bubble' }, { id:'arte', nome:'Arte', ico:'brush' },
   { id:'mente', nome:'Mente', ico:'pawn' }, { id:'casa', nome:'Casa', ico:'house' }
 ];
-const AREA = Object.fromEntries(AREAS.map(a=>[a.id,a]));
+const ICOS_AREA = ['coin','heart','sword','phone','bubble','brush','pawn','house','star','scroll','skull','chest','helm','trophy','mapa','book','flame','note'];
+const areasJogo = ()=> (typeof S!=='undefined' && S && Array.isArray(S.areas)) ? S.areas : [];
+const AREA = new Proxy({}, { get:(_,k)=> areasJogo().find(a=>a.id===k), has:(_,k)=> areasJogo().some(a=>a.id===k) });
+const icoArea = id=> { const a=AREA[id]; return a && ICOS_AREA.includes(a.ico) ? a.ico : (a ? 'star' : 'scroll'); };
+function areasUsadas(s){ const u=new Set(); ['diarias','extras','chefoes','habilidades'].forEach(k=>(s[k]||[]).forEach(x=>x&&x.area&&u.add(x.area))); (s.log||[]).forEach(e=>{ if (e && e.area && (e.xp||e.ouro)) u.add(e.area); }); return u; }
 const ABAS = [
   ['equip','Equipar','armor'], ['atrib','Atributos','star'], ['missoes','Missões','scroll'], ['chefoes','Chefões','skull'],
   ['loja','Loja','chest'], ['herois','Heróis','helm'], ['conq','Conquistas','trophy'], ['diario','Diário','book'], ['guia','Guia','mapa'], ['opcoes','Opções','gear']
@@ -2473,8 +2501,10 @@ const fmtD = s=>{ const d=dt(s); return String(d.getDate()).padStart(2,'0')+'/'+
 const num = n=> Math.round(n).toLocaleString('pt-BR');
 const esc = s=> String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
+// pet e tarefa sem área: o XP soma no nível geral, sem área nenhuma
+const areaPet = ()=> AREA.casa ? 'casa' : null;
 function calc(){
-  const area={}, ultima={}; AREAS.forEach(a=>{ area[a.id]=0; });
+  const area={}, ultima={}; areasJogo().forEach(a=>{ area[a.id]=0; });
   let ganho=0; const heroi={}; const diasDiaria=new Set(); const porDia={};
   for (const e of S.log){
     area[e.area] = (area[e.area]||0) + (e.xp||0);
@@ -2486,8 +2516,8 @@ function calc(){
   }
   if (S.pets && S.pets.desde && S.pets.possui.length){
     for (let d=S.pets.desde, n=0; d<=S.hoje && n<2000; d=addDias(d,1), n++){
-      area.casa += XP_PET_DIA; ganho += XP_PET_DIA;
-      (porDia[d] = porDia[d] || []).push({ d, area:'casa', txt:'Companheiro ao seu lado', xp:XP_PET_DIA, tipo:'petDia' });
+      area[areaPet()] = (area[areaPet()]||0) + XP_PET_DIA; ganho += XP_PET_DIA;
+      (porDia[d] = porDia[d] || []).push({ d, area:areaPet(), txt:'Companheiro ao seu lado', xp:XP_PET_DIA, tipo:'petDia' });
     }
   }
   const gasto = S.compras.reduce((s,c)=>s+c.preco,0);
@@ -2558,7 +2588,7 @@ function petBox(){
 }
 function cuidar(petId, acao){
   const p=S.pets.possui.find(x=>x.id===petId); if (!p || cuidouHoje(p,acao)) return;
-  S.log.push({ id:uid('l'), d:S.hoje, area:'casa', txt:(acao==='passear'?'Passeou com ':'Alimentou ')+p.nome, xp:XP_PET_CUIDADO, tipo:'petReal', acao, pet:p.id, heroi:S.herois.ativo });
+  S.log.push({ id:uid('l'), d:S.hoje, area:areaPet(), txt:(acao==='passear'?'Passeou com ':'Alimentou ')+p.nome, xp:XP_PET_CUIDADO, tipo:'petReal', acao, pet:p.id, heroi:S.herois.ativo });
   Som.sfx('moeda'); marcaSujo(); petBox(); topo(); if (aba==='missoes'||aba==='diario') render(); toast(`+${XP_PET_CUIDADO} XP por cuidar de ${p.nome}`);
 }
 /* ---------- lendários misteriosos: aparecem quando o ouro alcança o preço (ou caem no baú) ---------- */
@@ -2616,11 +2646,12 @@ function vEquip(){
 
 function vAtrib(){
   const c=calc();
-  return `<div class="lista">` + AREAS.map(a=>{
+  if (!areasJogo().length) return `<div class="sec"><h3>Atributos</h3></div><p class="fraco">Você ainda não tem atributos. Eles são as áreas da sua vida que você quer evoluir (saúde, estudos, trabalho, o que fizer sentido pra você). O agente do jogo cria os seus depois de conversar com você.</p>`;
+  return `<div class="lista">` + areasJogo().map(a=>{
     const xp=c.area[a.id]||0, lv=nivelDe(xp), skills=S.habilidades.filter(h=>h.area===a.id);
     const parado = c.ultima[a.id] ? diasEntre(c.ultima[a.id], S.hoje) : null;
     const alerta = parado!=null && parado>=5 ? `<span class="alerta">${parado} dias parado</span>` : '';
-    return `<details class="area"><summary>${ico(a.ico,'ai')}<span class="anome">${a.nome}</span>${alerta}<span class="anv">Nv ${lv.n}</span>
+    return `<details class="area"><summary>${ico(icoArea(a.id),'ai')}<span class="anome">${a.nome}</span>${alerta}<span class="anv">Nv ${lv.n}</span>
       <span class="abar">${barra(lv.r,lv.p,'xp')}<span class="afr">${num(lv.r)}/${num(lv.p)} XP</span></span></summary>
       <div class="skills">${skills.length? skills.map(s=>`<span class="skill">${esc(s.nome)}</span>`).join('') : '<span class="fraco">Nenhuma habilidade ainda.</span>'}</div></details>`;
   }).join('') + `</div>`;
@@ -2640,12 +2671,11 @@ function vMissoes(){
       const e = doDia.find(e=>e.diaria===m.id);
       st = !e ? `<span class="pend">Pendente</span>${estrelas(0)}` : e.estrelas>0 ? estrelas(e.estrelas) : `<span class="falha">${ico('x','st')} ${e.xp} XP</span>`;
     }
-    const a=AREA[m.area];
-    return `<div class="miss">${ico(a.ico,'ai')}<div class="mt"><div class="mn">${esc(m.nome)}</div>
+    return `<div class="miss">${ico(icoArea(m.area),'ai')}<div class="mt"><div class="mn">${esc(m.nome)}</div>
       <div class="mm">${m.minima?`<span>Mín.: ${esc(m.minima)}</span>`:''}${m.tres?`<span>3★: ${esc(m.tres)}</span>`:''}</div></div><div class="ms">${st}</div></div>`;
   }).join('');
-  const extras = (S.extras||[]).map(x=>{ const n=S.log.filter(e=>e.extra===x.id && e.d>=ini).length; const a=AREA[x.area];
-    return `<div class="miss">${ico(a.ico,'ai')}<div class="mt"><div class="mn">${esc(x.nome)}</div><div class="mm"><span>+${x.xp} XP por lote</span></div></div><div class="ms"><span class="sem">${n} na semana</span></div></div>`; }).join('');
+  const extras = (S.extras||[]).map(x=>{ const n=S.log.filter(e=>e.extra===x.id && e.d>=ini).length; 
+    return `<div class="miss">${ico(icoArea(x.area),'ai')}<div class="mt"><div class="mn">${esc(x.nome)}</div><div class="mm"><span>+${x.xp} XP por lote</span></div></div><div class="ms"><span class="sem">${n} na semana</span></div></div>`; }).join('');
   const tarefas = (S.tarefas||[]).filter(t=>t.d===hoje).map(t=>`<div class="miss tarefa ${t.feita===true?'feita':t.feita===false?'nfeita':''}">${ico('scroll','ai')}<div class="mt"><div class="mn">${esc(t.txt)}</div><div class="mm"><span>${t.feita===true?`Feita, +${XP_TAREFA} XP`:t.feita===false?'Não feita':'Pendente'}</span></div></div>
       <div class="tbtn"><button class="btn mini ${t.feita===true?'ouro':''}" data-tarefa="${t.id}" data-st="1" aria-label="Feita">Feita</button><button class="btn mini ${t.feita===false?'on':''}" data-tarefa="${t.id}" data-st="0" aria-label="Não fiz">Não fiz</button></div></div>`).join('');
   const reais = (S.pets ? S.pets.possui.filter(p=>p.real) : []);
@@ -2677,7 +2707,7 @@ function vChefoes(){
     }
     return `<div class="boss ${morto?'morto':''}"><div class="bwrap" tabindex="0" aria-label="História de ${esc(b.nome)}"><img class="bimg" src="${Shots.boss(b)}" alt="">${b.historia?`<div class="balao" role="tooltip">${esc(b.historia)}</div>`:''}</div><div class="bt">
       <div class="bnome">${esc(b.nome)}</div><div class="bdesc">${esc(b.meta)}</div>${corpo}
-      <div class="brec">${ico(AREA[b.area].ico,'st')} +300 XP${b.nota?`<span class="fraco">${esc(b.nota)}</span>`:''}</div>
+      <div class="brec">${ico(icoArea(b.area),'st')} +300 XP${b.nota?`<span class="fraco">${esc(b.nota)}</span>`:''}</div>
       ${morto?`<div class="selo">Derrotado ${fmtD(morto.d)}</div>`:''}</div></div>`;
   };
   if (!S.chefoes.length) return `<div class="sec"><h3>Chefões</h3></div><p class="fraco">Nenhum chefão ainda. Conte suas metas grandes pro agente do jogo: cada uma vira um chefão com história própria.</p>`;
@@ -2749,16 +2779,17 @@ function vDiario(){
   return dias.map(d=>{
     const es=c.porDia[d], tot=es.reduce((s,e)=>s+(e.xp||0),0);
     return `<div class="dia"><div class="dh"><span>${DSEM[dt(d).getDay()]}, ${fmtD(d)}</span><b class="${tot<0?'neg':''}">${tot>=0?'+':''}${tot} XP</b></div>
-      ${es.map(e=>`<div class="de">${ico(AREA[e.area]?AREA[e.area].ico:'scroll','st')}<span class="dt">${esc(e.txt)}</span>${e.estrelas?estrelas(e.estrelas):''}<b class="${(e.xp||0)<0||(e.ouro||0)<0?'neg':''}">${e.xp?((e.xp>0?'+':'')+e.xp):''}${e.ouro!=null&&e.ouro!==(e.xp||0)?` ${e.ouro>0?'+':''}${num(e.ouro)} ouro`:''}</b></div>`).join('')}</div>`;
+      ${es.map(e=>`<div class="de">${ico(icoArea(e.area),'st')}<span class="dt">${esc(e.txt)}</span>${e.estrelas?estrelas(e.estrelas):''}<b class="${(e.xp||0)<0||(e.ouro||0)<0?'neg':''}">${e.xp?((e.xp>0?'+':'')+e.xp):''}${e.ouro!=null&&e.ouro!==(e.xp||0)?` ${e.ouro>0?'+':''}${num(e.ouro)} ouro`:''}</b></div>`).join('')}</div>`;
   }).join('');
 }
 
 const GUIA = [
   ['O que é', `O Daily Legends transforma a sua vida num RPG. Você é o herói, e cada coisa que faz de verdade (cuidar da saúde, estudar, trabalhar, arrumar a casa) vira XP. Quem registra tudo é o agente do jogo no King Bot.`],
   ['Começo', `Você escolhe o herói principal (com confirmação, porque ele não troca), dá um nome, diz se tem cachorro, gato, pássaro ou peixe na vida real e escolhe a trilha sonora.`],
-  ['Áreas da vida', `8 áreas, cada uma com XP e nível próprios: Finanças, Saúde, Trabalho, Redes, Idiomas, Arte, Mente e Casa. O agente troca pelas que fazem sentido pra você. Habilidade nova que você conquista entra na área sozinha.`],
+  ['Atributos', `As áreas da sua vida que você quer evoluir, cada uma com XP e nível próprios. Não vêm prontas: o agente conversa com você e cria as que fazem sentido pra sua vida (ex.: Saúde, Estudos, Trabalho, Família). Dá pra pedir pra ele criar, renomear ou tirar uma área a qualquer hora. Habilidade nova que você conquista entra na área sozinha.`],
   ['Missões diárias', `Os hábitos do dia, montados com o agente. Cada uma tem versão mínima pra dia ruim, que conta como feita.<br>★ mínimo ou atrasada: +4 XP<br>★★ normal: +10 XP<br>★★★ acima da meta ou bem cedo: +15 XP<br>Não fez: −5 XP.`],
-  ['Tarefas do dia', `Uma vez por dia o agente pergunta o que você tem pra fazer, anota as tarefas e cria lembretes. Você também adiciona tarefa aqui na aba Missões e marca se fez ou não. Cada tarefa feita dá +${XP_TAREFA} XP.`],
+  ['Tarefas do dia', `Coisas de uma vez só (mandar um e-mail, ir ao banco). Uma vez por dia o agente pergunta o que você tem pra fazer, anota as tarefas e cria lembretes. Você também adiciona tarefa aqui na aba Missões e marca se fez ou não. Cada tarefa feita dá +${XP_TAREFA} XP fixo, sem estrela.`],
+  ['Tarefa x diária', `Diária é hábito que se repete e tem meta (versão mínima e versão 3★), então dá pra medir o quanto você foi bem: por isso ganha de 1 a 3 estrelas. Tarefa é de uma vez só e não tem meta: ou fez, ou não fez. Por isso vale XP fixo.`],
   ['Nível', `Todo XP soma no nível geral e nunca é gasto. O nível 2 pede 100 XP, e cada nível seguinte pede 50 a mais. Área parada 7 dias cai 1 nível.`],
   ['Ouro e loja', `Cada XP ganho vira 1 de ouro. A loja é dividida por seções (cabeça, peito, mãos, pernas, arma, acessório, pets e itens de pet), sempre do mais barato pro mais caro. Toque num item pra provar antes de comprar. Lendários aparecem pretos e só se revelam quando o seu ouro alcança o preço, ou quando caem num baú.`],
   ['Pets', `Cachorro, gato, pássaro e peixe. Cada pet ao seu lado dá +${XP_PET_DIA} XP por dia. A cor é escolhida uma vez, na adoção. Se você tem o bicho na vida real, o primeiro vem de graça na criação; os outros você adota com ouro. Pet de verdade ganha uma caixinha perguntando se você já alimentou (e passeou, no caso do cachorro): cada cuidado dá +${XP_PET_CUIDADO} XP por dia.`],
@@ -2986,7 +3017,7 @@ function marcaTarefa(id, feita){
   t.feita = (t.feita===feita) ? null : feita; t.em = Date.now();
   S.log.forEach(e=>{ if (e.tipo==='tarefa' && e.tarefa===id && e.id) S.removidos.push(e.id); });
   S.log = S.log.filter(e=>!(e.tipo==='tarefa' && e.tarefa===id));
-  if (t.feita===true) S.log.push({ id:uid('l'), d:t.d, area:t.area||'mente', txt:t.txt, xp:XP_TAREFA, tipo:'tarefa', tarefa:id, heroi:S.herois.ativo });
+  if (t.feita===true) S.log.push({ id:uid('l'), d:t.d, area:t.area||null, txt:t.txt, xp:XP_TAREFA, tipo:'tarefa', tarefa:id, heroi:S.herois.ativo });
   Som.sfx(t.feita===true?'moeda':'clique'); marcaSujo(); render();
 }
 function normaliza(){
@@ -2995,6 +3026,8 @@ function normaliza(){
   S.hoje = hojeReal(); // o dia do jogo é sempre o dia do aparelho (antes só andava pra frente e ficava preso no dia do servidor, em UTC)
   consertaDatas(S); // registros gravados com o dia errado (futuro) voltam pro dia local em que foram feitos
   ['log','compras','mochila','bausAbertos','habilidades','derrotados','diarias','extras','chefoes','novidades','revelados'].forEach(k=>{ if (!Array.isArray(S[k])) S[k]=[]; });
+  // save de antes das áreas personalizadas: fica só com as áreas antigas que ele já usava
+  if (!Array.isArray(S.areas)){ const u=areasUsadas(S); S.areas = AREAS_LEGADO.filter(a=>u.has(a.id)).map(a=>Object.assign({}, a)); }
   S.removidos = S.removidos || []; S.aplicados = S.aplicados || []; S.agenteErros = S.agenteErros || []; S.mod = S.mod || {};
   if (!Array.isArray(S.bausGanhos)){ S.bausGanhos=[]; const n=(S.baus||0)+S.bausAbertos.length; for (let i=0;i<n;i++) S.bausGanhos.push({ id:'leg'+i, d:S.hoje }); }
   ['log','compras','bausAbertos','bausGanhos','habilidades','derrotados','tarefas'].forEach(k=>garanteIds(S[k], k[0]+':', chaveDe(k)));

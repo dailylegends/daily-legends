@@ -461,7 +461,7 @@ const SAVE = {
  "mod": {},
  "rev": 0
 };
-const DL_VERSAO = "2026.10.12-0622";
+const DL_VERSAO = "2026.10.12-0641";
 
 /* ===== Voxel v2: bonecos esculpidos em meia resolução (voxel = 0,5 do mundo) ===== */
 const VS = 0.5;
@@ -1277,12 +1277,16 @@ function buildVModel(h, equip, opts){
   if (ESTILO_NOVO) camadas(m,h);
   const eq = equip || {};
   const order = ['pernas','maos','peito','acess','cabeca','arma'];
+  let antes = null; const guarda = ()=>{ antes = { L:new Map(m.parts.armL), R:new Map(m.parts.armR) }; };
   for (const s of order){
+    if (s==='arma') guarda();
     const id = eq[s]; if (!id) continue; const it = ITEM[id]; if (!it) continue;
     const cor = Object.assign({}, it.c, (opts.cor||{})[id]||{});
     P[it.p](m, cor);
   }
   if (!eq.arma && h.arma && WEAPONS[h.arma]) WEAPONS[h.arma](m);
+  // o que a arma acrescentou nos braços vira peça própria (segue o antebraço quando o cotovelo dobra)
+  for (const L of ['L','R']){ const arm=m.parts['arm'+L], ant=antes[L], sep=new Map(); arm.forEach((c,k)=>{ if (ant.get(k)!==c) sep.set(k,c); }); sep.forEach((c,k)=>arm.delete(k)); m.parts['arma'+L]=sep; }
   m.pose.armR = (eq.arma ? ITEM[eq.arma].c.k : h.arma);
   if (ESTILO_NOVO) estilizar(m,h);
   return m;
@@ -1304,15 +1308,51 @@ function estilizar(m,h){
     m.parts[p] = novo;
   }
   m.piv = {}; for (const k in PIV) m.piv[k] = k==='torso' ? PIV[k].slice() : [PIV[k][0], PIV[k][1]+PERNA_D, PIV[k][2]];
+  esculpir(m);
   // 2) estampa: cada bloquinho com tom próprio (manchas grandes + grão), menos pele e rosto
   const sk = h.skin ? parseInt(h.skin.slice(1),16) : -1, sr=sk>>16, sg=(sk>>8)&255, sb=sk&255;
   const pele = c=>{ if (sk<0) return false; const n=parseInt(c.slice(1),16), r=n>>16, g=(n>>8)&255, b=n&255; const l=(r+g+b)/(sr+sg+sb||1); return l>0.6 && l<1.4 && Math.abs(r/(g+1)-sr/(sg+1))<0.12 && Math.abs(g/(b+1)-sg/(sb+1))<0.18; };
   for (const p of ['torso','armL','armR','legL','legR']){
     const map = m.parts[p];
     map.forEach((c,k)=>{ if (c[0]!=='#' || pele(c)) return; const [x,y,z]=k.split(',').map(Number);
-      const lf = hash3(Math.floor(x/3)+31, Math.floor(y/3)+7, Math.floor(z/3)+3), hf = hash3(x,y,z);
-      const f = (lf-0.5)*0.16 + (hf-0.5)*0.07; map.set(k, shade(c, f)); });
+      const lf = hash3(Math.floor(x/5)+31, Math.floor(y/5)+7, Math.floor(z/5)+3), hf = hash3(x,y,z), dobra = (Math.floor(y/2)%7===0 && hash3(Math.floor(x/4),Math.floor(y/2),Math.floor(z/4))>0.45) ? -0.09 : 0;
+      const f = (lf-0.5)*0.14 + (hf-0.5)*0.06 + dobra; map.set(k, shade(c, f)); });
   }
+}
+/* resolução dobrada (cada bloco vira 8) e escultura: membros e tronco arredondados, joelho e tornozelo mais finos */
+const RES_NOVO = 2;
+function esculpir(m){
+  const R = RES_NOVO;
+  for (const p in m.parts){ const novo = new Map(); m.parts[p].forEach((c,k)=>{ const [x,y,z]=k.split(',').map(Number);
+    for (let a=0;a<R;a++) for (let b=0;b<R;b++) for (let d=0;d<R;d++) novo.set((x*R+a)+','+(y*R+b)+','+(z*R+d), c); }); m.parts[p] = novo; }
+  for (const k in m.piv) m.piv[k] = m.piv[k].map(v=>v*R);
+  m.res = R;
+  const pernaTopo = (PERNA_Y1+1+PERNA_D)*R, boot = 7*R;
+  // perfil das pernas: tornozelo e joelho finos, panturrilha e coxa cheias
+  const perfilPerna = y=>{ if (y<boot) return 1; const t=(y-boot)/(pernaTopo-boot); if (t<0.12) return 0.74+t*0.6; if (t<0.45) return 0.82+0.12*Math.sin(Math.PI*(t-0.12)/0.33); if (t<0.52) return 0.83; return 0.84+0.16*(t-0.52)/0.48; };
+  const perfilBraco = (y,pv)=>{ const top=pv[1], cot=top-7*R, pulso=top-13*R; if (y>top-3*R) return 1; if (y>cot) return 0.9+0.1*(y-cot)/(4*R); if (y>pulso) return 0.82+0.08*(y-pulso)/(cot-pulso); return 1; };
+  const corta = (p, n, perfil)=>{
+    const map=m.parts[p], fat=new Map(); map.forEach((c,k)=>{ const [x,y,z]=k.split(',').map(Number); let f=fat.get(y); if (!f){ f=[1e9,-1e9,1e9,-1e9]; fat.set(y,f); } f[0]=Math.min(f[0],x); f[1]=Math.max(f[1],x); f[2]=Math.min(f[2],z); f[3]=Math.max(f[3],z); });
+    for (const k of [...map.keys()]){ const [x,y,z]=k.split(',').map(Number); const f=fat.get(y), k2 = perfil ? perfil(y) : 1;
+      const cx=(f[0]+f[1]+1)/2, cz=(f[2]+f[3]+1)/2, a=(f[1]-f[0]+1)/2*k2+0.35, b=(f[3]-f[2]+1)/2*k2+0.35;
+      if (Math.pow(Math.abs((x+0.5-cx)/a),n) + Math.pow(Math.abs((z+0.5-cz)/b),n) > 1) map.delete(k); }
+  };
+  corta('legL', 2.3, perfilPerna); corta('legR', 2.3, perfilPerna);
+  corta('armL', 2.4, y=>perfilBraco(y,m.piv.armL)); corta('armR', 2.4, y=>perfilBraco(y,m.piv.armR));
+  corta('torso', 3.2, null);
+  // cabeça: arredonda a nuca, as laterais e o topo (o rosto na frente fica intacto)
+  { const map=m.parts.head, zf=HZ1*R, fat=new Map(), fx=new Map();
+    map.forEach((c,k)=>{ const [x,y,z]=k.split(',').map(Number); let f=fat.get(y); if (!f){ f=[1e9,-1e9,1e9,-1e9]; fat.set(y,f); } f[0]=Math.min(f[0],x); f[1]=Math.max(f[1],x); f[2]=Math.min(f[2],z); f[3]=Math.max(f[3],z);
+      let g=fx.get(x); if (!g){ g=[1e9,-1e9,1e9,-1e9]; fx.set(x,g); } g[0]=Math.min(g[0],y); g[1]=Math.max(g[1],y); g[2]=Math.min(g[2],z); g[3]=Math.max(g[3],z); });
+    for (const k of [...map.keys()]){ const [x,y,z]=k.split(',').map(Number); if (z>=zf-1) continue;
+      const f=fat.get(y), cx=(f[0]+f[1]+1)/2, cz=(f[2]+f[3]+1)/2, a=(f[1]-f[0]+1)/2+0.3, b=(f[3]-f[2]+1)/2+0.3;
+      if (Math.pow(Math.abs((x+0.5-cx)/a),3.2) + Math.pow(Math.abs((z+0.5-cz)/b),3.2) > 1){ map.delete(k); continue; }
+      const g=fx.get(x), cy=(g[0]+g[1]+1)/2, ay=(g[1]-g[0]+1)/2+0.3, cz2=(g[2]+g[3]+1)/2, bz=(g[3]-g[2]+1)/2+0.3;
+      if (y>cy && Math.pow(Math.abs((y+0.5-cy)/ay),3.2) + Math.pow(Math.abs((z+0.5-cz2)/bz),3.2) > 1) map.delete(k); } }
+  // tira o miolo (só a casca aparece): menos peso pra montar a malha
+  for (const p in m.parts){ const map=m.parts[p], tira=[]; map.forEach((c,k)=>{ const [x,y,z]=k.split(',').map(Number);
+    if (map.has((x+1)+','+y+','+z) && map.has((x-1)+','+y+','+z) && map.has(x+','+(y+1)+','+z) && map.has(x+','+(y-1)+','+z) && map.has(x+','+y+','+(z+1)) && map.has(x+','+y+','+(z-1))) tira.push(k); });
+    tira.forEach(k=>map.delete(k)); }
 }
 // peças por cima da roupa (por herói); o resto dos heróis ganha só o estilo
 function camadas(m,h){
@@ -1576,17 +1616,35 @@ function matPS1(){
 }
 let MAT_PS1 = null;
 function buildMesh(vm, o){
-  o = o || {}; const sc = o.scale || VS;
+  o = o || {}; const RES = vm.res || 1, sc = o.scale || VS/RES;
   const g = new THREE.Group(); const parts = {};
   const occ = new Set(); for (const name in vm.parts) for (const k of vm.parts[name].keys()) occ.add(k);
+  const ps1 = RENDER_PS1 && !o.blocos; if (ps1 && !MAT_PS1) MAT_PS1 = matPS1();
+  const malha = (map, pv)=>{ const mesh = new THREE.Mesh(ps1 ? meshPartNets(map, pv, sc, o.sil) : meshPart(map, occ, pv, sc, o.sil), ps1 ? MAT_PS1 : MAT); mesh.castShadow = true; mesh.receiveShadow = true; return mesh; };
   for (const name in vm.parts){
+    if (name==='armaL' || name==='armaR') continue;   // arma segurada: vai junto com o antebraço
     const map = vm.parts[name], pv = o.pivot0 ? ((o.piv && o.piv[name]) || [0,0,0]) : ((vm.piv && vm.piv[name]) || PIV[name]);
     const pg = new THREE.Group(); pg.position.set(pv[0]*sc, pv[1]*sc, pv[2]*sc); pg.userData.base = [pv[0]*sc, pv[1]*sc, pv[2]*sc];
-    if (map.size){
-      const ps1 = RENDER_PS1 && !o.blocos; if (ps1 && !MAT_PS1) MAT_PS1 = matPS1();
-      const mesh = new THREE.Mesh(ps1 ? meshPartNets(map, pv, sc, o.sil) : meshPart(map, occ, pv, sc, o.sil), ps1 ? MAT_PS1 : MAT);
-      mesh.castShadow = true; mesh.receiveShadow = true; pg.add(mesh);
-    }
+    if (!o.pivot0 && (name==='armL' || name==='armR')){
+      // cotovelo: o que fica abaixo dele (antebraço, mão, luva) e a arma viram uma peça filha que dobra
+      const lado = name==='armL' ? 'L' : 'R', cy = pv[1]-7*RES, fv = [pv[0], cy, pv[2]];
+      const cima = new Map(), baixo = new Map();
+      map.forEach((c,k)=>{ const y = +k.split(',')[1]; (y<cy ? baixo : cima).set(k,c); });
+      const arma = vm.parts['arma'+lado]; if (arma) arma.forEach((c,k)=>baixo.set(k,c));
+      if (cima.size) pg.add(malha(cima, pv));
+      const fg = new THREE.Group(); fg.position.set((fv[0]-pv[0])*sc, (fv[1]-pv[1])*sc, (fv[2]-pv[2])*sc); fg.userData.base = [fg.position.x, fg.position.y, fg.position.z]; fg.userData.piv = fv;
+      if (baixo.size) fg.add(malha(baixo, fv));
+      pg.add(fg); parts['fore'+lado] = fg;
+    } else if (!o.pivot0 && (name==='legL' || name==='legR')){
+      // joelho: a canela e o pé viram peça filha que dobra
+      const lado = name==='legL' ? 'L' : 'R', ky = Math.round(pv[1]*0.5), kv = [pv[0], ky, pv[2]];
+      const cima = new Map(), baixo = new Map();
+      map.forEach((c,k)=>{ const y = +k.split(',')[1]; (y<ky ? baixo : cima).set(k,c); });
+      if (cima.size) pg.add(malha(cima, pv));
+      const sg = new THREE.Group(); sg.position.set(0, (ky-pv[1])*sc, 0); sg.userData.base = [0, sg.position.y, 0];
+      if (baixo.size) sg.add(malha(baixo, kv));
+      pg.add(sg); parts['shin'+lado] = sg;
+    } else if (map.size) pg.add(malha(map, pv));
     g.add(pg); parts[name] = pg;
   }
   g.userData.parts = parts;
@@ -1597,7 +1655,7 @@ function disposeGroup(g){ g.traverse(o=>{ if (o.isMesh) o.geometry.dispose(); })
 function cellBounds(vm){
   let mn=[1e9,1e9,1e9], mx=[-1e9,-1e9,-1e9];
   for (const name in vm.parts) vm.parts[name].forEach((c,k)=>{ const v=k.split(',').map(Number); for (let i=0;i<3;i++){ mn[i]=Math.min(mn[i],v[i]); mx[i]=Math.max(mx[i],v[i]+1); } });
-  return { mn: mn.map(v=>v*VS), mx: mx.map(v=>v*VS) };
+  const e = VS/(vm.res||1); return { mn: mn.map(v=>v*e), mx: mx.map(v=>v*e) };
 }
 
 // plataforma do palco: muda com o cenário. lajes = piso em lajotas com rejunte; liso = chão natural (areia, neve, grama)
@@ -1824,8 +1882,9 @@ class Stage {
     const k = vm.pose.armR;
     this.armBase = (k==='espada'||k==='espadaBase'||k==='adagas'||k==='adaga'||k==='baquetas'||k==='varinha'||k==='escudo'||k==='besta') ? -0.22 : (k==='pole'||k==='pincelBase'||k==='marteloBase'||k==='machadoBase'||k==='lanca') ? -0.08 : 0;
     // ponta da arma (ou da mão): o ponto mais baixo do braço direito, no espaço do braço
-    let minY = -10; const pv = (vm.piv||PIV).armR; vm.parts.armR.forEach((c,key)=>{ const y=Number(key.split(',')[1]); minY = Math.min(minY, (y-pv[1])*VS); });
-    this.ponta = new THREE.Vector3(0, minY, (GZ+0.5-pv[2])*VS);
+    const RES = vm.res||1, E = VS/RES, pv = (vm.piv||PIV).armR, cy = pv[1]-7*RES; let minY = -3;
+    [vm.parts.armR, vm.parts.armaR].forEach(mp=> mp && mp.forEach((c,key)=>{ const y=Number(key.split(',')[1]); minY = Math.min(minY, (y-cy)*E); }));
+    this.ponta = new THREE.Vector3(0, minY, ((GZ+0.5)*RES-pv[2])*E);
     // limites do herói com QUALQUER item: altura e raio no chão (x e z, porque o palco gira), com folga pra animação (pulo e braço erguido)
     const b = cellBounds(vm);
     this.hb = { y0:Math.min(0,b.mn[1]), y1:b.mx[1]+2.6, r:Math.max(Math.hypot(b.mn[0],b.mn[2]), Math.hypot(b.mn[0],b.mx[2]), Math.hypot(b.mx[0],b.mn[2]), Math.hypot(b.mx[0],b.mx[2]))+1.2 };
@@ -1885,7 +1944,7 @@ class Stage {
   noPalco(obj, local){ obj.updateMatrixWorld(true); const v = local.clone(); obj.localToWorld(v); return this.root.worldToLocal(v); }
   ponto(onde){
     const p = this.model.userData.parts;
-    if (onde==='ponta') return this.noPalco(p.armR, this.ponta);
+    if (onde==='ponta') return this.noPalco(p.foreR || p.armR, this.ponta);
     if (onde==='cabeca') return this.noPalco(p.head, new THREE.Vector3(0, 6.5, 3.5));
     return this.noPalco(this.model, new THREE.Vector3(0, 14, 4));
   }
@@ -1961,13 +2020,23 @@ class Stage {
     if (this.model && !reduce){
       const p = this.model.userData.parts, m = this.model;
       const br = Math.sin(s*1.6);
-      p.head.rotation.set(br*0.025, 0, Math.sin(s*0.7)*0.03);
-      p.torso.position.y = br*0.12;
-      p.armL.rotation.set(br*0.05, 0, -0.04 - br*0.02);
-      p.armR.rotation.set((this.armBase||0) - br*0.05, 0, 0.04 + br*0.02);
-      p.legL.rotation.set(0,0,0); p.legR.rotation.set(0,0,0);
-      for (const k of ['head','armL','armR']) p[k].position.y = p[k].userData.base[1] + br*0.12;
-      m.position.set(0,0,0); m.rotation.set(0,0,0);
+      // andando no lugar: perna e braço alternados, cotovelo dobrando, corpo quicando; para durante golpe ou cena
+      const querAndar = (a && a.alvo==='heroi') || this.cena ? 0 : 1;
+      this.andar = (this.andar==null ? 1 : this.andar) + (querAndar - (this.andar==null?1:this.andar)) * Math.min(1, dt*8);
+      const wk = this.andar, w = s*Math.PI*1.7, sw = Math.sin(w), ab = this.armBase||0;
+      p.head.rotation.set(br*0.025 + Math.abs(Math.cos(w))*0.03*wk, Math.sin(w*0.5)*0.05*wk, Math.sin(s*0.7)*0.03 - sw*0.03*wk);
+      p.torso.position.y = br*0.12*(1-wk); p.torso.rotation.set(0, sw*0.06*wk, 0);
+      p.armL.rotation.set(br*0.05*(1-wk) - sw*0.32*wk, 0, -0.06 - br*0.02);
+      p.armR.rotation.set(ab - br*0.05*(1-wk) + sw*(ab ? 0.16 : 0.32)*wk, 0, 0.06 + br*0.02);
+      if (p.foreL){ p.foreL.rotation.set(-(0.18 + Math.max(0, sw)*0.4)*wk - 0.08*(1-wk), 0, 0); }
+      if (p.foreR){ p.foreR.rotation.set(-(0.12 + Math.max(0, -sw)*(ab ? 0.15 : 0.4))*wk - 0.05*(1-wk), 0, 0); }
+      p.legL.rotation.set(sw*0.3*wk, 0, 0); p.legR.rotation.set(-sw*0.3*wk, 0, 0);
+      // joelho dobra quando a perna vem pra frente (levanta o pé) e quase estica quando apoia
+      const cw = Math.cos(w);
+      if (p.shinL) p.shinL.rotation.set((0.08 + Math.max(0,  cw)*0.75)*wk, 0, 0);
+      if (p.shinR) p.shinR.rotation.set((0.08 + Math.max(0, -cw)*0.75)*wk, 0, 0);
+      for (const k of ['head','armL','armR']) p[k].position.y = p[k].userData.base[1] + br*0.12*(1-wk);
+      m.position.set(0, Math.abs(Math.cos(w))*0.35*wk, 0); m.rotation.set(0,0,0);
       if (a && a.alvo==='heroi'){ const an = a.def || ANIM_HEROI[a.cl]; an.pose(a.t, p, m, this.armBase||0, this); if (a.t >= an.dur){ this.anim = null; m.position.set(0,0,0); m.rotation.set(0,0,0); m.visible = true; } }
       this.pets.forEach((pt,i)=>{
         const g = pt.g, P = pt.parts;
@@ -2004,7 +2073,7 @@ const Shots = {
     const g = buildMesh(vm, { sil }); const b = cellBounds(vm);
     let cx=(b.mn[0]+b.mx[0])/2, cy=(b.mn[1]+b.mx[1])/2, cz=(b.mn[2]+b.mx[2])/2;
     let size = Math.max(b.mx[0]-b.mn[0], b.mx[1]-b.mn[1], b.mx[2]-b.mn[2])*0.62 + 1;
-    if (frame==='busto'){ cy = 25.2 + (vm.piv ? (vm.piv.head[1]-PIV.head[1])*VS : 0); size = 10; cx = 0; cz = 0; }
+    if (frame==='busto'){ cy = 25.2 + (vm.piv ? (vm.piv.head[1]/(vm.res||1)-PIV.head[1])*VS : 0); size = 10; cx = 0; cz = 0; }
     if (frame==='arma') size = Math.max(b.mx[1]-b.mn[1], b.mx[0]-b.mn[0])*0.42 + 1.5;
     const piv = new THREE.Group(); piv.add(g); g.position.set(-cx,-cy,-cz); piv.rotation.y = frame==='busto' ? 0.42 : -0.6; piv.rotation.x = frame==='busto' ? 0 : 0.18;
     if (frame==='arma'){ piv.rotation.set(0.15,-0.5,-0.72); }
@@ -2381,7 +2450,7 @@ function bossModelo(b){ const v=BOSS_VISUAL[bossVisualId(b)]; const eq={}; v.eq.
     const passo = Math.max(1, Math.ceil(lista.length/420));
     for (let i=0;i<lista.length;i+=passo){
       const [k,cor] = lista[i]; const [x,y,z] = k.split(',').map(Number);
-      const w = new V3((x+0.5)*VS, (y+0.5)*VS, (z+0.5)*VS); g.localToWorld(w); const p = this.root.worldToLocal(w);
+      const E = VS/(vm.res||1); const w = new V3((x+0.5)*E, (y+0.5)*E, (z+0.5)*E); g.localToWorld(w); const p = this.root.worldToLocal(w);
       const dir = p.clone().sub(centro); dir.y = Math.abs(dir.y)*0.5 + 2; dir.normalize();
       const vel = dir.multiplyScalar(6 + Math.random()*10); vel.y += 4 + Math.random()*6;
       let mat = this.fxMat[cor]; if (!mat) mat = this.fxMat[cor] = new THREE.MeshBasicMaterial({ color:cor });

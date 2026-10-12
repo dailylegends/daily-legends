@@ -1,5 +1,5 @@
 /* Service worker do Daily Legends. A versão muda a cada build: o app mostra "Nova versão, toque pra atualizar". */
-const VERSAO = '2026.10.12-0508';
+const VERSAO = '2026.10.12-0529';
 const CACHE = 'dl-' + VERSAO;
 const ARQUIVOS = ["./", "index.html", "config.js", "manifest.webmanifest", "vendor/three.min.js", "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png"];
 

@@ -301,6 +301,48 @@ body.conectando::after{ content:'Conectando ao Google…'; position:fixed; inset
   #jogo.folha .placa, #jogo.folha .petbox{ display:none; }
 }
 @media (prefers-reduced-motion: reduce){ *{ animation:none !important; transition:none !important; } }
+
+/* trilha */
+button.stat{ background:none; border:0; color:inherit; font:inherit; padding:0; cursor:pointer; }
+.trilhaBtn{ display:block; width:100%; text-align:left; background:#0c0f0f; border:0; color:inherit; font:inherit; padding:10px 12px; margin:0 0 10px; cursor:pointer; box-shadow: inset 0 0 0 2px #000, inset 0 0 0 4px var(--linha); }
+.trilha{ display:flex; flex-direction:column; gap:8px; }
+.tcab{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; } .tcab b{ font-family:var(--titulo); font-size:22px; color:var(--ouro); line-height:1; } .tcab .fraco{ margin-left:auto; font-size:12px; }
+.tcaminho{ display:flex; align-items:center; gap:0; overflow-x:auto; padding:4px 2px 6px; scrollbar-width:thin; }
+.pedra{ position:relative; flex:0 0 auto; width:26px; height:26px; display:grid; place-items:center; background:#2a2620; box-shadow: inset 0 0 0 2px #000; margin-right:10px; font-size:10px; color:var(--fraco); }
+.pedra:not(:last-child)::after{ content:''; position:absolute; left:100%; top:50%; width:10px; height:4px; margin-top:-2px; background:repeating-linear-gradient(90deg,#5c4a2e 0 3px,transparent 3px 5px); }
+.pedra i{ font-style:normal; }
+.pedra.ok{ background:linear-gradient(#ffd77a 0 30%, var(--ouro) 30% 75%, #b07a1e 75%); }
+.pedra.ok:not(:last-child)::after{ background:var(--ouro); }
+.pedra.agora{ box-shadow: inset 0 0 0 2px #000, 0 0 0 2px var(--ouro); animation:pisca 1.2s steps(2) infinite; }
+.pedra.marco{ width:34px; height:34px; background:#3a2a1a; } .pedra.marco.ok{ background:var(--ouro); }
+.pedra.base{ background:#1e2524; } .pedra.base i{ position:absolute; bottom:-14px; font-size:10px; }
+.pedra .pm{ width:22px; height:22px; } .pedra.base .pm{ width:18px; height:18px; }
+@keyframes pisca{ 50%{ box-shadow: inset 0 0 0 2px #000, 0 0 0 2px transparent; } }
+.tnota{ font-size:12px; display:block; }
+.trec{ display:flex; gap:6px; flex-wrap:wrap; margin:6px 0; font-size:11px; } .trec span{ display:flex; flex-direction:column; align-items:center; padding:4px 6px; background:#0c0f0f; box-shadow: inset 0 0 0 2px #000; }
+.trec b{ font-size:14px; } .tr-ok b{ color:var(--ouro); } .tr-quebra b{ color:var(--ruim); } .tr-aberto b{ color:var(--fraco); }
+.chama{ display:inline-flex; align-items:center; gap:2px; background:none; border:0; color:var(--ouro); font:inherit; font-size:12px; font-weight:600; padding:4px 2px; min-height:28px; cursor:pointer; }
+
+/* festa (vitórias) */
+#festa{ position:fixed; inset:0; pointer-events:none; z-index:9999; overflow:hidden; }
+.fsobe{ position:absolute; transform:translate(-50%,-50%); font-family:var(--titulo); font-weight:700; font-size:22px; color:var(--ouro); text-shadow:0 2px 0 #000, 0 0 10px rgba(231,176,74,.6); animation:fsobe 1.1s ease-out forwards; white-space:nowrap; }
+@keyframes fsobe{ 0%{ opacity:0; transform:translate(-50%,-30%) scale(.6); } 20%{ opacity:1; transform:translate(-50%,-60%) scale(1.15); } 100%{ opacity:0; transform:translate(-50%,-260%) scale(1); } }
+.ffai{ position:absolute; width:6px; height:6px; background:#ffd77a; box-shadow:0 0 6px #ffd77a; animation:ffai .6s ease-out forwards; }
+@keyframes ffai{ to{ transform:translate(var(--dx),var(--dy)); opacity:0; } }
+.ffaixa{ position:absolute; left:50%; top:24%; transform:translate(-50%,-50%); min-width:min(86vw,340px); padding:14px 22px 12px; text-align:center; background:linear-gradient(#2a1e12,#1a130c); box-shadow: inset 0 0 0 2px #000, inset 0 0 0 4px var(--ouro), 0 10px 30px rgba(0,0,0,.6); animation:fentra .45s cubic-bezier(.2,1.6,.4,1) both; display:flex; flex-direction:column; align-items:center; gap:4px; }
+.ffaixa b{ font-family:var(--titulo); font-size:26px; color:var(--ouro); letter-spacing:.5px; text-shadow:0 2px 0 #000; }
+.ffaixa span{ font-size:14px; color:var(--texto); max-width:80vw; }
+.ffaixa .stars img{ width:22px; height:22px; } .ffaixa .fxp{ color:var(--ouro); font-weight:700; font-size:16px; }
+.ffaixa.chefao{ top:30%; padding:20px 28px 16px; background:linear-gradient(#3a1214,#1a0809); box-shadow: inset 0 0 0 2px #000, inset 0 0 0 5px var(--ouro), 0 0 60px rgba(231,176,74,.45); }
+.ffaixa.chefao b{ font-size:32px; }
+.ffaixa.sai{ animation:fsai .5s ease-in forwards; }
+@keyframes fentra{ from{ opacity:0; transform:translate(-50%,-50%) scale(.3); } to{ opacity:1; transform:translate(-50%,-50%) scale(1); } }
+@keyframes fsai{ to{ opacity:0; transform:translate(-50%,-80%) scale(.9); } }
+.fconf{ position:absolute; top:-12px; width:7px; height:10px; animation:fcai 1.6s linear forwards; }
+@keyframes fcai{ to{ transform:translate(var(--dx), 105vh) rotate(540deg); } }
+body.treme #jogo{ animation:treme .55s; }
+@keyframes treme{ 0%,100%{ transform:none; } 20%{ transform:translate(-6px,3px); } 40%{ transform:translate(5px,-4px); } 60%{ transform:translate(-4px,-2px); } 80%{ transform:translate(3px,2px); } }
+@media (prefers-reduced-motion: reduce){ .fconf, .ffai{ display:none; } }
 </style>
 </head>
 <body>
@@ -326,7 +368,7 @@ body.conectando::after{ content:'Conectando ao Google…'; position:fixed; inset
     <div class="marca">Daily Legends</div>
     <div class="nivelG"><span class="lv" id="tNivel">1</span><div class="xpw"><div id="tXp"></div><small id="tXpTxt"></small></div></div>
     <div class="stat" title="Ouro"><img class="px" id="tIcoOuro" alt="Ouro" style="width:22px;height:22px"><b id="tOuro">0</b></div>
-    <div class="stat" title="Dias seguidos"><img class="px" id="tIcoSeq" alt="Sequência" style="width:22px;height:22px"><b id="tSeq">0</b></div>
+    <button class="stat" id="btnTrilha" title="Trilha: dias seguidos"><img class="px" id="tIcoSeq" alt="Trilha" style="width:22px;height:22px"><b id="tSeq">0</b></button>
     <button class="ib" id="btnBau" title="Abrir baú"><img class="px" id="tIcoBau" alt="Baús"><b id="tBaus">0</b></button>
     <button class="ib" id="btnMudo" title="Música"><img class="px" id="tIcoNota" alt="Música"></button>
     <button class="btn ouro nuvem" id="btnNuvem">Entrar</button>
@@ -403,7 +445,7 @@ const SAVE = {
  "mod": {},
  "rev": 0
 };
-const DL_VERSAO = "2026.10.12-0508";
+const DL_VERSAO = "2026.10.12-0529";
 
 /* ===== Voxel v2: bonecos esculpidos em meia resolução (voxel = 0,5 do mundo) ===== */
 const VS = 0.5;
@@ -1429,24 +1471,44 @@ function cellBounds(vm){
   return { mn: mn.map(v=>v*VS), mx: mx.map(v=>v*VS) };
 }
 
-function platform(){
+// plataforma do palco: muda com o cenário. lajes = piso em lajotas com rejunte; liso = chão natural (areia, neve, grama)
+const PLAT = {
+  castelo:  { tipo:'lajes', top:['#5a605c','#535955','#4c524f','#606662'], rej:'#3a403e', borda:'#3c4342', lado:'#2e3433', ladoB:'#343a39', fundo:['#2a2f2e','#232827'], musgo:['#4f6b3e',0.8], seixo:'#454b49', aro:['#5f6662','#575d5a'], enf:[['#5d7f45',13],['#4a6a38',13]] },
+  neve:     { tipo:'liso', top:['#e8edf8','#dfe5f4','#f2f5fc','#d4dcef'], borda:'#b8c4de', lado:'#8e9cc0', ladoB:'#a4b2d2', fundo:['#6e7aa0','#5a6488'], seixo:'#ffffff', aro:['#c8e4f4','#a8d0ea'], enf:[['#a8d0ea',10],['#ffffff',14],['#5a6a8a',4,1]] },
+  deserto:  { tipo:'liso', top:['#e2c086','#d8b478','#ecca92','#cfa96c'], borda:'#b88e58', lado:'#9a7448', ladoB:'#a8804e', fundo:['#80603a','#6a4e30'], seixo:'#c49a62', aro:['#a8865a','#94744c'], enf:[['#c49a62',12],['#5a8a3a',3,3],['#8a6a44',6]] },
+  floresta: { tipo:'liso', top:['#4f7a3a','#47703a','#58843f','#3f6634'], borda:'#5a4430', lado:'#4a3828', ladoB:'#56402e', fundo:['#3c2e22','#30251c'], seixo:'#6a8a4a', aro:['#6a6660','#5a5650'], enf:[['#d84a3a',5,1],['#f0e0c0',5],['#e8d84a',8],['#3a5a2c',14]] },
+  mar:      { tipo:'liso', top:['#e6d6ac','#dccb9e','#efe0b8','#d2c092'], borda:'#bfae84', lado:'#9c8c66', ladoB:'#ab9a72', fundo:['#7e7052','#685c44'], seixo:'#c8b88e', aro:['#8a7a5a','#7a6a4c'], enf:[['#f2ece0',8],['#e8a0a0',5],['#3a8a6a',8,1],['#6ac0d0',6]] },
+  vulcao:   { tipo:'lajes', top:['#3a3434','#332e2e','#2c2828','#403a38'], rej:'#e8742a', borda:'#2a2424', lado:'#1e1a1a', ladoB:'#262020', fundo:['#181414','#120f0f'], musgo:['#d0503f',0.86], seixo:'#4a4240', aro:['#5a3a30','#4a302a'], enf:[['#ffb030',10],['#e8742a',10]] },
+  cerejeira:{ tipo:'liso', top:['#6a9a4a','#5f8e44','#76a654','#56843e'], borda:'#7a6450', lado:'#5e4c3c', ladoB:'#6a5644', fundo:['#4c3c30','#3e3026'], seixo:'#f2b8cc', aro:['#c8bfb0','#b0a898'], enf:[['#f6c2d4',22],['#ffdbe6',14],['#e898b4',10]] },
+  vila:     { tipo:'lajes', top:['#7a6a58','#6e604f','#857360','#665847'], rej:'#4a3e34', borda:'#5a4c40', lado:'#40362e', ladoB:'#4a3e34', fundo:['#352c26','#2a231e'], musgo:['#5a7a40',0.88], seixo:'#6a5a4a', aro:['#8a7a66','#7a6a58'], enf:[['#5a7a40',10],['#d8a040',4]] }
+};
+function platform(tema){
+  const P = PLAT[tema] || PLAT.castelo;
   const vm = new VModel(); const R=23;
-  const pedra=['#5a605c','#535955','#4c524f','#606662'];
   for (let x=-R;x<=R;x++) for (let z=-R;z<=R;z++){
     const r = Math.hypot(x+0.5,z+0.5); if (r>R) continue;
-    // lajotas: grade irregular com rejunte escuro
-    const gx = Math.floor((x+100 + (Math.floor((z+100)/5)%2)*3)/6), gz = Math.floor((z+100)/5);
-    const rej = ((x+100 + (Math.floor((z+100)/5)%2)*3)%6===0) || ((z+100)%5===0);
-    let top = rej ? '#3a403e' : pedra[Math.floor(hash3(gx,1,gz)*4)];
-    if (!rej && hash3(x,9,z)>0.9) top = shade(top,0.08);
-    if (hash3(gx,5,gz)>0.8 && !rej && hash3(x,3,z)>0.55) top = '#4f6b3e';
-    if (r > R-2) top = '#3c4342';
-    vm.set('torso',x,-1,z,top); vm.set('torso',x,-2,z, r>R-2? '#343a39' : '#2e3433');
-    if (r>R-3){ vm.set('torso',x,-3,z,'#2a2f2e'); vm.set('torso',x,-4,z,'#232827'); }
-    if (r>R-1.2 && hash3(x,2,z)>0.6) vm.set('torso',x,0,z,'#454b49');
+    let top;
+    if (P.tipo==='lajes'){
+      // lajotas: grade irregular com rejunte
+      const gx = Math.floor((x+100 + (Math.floor((z+100)/5)%2)*3)/6), gz = Math.floor((z+100)/5);
+      const rej = ((x+100 + (Math.floor((z+100)/5)%2)*3)%6===0) || ((z+100)%5===0);
+      top = rej ? P.rej : P.top[Math.floor(hash3(gx,1,gz)*4)];
+      if (!rej && hash3(x,9,z)>0.9) top = shade(top,0.08);
+      if (P.musgo && hash3(gx,5,gz)>P.musgo[1] && !rej && hash3(x,3,z)>0.55) top = P.musgo[0];
+    } else {
+      // chão natural: manchas suaves
+      const m = hash3(Math.floor((x+100)/3),7,Math.floor((z+100)/3))*0.6 + hash3(x,8,z)*0.4;
+      top = P.top[Math.min(3, Math.floor(m*4))];
+    }
+    if (r > R-2) top = P.borda;
+    vm.set('torso',x,-1,z,top); vm.set('torso',x,-2,z, r>R-2? P.ladoB : P.lado);
+    if (r>R-3){ vm.set('torso',x,-3,z,P.fundo[0]); vm.set('torso',x,-4,z,P.fundo[1]); }
+    if (r>R-1.2 && hash3(x,2,z)>0.6) vm.set('torso',x,0,z,P.seixo);
   }
-  for (let i=0;i<10;i++){ const a=i/10*Math.PI*2+0.4, x=Math.round(Math.cos(a)*19), z=Math.round(Math.sin(a)*19); if (hash3(i,1,2)>0.4){ vm.set('torso',x,0,z,'#5f6662'); vm.set('torso',x+1,0,z,'#575d5a'); } }
-  for (let i=0;i<26;i++){ const a=hash3(i,4,4)*Math.PI*2, rr=6+hash3(i,5,5)*14, x=Math.round(Math.cos(a)*rr), z=Math.round(Math.sin(a)*rr); vm.set('torso',x,0,z, hash3(i,6,6)>0.5? '#5d7f45' : '#4a6a38'); }
+  for (let i=0;i<10;i++){ const a=i/10*Math.PI*2+0.4, x=Math.round(Math.cos(a)*19), z=Math.round(Math.sin(a)*19); if (hash3(i,1,2)>0.4){ vm.set('torso',x,0,z,P.aro[0]); vm.set('torso',x+1,0,z,P.aro[1]); } }
+  // enfeites: [cor, quantidade, altura extra]; longe do centro pra não entrar no herói
+  let k=0; P.enf.forEach(([cor,n,alt])=>{ for (let i=0;i<n;i++,k++){ const a=hash3(k,4,4)*Math.PI*2, rr=7+hash3(k,5,5)*13, x=Math.round(Math.cos(a)*rr), z=Math.round(Math.sin(a)*rr);
+    vm.set('torso',x,0,z,cor); for (let y=1;y<=(alt||0);y++) vm.set('torso',x,y,z, y===alt && alt>1 ? shade(cor,0.15) : cor); } });
   return buildMesh(vm, { pivot0:true });
 }
 
@@ -1566,7 +1628,7 @@ class Stage {
     this.camera = new THREE.PerspectiveCamera(28, 1, 1, 600);
     addLights(this.scene);
     this.root = new THREE.Group(); this.scene.add(this.root);
-    this.plat = platform(); this.scene.add(this.plat);
+    this.plat = platform(); this.scene.add(this.plat); this.platTema = 'castelo';
     this.fxG = new THREE.Group(); this.root.add(this.fxG); this.fx = []; this.fxGeo = new THREE.BoxGeometry(1,1,1); this.fxMat = {};
     this.pets = []; this.anim = null; this.ray = new THREE.Raycaster();
     this.yaw = 0.35; this.autoT = 0; this.drag = null; this.t0 = performance.now(); this.ult = this.t0; this.proxSozinho = this.t0 + 14000;
@@ -1579,6 +1641,7 @@ class Stage {
     this.resize();
     const loop = (t)=>{ this.frame(t); requestAnimationFrame(loop); }; requestAnimationFrame(loop);
   }
+  setPlataforma(tema){ if (tema===this.platTema) return; this.scene.remove(this.plat); disposeGroup(this.plat); this.plat = platform(tema); this.scene.add(this.plat); this.platTema = tema; }
   setModel(vm, heroi){
     if (this.model){ this.root.remove(this.model); disposeGroup(this.model); }
     this.model = buildMesh(vm); this.root.add(this.model);
@@ -1778,10 +1841,10 @@ const Shots = {
     this.cache[key] = url; return url;
   },
   item(it, sil){ return this.shot('i:'+it.id+(sil?':s':''), buildItemVModel(it), it.slot==='arma' && !['alaude','arco','adagas','baquetas','besta','escudo'].includes(it.c.k) ? 'arma' : null, sil); },
-  hero(h, eq, sil){ return this.shot('h:'+h.id+':'+JSON.stringify(eq||{})+(sil?':s':''), buildVModel(h, eq), 'busto', sil); },
+  hero(h, eq, sil){ return this.shot('h:'+h.id+':'+h.skin+':'+JSON.stringify(eq||{})+(sil?':s':''), buildVModel(h, eq), 'busto', sil); },
   pet(p, extra, sil){ return this.shot('p:'+p.tipo+':'+(p.cor||'')+':'+JSON.stringify(Object.assign({},p.equip||{},extra||{}))+(sil?':s':''), buildPetVModel(p, extra), null, sil); },
   petItem(it){ return this.shot('pi:'+it.id, buildPetItemVModel(it), null); },
-  heroFull(h, eq){ return this.shot('hf:'+h.id+':'+JSON.stringify(eq||{}), buildVModel(h, eq)); },
+  heroFull(h, eq){ return this.shot('hf:'+h.id+':'+h.skin+':'+JSON.stringify(eq||{}), buildVModel(h, eq)); },
   boss(b){ const ks=Object.keys(BOSS_VISUAL); const vis = BOSS_VISUAL[b.visual] ? b.visual : ks[parseInt(hashTxt(String(b.id||b.nome)),36)%ks.length]; b={...b, visual:vis}; const v = BOSS_VISUAL[vis]; const eq={}; v.eq.forEach(id=>eq[ITEM[id].slot]=id); return this.shot('b:'+b.visual, buildVModel(Object.assign({sexo:'m'},v.h), eq, {cor:v.cor})); }
 };
 
@@ -2284,6 +2347,17 @@ const Som = (()=>{
     if (tipo==='equipar'){ noise(t,0.12,'lowpass',900,0.7,0.25,sfxBus); tom(1760,0.25,'triangle',0.05,0.03); tom(2637,0.2,'triangle',0.03,0.05); }
     if (tipo==='erro'){ tom(140,0.18,'square',0.06); tom(110,0.2,'square',0.06,0.1); }
     if (tipo==='bau'){ [523,659,784,1047,1319].forEach((f,i)=>tom(f,0.3,'triangle',0.07,i*0.07)); }
+    // sino curto: tarefa feita (parciais inarmônicas de sino)
+    if (tipo==='ding'){ const f=1568; [[1,0.9,0.18],[2.76,0.5,0.06],[5.4,0.25,0.03]].forEach(([m,d,v])=>tom(f*m,d,'sine',v)); tom(f*2,0.6,'sine',0.05,0.005); }
+    // fanfarra curta: missão (diária) concluída
+    if (tipo==='missao'){ [[67,0,0.09],[72,0.09,0.09],[76,0.18,0.09],[79,0.27,0.12]].forEach(([n,at,d])=>tom(mtof(n),d+0.05,'square',0.07,at));
+      [72,76,79,84].forEach(n=>{ tom(mtof(n),0.9,'triangle',0.08,0.42); }); tom(mtof(84)*2,0.6,'sine',0.02,0.42); }
+    // fanfarra épica: chefão derrotado (tambor, metais e acorde final com eco)
+    if (tipo==='chefao'){ noise(t,0.5,'lowpass',180,0.8,0.9,sfxBus); noise(t+0.45,0.4,'lowpass',200,0.8,0.7,sfxBus);
+      const metal=(n,at,d,v)=>{ const o=ctx.createOscillator(), g=ctx.createGain(), lp=ctx.createBiquadFilter(); o.type='sawtooth'; o.frequency.value=mtof(n); lp.type='lowpass'; lp.frequency.setValueAtTime(600,t+at); lp.frequency.linearRampToValueAtTime(2600,t+at+0.08);
+        g.gain.setValueAtTime(0,t+at); g.gain.linearRampToValueAtTime(v,t+at+0.03); g.gain.setValueAtTime(v,t+at+d*0.7); g.gain.exponentialRampToValueAtTime(0.001,t+at+d); o.connect(lp); lp.connect(g); g.connect(sfxBus); g.connect(revIn); o.start(t+at); o.stop(t+at+d+0.05); };
+      [[60,0,0.18],[60,0.2,0.12],[60,0.34,0.12],[65,0.48,0.3],[67,0.8,0.3]].forEach(([n,at,d])=>{ metal(n,at,d,0.035); metal(n+7,at,d,0.02); });
+      [60,64,67,72,76].forEach(n=>metal(n,1.15,1.6,0.028)); noise(t+1.15,1.2,'highpass',5000,0.7,0.08,sfxBus); tom(mtof(96),1.2,'sine',0.02,1.2); }
     if (tipo==='nivel'){ [[74,0],[77,0.15],[81,0.3],[86,0.45]].forEach(([n,d])=>tom(mtof(n),0.5,'triangle',0.08,d)); }
   }
   /* ----- efeitos do herói e dos pets (toque no palco) ----- */
@@ -2499,7 +2573,7 @@ function mesclar(local, remoto, primeiraVez){
     else usaR = mr>ml;
     const venc = usaR ? R : L, perd = usaR ? L : R;
     out[k] = venc[k]; out.mod[k] = Math.max(ml, mr);
-    if (k==='herois' && out[k] && perd[k]){ const h=out[k]; h.possui=[...new Set([...(h.possui||[]), ...(perd[k].possui||[])])]; h.equip=Object.assign({}, perd[k].equip, h.equip); h.nomes=Object.assign({}, perd[k].nomes, h.nomes); if (!h.ativo) h.ativo=perd[k].ativo||null; }
+    if (k==='herois' && out[k] && perd[k]){ const h=out[k]; h.possui=[...new Set([...(h.possui||[]), ...(perd[k].possui||[])])]; h.equip=Object.assign({}, perd[k].equip, h.equip); h.nomes=Object.assign({}, perd[k].nomes, h.nomes); h.pele=Object.assign({}, perd[k].pele, h.pele); if (!h.ativo) h.ativo=perd[k].ativo||null; }
     if (k==='pets' && out[k] && perd[k]){ const p=out[k]; p.possui=uneId(p.possui, perd[k].possui); if (!p.desde || (perd[k].desde && perd[k].desde<p.desde)) p.desde = perd[k].desde || p.desde; if (!p.ativo) p.ativo=perd[k].ativo||null; }
   });
   out.hoje = [L.hoje, R.hoje].filter(Boolean).sort().pop() || L.hoje;
@@ -2554,10 +2628,10 @@ function aplicaUma(l, d){
     case 'registro': { obj(d,['area','txt']); areaOk(d.area); const xp=Number(d.xp||0); if (!isFinite(xp)) throw new Error('xp inválido');
       const e=Object.assign({ d:d.d||hoje, tipo:'extra' }, d, { area:d.area, xp, id:'ag:'+l.id }); if (!e.heroi && heroi) e.heroi=heroi;
       if (d.ouro!=null){ const o=Number(d.ouro); if (!isFinite(o)) throw new Error('ouro inválido (use número, ex.: "ouro":500)'); e.ouro=o; }
-      S.log.push(e); return; }
+      S.log.push(e); if (e.tipo==='diaria' && e.estrelas>0 && festaRecente(e.d)){ const m=S.diarias.find(x=>x.id===e.diaria); Festa.add('missao', (m&&m.nome)||e.txt, { estrelas:e.estrelas }); } return; }
     case 'tarefa': { obj(d,['txt']); const id=d.id||('ag'+hashTxt(l.id)); if (!S.tarefas.some(t=>t.id===id)) S.tarefas.push({ id, d:d.d||hoje, txt:String(d.txt), area:d.area&&AREA[d.area]?d.area:undefined, feita:null, em:agora }); return; }
     case 'tarefa_feita': { obj(d,['id']); const t=S.tarefas.find(x=>x.id===d.id); if (!t) throw new Error('tarefa "'+d.id+'" não existe'); t.feita = d.feita===false ? false : true; t.em=agora;
-      S.log=S.log.filter(e=>!(e.tipo==='tarefa'&&e.tarefa===t.id)); if (t.feita) S.log.push({ id:'ag:'+l.id, d:t.d, area:t.area||null, txt:t.txt, xp:XP_TAREFA, tipo:'tarefa', tarefa:t.id, heroi }); return; }
+      S.log=S.log.filter(e=>!(e.tipo==='tarefa'&&e.tarefa===t.id)); if (t.feita){ S.log.push({ id:'ag:'+l.id, d:t.d, area:t.area||null, txt:t.txt, xp:XP_TAREFA, tipo:'tarefa', tarefa:t.id, heroi }); if (festaRecente(t.d)) Festa.add('tarefa', t.txt); } return; }
     case 'area': { obj(d,['id','nome']); const id=String(d.id).trim(); if (!/^[a-z0-9_-]{1,24}$/.test(id)) throw new Error('id da área: só letras minúsculas, números, - ou _ (ex.: "saude")');
       const ico = ICOS_AREA.includes(d.ico) ? d.ico : 'star'; const novo=!AREA[id]; upsert(S.areas, { id, nome:String(d.nome).slice(0,24), ico }); S.mod.areas=agora; return novo ? { novidade:'Atributo novo: '+d.nome } : null; }
     case 'area_remover': { obj(d,['id']); S.areas=S.areas.filter(x=>x.id!==d.id); S.mod.areas=agora; return; }
@@ -2567,7 +2641,7 @@ function aplicaUma(l, d){
     case 'chefao': { obj(d,['id','nome','meta','area']); areaOk(d.area); const novo=!S.chefoes.some(c=>c.id===d.id); upsert(S.chefoes, d); S.mod.chefoes=agora; return novo ? { novidade:'Chefão novo: '+d.nome } : null; }
     case 'chefao_remover': { obj(d,['id']); S.chefoes=S.chefoes.filter(x=>x.id!==d.id); S.mod.chefoes=agora; return; }
     case 'chefao_derrotado': { obj(d,['id']); if (!S.derrotados.some(x=>x.id===d.id)){ const c=S.chefoes.find(x=>x.id===d.id); S.derrotados.push({ id:d.id, d:d.d||hoje });
-      S.log.push({ id:'ag:'+l.id, d:d.d||hoje, area:(c&&c.area)||null, txt:'Chefão derrotado: '+((c&&c.nome)||d.id), xp:d.xp!=null?Number(d.xp):300, tipo:'chefao', heroi }); return { novidade:'Chefão derrotado: '+((c&&c.nome)||d.id) }; } return; }
+      S.log.push({ id:'ag:'+l.id, d:d.d||hoje, area:(c&&c.area)||null, txt:'Chefão derrotado: '+((c&&c.nome)||d.id), xp:d.xp!=null?Number(d.xp):300, tipo:'chefao', heroi }); if (festaRecente(d.d)) Festa.add('chefao', (c&&c.nome)||d.id, { xp:d.xp!=null?Number(d.xp):300 }); return { novidade:'Chefão derrotado: '+((c&&c.nome)||d.id) }; } return; }
     case 'habilidade': { const h = obj(d,['nome','area']); areaOk(h.area); S.habilidades.push({ id:'ag:'+l.id, area:h.area, nome:String(h.nome), d:h.d||hoje }); return { novidade:'Habilidade nova: '+h.nome }; }
     case 'bau': { S.bausGanhos.push({ id:'ag:'+l.id, d:(d&&d.d)||hoje }); return { novidade:'Novo baú pra abrir' }; }
     case 'novidade': { const t = typeof d==='string' ? d : obj(d,['txt']).txt; return { novidade:String(t) }; }
@@ -2840,7 +2914,7 @@ function linhasResumo(){
   return R;
 }
 
-const LEIA_VER = 3; // subir quando mudar o texto: o jogo reescreve a aba leia-me das planilhas antigas
+const LEIA_VER = 4; // subir quando mudar o texto: o jogo reescreve a aba leia-me das planilhas antigas
 const LEIA_ME = [
   'DAILY LEGENDS: planilha de save (instruções versão '+LEIA_VER+')',
   '',
@@ -2897,7 +2971,7 @@ const LEIA_ME = [
   'chefao_remover: {"id":"ingles-b2"}  (tira o chefão da lista sem derrotar; não dá nem tira XP)',
   'chefao_derrotado: {"id":"ingles-b2"}  (dá +300 XP; "xp":N muda o valor)',
   'habilidade: {"area":"idiomas","nome":"Espanhol B1"}',
-  'bau: {}  (1 baú pra abrir; dar quando o dia fechou com todas as diárias)',
+  'bau: {}  (1 baú extra, só em ocasião especial. Os baús normais o jogo já dá sozinho nos marcos da trilha: 3, 7, 14, 30, 60, 100 dias)',
   'novidade: {"txt":"Saúde subiu pro nível 3"}  (aparece no jogo quando a pessoa abrir)',
   'save_importar: o JSON inteiro de um save antigo do Daily Legends (com "log", "herois" etc.), numa linha só. Junta com o progresso atual. Uso: migração, uma vez só.',
   '',
@@ -2993,11 +3067,83 @@ function calc(){
   }
   const gasto = S.compras.reduce((s,c)=>s+c.preco,0);
   const xpTotal = Object.values(area).reduce((s,v)=>s+Math.max(0,v),0);
-  // sequência
-  let seq=0, d=S.hoje; if (!diasDiaria.has(d)) d=addDias(d,-1);
-  while (diasDiaria.has(d)){ seq++; d=addDias(d,-1); }
-  let melhor=0, cur=0, prev=null; [...diasDiaria].sort().forEach(x=>{ cur = (prev && diasEntre(prev,x)===1) ? cur+1 : 1; melhor=Math.max(melhor,cur); prev=x; });
-  return { area, ultima, ouro: ganho-gasto, xpTotal, heroi, seq, melhor: Math.max(melhor,seq), porDia, diasDiaria };
+  // sequência = trilha do dia (ver trilhaDia)
+  const tr = trilhaDia(porDia);
+  return { area, ultima, ouro: ganho-gasto, xpTotal, heroi, seq: tr.pos, melhor: tr.melhor, trilha: tr, porDia, diasDiaria };
+}
+
+/* ---------- trilha (sequência com checkpoints) ----------
+   Passo do dia: pelo menos 60% das diárias fixas (semanais ficam fora) feitas, versão mínima vale.
+   Dia sem passo: volta pro último marco alcançado (não pro zero). Hoje ainda aberto nunca quebra.
+   Marco alcançado pela 1ª vez = 1 baú (id trilha:N, não repete se a trilha voltar e passar de novo). */
+const TRILHA_PCT = 0.6;
+const MARCOS_BASE = [3,7,14,30,60,100,150,200,250,300,365];
+function marcoN(i){ return i<MARCOS_BASE.length ? MARCOS_BASE[i] : 365 + 100*(i-MARCOS_BASE.length+1); }
+function marcoAte(pos){ let m=0; for (let i=0; marcoN(i)<=pos; i++) m=marcoN(i); return m; }
+function marcoDepois(pos){ let i=0; while (marcoN(i)<=pos) i++; return marcoN(i); }
+function percorre(unidades, ehPasso, aberta){
+  // unidades: lista em ordem (dias ou semanas); aberta: a última ainda pode ser feita (não quebra)
+  let pos=0, melhor=0; const hist=[]; const marcos=[];
+  unidades.forEach((u,i)=>{
+    const ok = ehPasso(u), ultima = i===unidades.length-1;
+    if (ok){ pos++; if (pos>melhor) melhor=pos; if (MARCOS_BASE.includes(pos) || (pos>365 && marcoAte(pos)===pos)) marcos.push(pos); hist.push({ u, st:'ok', pos }); }
+    else if (ultima && aberta) hist.push({ u, st:'aberto', pos });
+    else { const volta=marcoAte(pos); hist.push({ u, st:'quebra', de:pos, pos:volta }); pos=volta; }
+  });
+  return { pos, melhor, hist, marcos:[...new Set(marcos)] };
+}
+function inicioJogo(){ const ds=S.log.map(e=>e.d).filter(Boolean).sort(); return ds[0] || S.hoje; }
+function diasDoJogo(){ const r=[]; for (let d=inicioJogo(), n=0; d<=S.hoje && n<3000; d=addDias(d,1), n++) r.push(d); return r; }
+function fixasDia(){ return S.diarias.filter(m=>!m.semanal); }
+function precisaDia(){ const n=fixasDia().length; return n ? Math.ceil(n*TRILHA_PCT) : 0; }
+function feitasNoDia(es){ const ids=new Set(fixasDia().map(m=>m.id)); return new Set((es||[]).filter(e=>e.tipo==='diaria' && e.estrelas>0 && ids.has(e.diaria)).map(e=>e.diaria)).size; }
+function trilhaDia(porDia){
+  const precisa=precisaDia(); if (!precisa) return Object.assign(percorre([], ()=>false, true), { precisa:0, feitasHoje:0 });
+  const r = percorre(diasDoJogo(), d=>feitasNoDia(porDia[d])>=precisa, true);
+  return Object.assign(r, { precisa, feitasHoje: feitasNoDia(porDia[S.hoje]) });
+}
+function trilhaDiaria(m){
+  const feito = new Set(S.log.filter(e=>e.diaria===m.id && e.estrelas>0).map(e=>e.d));
+  if (!m.semanal) return Object.assign(percorre(diasDoJogo(), d=>feito.has(d), true), { unidade:'dia' });
+  const sems=[]; for (let w=semanaDe(inicioJogo()); w<=S.hoje; w=addDias(w,7)) sems.push(w);
+  const conta = w=>[...feito].filter(d=>d>=w && d<=addDias(w,6)).length;
+  // semana em que o jogo começou pela metade: só conta se bateu a meta (não quebra)
+  if (sems.length>1 && conta(sems[0])<m.semanal) sems.shift();
+  return Object.assign(percorre(sems, w=>conta(w)>=m.semanal, true), { unidade:'semana', estaSemana: conta(semanaDe(S.hoje)) });
+}
+function checaMarcos(c){
+  const novos = (c.trilha.marcos||[]).filter(m=>!S.bausGanhos.some(b=>b.id==='trilha:'+m));
+  if (!novos.length) return;
+  novos.forEach(m=>S.bausGanhos.push({ id:'trilha:'+m, d:S.hoje, marco:m }));
+  S.baus = Math.max(0, S.bausGanhos.length - S.bausAbertos.length);
+  marcaSujo(); Som.sfx('nivel'); toast(novos.length>1 ? `Marcos ${novos.join(', ')} da trilha: ${novos.length} baús!` : `Marco ${novos[0]} da trilha: baú ganho!`);
+}
+// desenho da trilha: do último marco até o próximo, uma pedra por passo
+function trilhaHTML(t, rotulo){
+  const ini=marcoAte(t.pos), fim=marcoDepois(t.pos), aberto = t.hist.length && t.hist[t.hist.length-1].st==='aberto';
+  let pedras='';
+  for (let i=ini+1; i<=fim; i++){
+    const feito = i<=t.pos, prox = !feito && i===t.pos+1, marco = i===fim;
+    pedras += `<span class="pedra ${feito?'ok':''} ${prox&&aberto?'agora':''} ${marco?'marco':''}" title="${i}">${marco?ico('chest','pm'):feito?'':`<i>${i}</i>`}</span>`;
+  }
+  const falta = fim - t.pos;
+  return `<div class="trilha"><div class="tcab">${ico('flame','st')}<b>${t.pos}</b><span>${rotulo}</span><span class="fraco">${falta} até o baú do marco ${fim}</span></div>
+    <div class="tcaminho">${ini?`<span class="pedra base" title="Marco ${ini}">${ico('mapa','pm')}<i>${ini}</i></span>`:''}${pedras}</div>
+    <div class="fraco tnota">${ini?`Falhou um ${t.unidade==='semana'?'semana':'dia'}? Volta pro marco ${ini}, não pro zero.`:`Falhou antes do marco 3? Volta pro começo.`} Recorde: ${t.melhor}.</div></div>`;
+}
+function abreTrilha(id){
+  if (id==='dia'){
+    const c=calc(), t=c.trilha;
+    const txt = t.precisa ? `Um passo por dia em que você faz pelo menos <b>${t.precisa} de ${fixasDia().length}</b> diárias (a versão mínima vale; semanais ficam fora). Hoje: ${t.feitasHoje}/${t.precisa}.` : 'Monte suas diárias com o agente pra trilha começar.';
+    modal(`${trilhaHTML(t,'dias')}<p class="fraco">${txt}</p>${diasRecentes(t)}<div class="acoes"><button class="btn" data-fecha="1">Fechar</button></div>`, 'Trilha do dia'); return;
+  }
+  const m=S.diarias.find(x=>x.id===id); if (!m) return; const t=trilhaDiaria(m);
+  const txt = m.semanal ? `Um passo por semana com ${m.semanal} treinos. Esta semana: ${t.estaSemana}/${m.semanal}.` : 'Um passo por dia em que você faz essa diária (a mínima vale).';
+  modal(`${trilhaHTML(t, t.unidade==='semana'?'semanas':'dias')}<p class="fraco">${txt}</p>${diasRecentes(t)}<div class="acoes"><button class="btn" data-fecha="1">Fechar</button></div>`, esc(m.nome));
+}
+function diasRecentes(t){
+  const ult=t.hist.slice(-7); if (!ult.length) return '';
+  return `<div class="trec">${ult.map(h=>`<span class="tr-${h.st}" title="${h.st==='quebra'?`Quebrou: ${h.de} → ${h.pos}`:''}">${t.unidade==='semana'?'sem '+fmtD(h.u):fmtD(h.u).slice(0,5)}<b>${h.st==='ok'?'✓':h.st==='aberto'?'…':'✗'}</b></span>`).join('')}</div>`;
 }
 
 const CONQ = [
@@ -3027,6 +3173,19 @@ function barra(v,max,cls){ const p=Math.max(0,Math.min(100, max? v/max*100 : 0))
 function estrelas(n){ let s=''; for (let i=1;i<=3;i++) s+=ico(i<=n?'star':'starOff','st'); return `<span class="stars" aria-label="${n} de 3 estrelas">${s}</span>`; }
 function marcaSujo(){ sujo=true; Nuvem.mudou(); }
 function heroAtivo(){ return HEROI[S.herois.ativo]; }
+// tons de pele: só heróis humanos (orc e lobo têm cor própria). Guardado em S.herois.pele[id]
+const TONS_PELE = ['#f6d7bf','#f0c9a4','#e0aa82','#c68a5e','#a86f47','#8d5a3b','#6e4429','#4a2c1a'];
+const temPele = h=> h && !h.raca;
+function heroiV(id, pele){ const h=HEROI[id]; const p = pele || (S.herois.pele||{})[id]; return p && temPele(h) ? Object.assign({}, h, { skin:p }) : h; }
+function tonsHTML(sel, attr){ return `<div class="sw">${TONS_PELE.map(c=>`<button type="button" class="swc ${sel===c?'on':''}" style="background:${c}" ${attr}="${c}" aria-label="Tom de pele ${c}"></button>`).join('')}</div>`; }
+function abrePele(id){ const h=HEROI[id]; if (!temPele(h)) return; const atual=heroiV(id).skin;
+  modal(`<div class="conf"><img id="pelePrev" src="${Shots.heroFull(heroiV(id),S.herois.equip[id]||{})}" alt=""><div><p class="fraco">Escolha o tom de pele de ${esc(nomeH(id))}. Dá pra trocar quando quiser, de graça.</p>${tonsHTML(atual,'data-pele')}
+    <div class="acoes"><button class="btn ouro" data-fecha="1">Pronto</button></div></div></div>`, 'Tom de pele'); $('#modal').dataset.heroi=id; }
+function trocaPele(cor){
+  if (cria && cria.passo==='confirma'){ cria.pele=cor; $('#pelePrev').src=Shots.heroFull(heroiV(cria.heroi,cor),{}); }
+  else { const id=$('#modal').dataset.heroi; if (!id) return; S.herois.pele=S.herois.pele||{}; S.herois.pele[id]=cor; marcaSujo(); $('#pelePrev').src=Shots.heroFull(heroiV(id),S.herois.equip[id]||{}); if (id===S.herois.ativo) atualizaPalco(); render(); }
+  document.querySelectorAll('[data-pele]').forEach(b=>b.classList.toggle('on', b.dataset.pele===cor)); Som.sfx('clique');
+}
 function nomeH(id){ return (S.herois.nomes||{})[id] || HEROI[id].nome; }
 // pets que estão com o herói (até MAX_PETS_JUNTOS); o primeiro é o principal (prova itens na loja)
 function petsJuntos(){ if (!S.pets) return []; const j=S.pets.juntos||[]; return j.map(id=>S.pets.possui.find(p=>p.id===id)).filter(Boolean); }
@@ -3041,12 +3200,59 @@ function cuidouHoje(p, acao){ return S.log.some(e=>e.tipo==='petReal' && e.pet==
 function eqAtivo(){ return S.herois.equip[S.herois.ativo] || (S.herois.equip[S.herois.ativo]={}); }
 function itemImg(it, cls, sil){ return `<img class="vox ${cls||''}" src="${Shots.item(it, sil)}" alt="">`; }
 
+/* ---------- festa: som + animação a cada tarefa, missão e chefão ----------
+   tarefa = sino (ding) + "+XP" subindo; missão (diária) = fanfarra curta + faixa; chefão = fanfarra épica + faixa grande + tremida.
+   Vários do mesmo tipo de uma vez (ex.: o agente mandou 4 diárias) viram uma festa só. */
+const Festa = {
+  fila:[], ocupado:false,
+  add(tipo, txt, o){ this.fila.push(Object.assign({ tipo, txt }, o||{})); if (!this.ocupado) setTimeout(()=>this.prox(), 60); },
+  prox(){
+    if (this.ocupado || !this.fila.length) return;
+    if ($('#jogo').hidden){ return; } // volta a tocar quando o jogo abrir (entrar chama prox)
+    const f=this.fila.shift(); const juntos=[f];
+    if (f.tipo!=='chefao') while (this.fila.length && this.fila[0].tipo===f.tipo) juntos.push(this.fila.shift());
+    this.ocupado=true; const dur = this.toca(f.tipo, juntos);
+    setTimeout(()=>{ this.ocupado=false; this.prox(); }, dur);
+  },
+  toca(tipo, js){
+    const n=js.length, f=js[0];
+    if (tipo==='tarefa'){
+      Som.sfx('ding'); if (n>1) setTimeout(()=>Som.sfx('ding'), 180);
+      this.sobe(`+${n*XP_TAREFA*(f.mult||1)} XP`, f.x, f.y); this.faisca(f.x, f.y, 10);
+      return 650;
+    }
+    if (tipo==='missao'){
+      Som.sfx('missao'); if (stage) stage.tocaHeroi(false);
+      const est = n===1 && f.estrelas ? estrelas(f.estrelas) : '';
+      this.faixa(n>1 ? `${n} missões concluídas` : 'Missão concluída', n>1 ? js.map(x=>x.txt).join(' · ') : f.txt, est, 'missao');
+      this.confete(28); return 2100;
+    }
+    if (tipo==='chefao'){
+      Som.sfx('chefao'); if (stage){ stage.tocaHeroi(false); setTimeout(()=>stage.tocaHeroi(false), 1200); }
+      this.faixa('Chefão derrotado!', f.txt, `<span class="fxp">+${f.xp||300} XP</span>`, 'chefao');
+      document.body.classList.add('treme'); setTimeout(()=>document.body.classList.remove('treme'), 600);
+      this.confete(70); setTimeout(()=>this.confete(50), 900); return 3600;
+    }
+    return 0;
+  },
+  camada(){ let c=$('#festa'); if (!c){ c=document.createElement('div'); c.id='festa'; c.setAttribute('aria-live','polite'); document.body.appendChild(c); } return c; },
+  centro(){ const p=$('#palco3d'); const r=p ? p.getBoundingClientRect() : { left:0, top:0, width:innerWidth, height:innerHeight*0.5 }; return [r.left+r.width/2, r.top+Math.min(r.height*0.45, innerHeight*0.4)]; },
+  sobe(txt, x, y){ if (x==null) [x,y]=this.centro(); const e=document.createElement('div'); e.className='fsobe'; e.textContent=txt; e.style.left=x+'px'; e.style.top=y+'px'; this.camada().appendChild(e); setTimeout(()=>e.remove(), 1200); },
+  faisca(x, y, n){ if (x==null) [x,y]=this.centro(); const c=this.camada(); for (let i=0;i<n;i++){ const e=document.createElement('i'); e.className='ffai'; const a=i/n*Math.PI*2, d=26+Math.random()*22;
+    e.style.left=x+'px'; e.style.top=y+'px'; e.style.setProperty('--dx', Math.cos(a)*d+'px'); e.style.setProperty('--dy', Math.sin(a)*d+'px'); c.appendChild(e); setTimeout(()=>e.remove(), 700); } },
+  faixa(tit, sub, extra, cls){ const e=document.createElement('div'); e.className='ffaixa '+cls; e.innerHTML=`<b>${esc(tit)}</b>${sub?`<span>${esc(sub)}</span>`:''}${extra||''}`; this.camada().appendChild(e); setTimeout(()=>e.classList.add('sai'), cls==='chefao'?2900:1600); setTimeout(()=>e.remove(), cls==='chefao'?3500:2100); },
+  confete(n){ const c=this.camada(), cores=['#e7b04a','#ffd77a','#ece4cc','#d0503f','#3ac08a','#3a9ad0']; for (let i=0;i<n;i++){ const e=document.createElement('i'); e.className='fconf';
+    e.style.left=(Math.random()*100)+'vw'; e.style.background=cores[i%cores.length]; e.style.setProperty('--dx', (Math.random()*80-40)+'px'); e.style.animationDelay=(Math.random()*0.35)+'s'; e.style.animationDuration=(1.3+Math.random()*0.9)+'s'; c.appendChild(e); setTimeout(()=>e.remove(), 2800); } }
+};
+// o que veio do agente vira festa só se for de hoje ou de ontem (importar histórico antigo não faz barulho)
+function festaRecente(d){ return !d || d>=addDias(hojeReal(),-1); }
+
 /* ---------- palco ---------- */
 function atualizaPalco(){
   const h=heroAtivo(); if (!h) return;
   const provando = aba==='loja' ? Object.values(prova) : [];
   const juntos = petsJuntos(), pet = juntos[0], pprova = aba==='loja' ? Object.values(provaPet) : [];
-  if (stage){ stage.setModel(buildVModel(h, provando.length ? Object.assign({}, eqAtivo(), prova) : eqAtivo()), h); stage.setPets(juntos, pprova.length ? provaPet : null); }
+  if (stage){ stage.setModel(buildVModel(heroiV(h.id), provando.length ? Object.assign({}, eqAtivo(), prova) : eqAtivo()), h); stage.setPets(juntos, pprova.length ? provaPet : null); }
   const c=calc(), lv=nivelDe(c.heroi[h.id]||0);
   const nomes = [...provando.map(id=>ITEM[id].nome), ...pprova.map(id=>PET_ITEM[id].nome)];
   $('#placa').innerHTML = `<div class="pnome">${esc(nomeH(h.id))}</div><div class="plema">${nomeH(h.id)!==h.nome?`<b>${esc(h.nome)}</b> `:''}${esc(h.lema)}${pet?`<span class="ppet">${esc(juntos.map(p=>p.nome).join(juntos.length>2?', ':' e ').replace(/, ([^,]*)$/,' e $1'))} ao seu lado</span>`:''}</div>
@@ -3070,7 +3276,7 @@ function petBox(){
 function cuidar(petId, acao){
   const p=S.pets.possui.find(x=>x.id===petId); if (!p || cuidouHoje(p,acao)) return;
   S.log.push({ id:uid('l'), d:S.hoje, area:areaPet(), txt:(acao==='passear'?'Passeou com ':'Alimentou ')+p.nome, xp:XP_PET_CUIDADO, tipo:'petReal', acao, pet:p.id, heroi:S.herois.ativo });
-  Som.sfx('moeda'); marcaSujo(); petBox(); topo(); if (aba==='missoes'||aba==='diario') render(); toast(`+${XP_PET_CUIDADO} XP por cuidar de ${p.nome}`);
+  Festa.add('tarefa', p.nome, { mult: XP_PET_CUIDADO/XP_TAREFA }); marcaSujo(); petBox(); topo(); if (aba==='missoes'||aba==='diario') render();
 }
 /* ---------- lendários misteriosos: aparecem quando o ouro alcança o preço (ou caem no baú) ---------- */
 function revelado(it){ return it.rar!=='lendario' || S.mochila.includes(it.id) || (S.revelados||[]).includes(it.id); }
@@ -3083,7 +3289,7 @@ function checaRevelados(c){
   if (novos.length){ marcaSujo(); Som.sfx('nivel'); toast('Lendário revelado: '+novos.join(', ')); }
 }
 function topo(){
-  const c=calc(), g=nivelDe(c.xpTotal);
+  const c=calc(), g=nivelDe(c.xpTotal); checaMarcos(c);
   $('#tNivel').textContent = g.n; $('#tXp').innerHTML = barra(g.r,g.p,'xp');
   $('#tXpTxt').textContent = `${num(g.r)}/${num(g.p)} XP`;
   $('#tOuro').textContent = num(c.ouro); $('#tSeq').textContent = c.seq; $('#tBaus').textContent = S.baus;
@@ -3153,6 +3359,8 @@ function vMissoes(){
       const e = doDia.find(e=>e.diaria===m.id);
       st = !e ? `<span class="pend">Pendente</span>${estrelas(0)}` : e.estrelas>0 ? estrelas(e.estrelas) : `<span class="falha">${ico('x','st')} ${e.xp} XP</span>`;
     }
+    const tm=trilhaDiaria(m);
+    st += `<button class="chama" data-trilha="${m.id}" aria-label="Trilha de ${esc(m.nome)}: ${tm.pos}">${ico('flame','st')}${tm.pos}</button>`;
     return `<div class="miss">${ico(icoArea(m.area),'ai')}<div class="mt"><div class="mn">${esc(m.nome)}</div>
       <div class="mm">${m.minima?`<span>Mín.: ${esc(m.minima)}</span>`:''}${m.tres?`<span>3★: ${esc(m.tres)}</span>`:''}</div></div><div class="ms">${st}</div></div>`;
   }).join('');
@@ -3167,7 +3375,9 @@ function vMissoes(){
     <form class="addt" data-form="tarefa"><input id="novaTarefa" maxlength="80" placeholder="Nova tarefa do dia" aria-label="Nova tarefa do dia"><button class="btn ouro">Adicionar</button></form>
     <div class="lista">${tarefas || '<p class="fraco">Nenhuma tarefa pra hoje ainda. Adicione aqui ou conte pro seu agente.</p>'}</div>`;
   const blocoP = cuidados ? `<div class="sec"><h3>Cuidados com os pets</h3></div><div class="lista">${cuidados}</div>` : '';
-  return blocoT + `<div class="sec"><h3>${DSEM[dt(hoje).getDay()]}, ${fmtD(hoje)}</h3><span class="fraco">${ico('star','st')}+4 &nbsp;${ico('star','st')}${ico('star','st')}+10 &nbsp;${ico('star','st')}${ico('star','st')}${ico('star','st')}+15 &nbsp;${ico('x','st')}−5</span></div>
+  const ct=calc().trilha;
+  const blocoTr = ct.precisa ? `<button class="trilhaBtn" data-trilha="dia" aria-label="Ver trilha do dia">${trilhaHTML(ct,'dias seguidos')}<span class="fraco tnota">Hoje: ${ct.feitasHoje}/${ct.precisa} diárias pro passo. Toque numa ${ico('flame','st')} pra ver a trilha de cada diária.</span></button>` : '';
+  return blocoTr + blocoT + `<div class="sec"><h3>${DSEM[dt(hoje).getDay()]}, ${fmtD(hoje)}</h3><span class="fraco">${ico('star','st')}+4 &nbsp;${ico('star','st')}${ico('star','st')}+10 &nbsp;${ico('star','st')}${ico('star','st')}${ico('star','st')}+15 &nbsp;${ico('x','st')}−5</span></div>
     <div class="lista">${linhas || '<p class="fraco">Suas diárias aparecem aqui quando você montar o jogo com o agente.</p>'}</div>${extras?`<div class="sec"><h3>Missões extras</h3></div><div class="lista">${extras}</div>`:''}${blocoP}`;
 }
 
@@ -3237,8 +3447,8 @@ function vHerois(){
     if (ativo) btn = `<span class="tem">Em campo</span>`;
     else if (tem) btn = `<button class="btn" data-usar="${h.id}">Usar</button>`;
     else btn = `<button class="btn ${conf?'ouro':''} ${c.ouro<preco?'off':''}" data-heroi="${h.id}">${conf?'Confirmar':`${ico('coin','st')} ${num(preco)}`}</button>`;
-    return `<div class="hcard ${ativo?'ativo':''} ${tem?'':'bloq'} ${h.lendario?'r-lendario':''}"><img src="${Shots.hero(h, S.herois.equip[h.id]||{})}" alt="">
-      ${tem?`<span class="hnv">Nv ${lv.n}</span>`:ico('lock','cad')}<div class="hn">${esc(tem?nomeH(h.id):h.nome)}</div><div class="hl">${tem&&nomeH(h.id)!==h.nome?esc(h.nome)+'. ':''}${esc(h.lema)}</div>${btn}${tem?`<button class="link" data-renomear="${h.id}">Renomear</button>`:''}</div>`;
+    return `<div class="hcard ${ativo?'ativo':''} ${tem?'':'bloq'} ${h.lendario?'r-lendario':''}"><img src="${Shots.hero(tem?heroiV(h.id):h, S.herois.equip[h.id]||{})}" alt="">
+      ${tem?`<span class="hnv">Nv ${lv.n}</span>`:ico('lock','cad')}<div class="hn">${esc(tem?nomeH(h.id):h.nome)}</div><div class="hl">${tem&&nomeH(h.id)!==h.nome?esc(h.nome)+'. ':''}${esc(h.lema)}</div>${btn}${tem?`<button class="link" data-renomear="${h.id}">Renomear</button>`:''}${tem&&temPele(h)?`<button class="link" data-pelede="${h.id}">Tom de pele</button>`:''}</div>`;
   }).join('');
   const meusItens = PET_ITENS.filter(i=>S.mochila.includes(i.id));
   const nJ = petsJuntos().length;
@@ -3279,7 +3489,7 @@ const GUIA = [
   ['Chefões', `As metas grandes, montadas com o agente: uma prova, uma compra, um número. Cada chefão tem barra de vida e uma história (passe o mouse ou toque nele). Derrotar dá +300 XP.`],
   ['Heróis', `6 classes (Guerreiro, Mago, Bardo, Ladino, Arqueiro, Artesão), homem e mulher, e dois lendários. Cada herói tem nome e nível próprios.`],
   ['Música e cenário', `3 trilhas e 8 cenários, grátis, pra trocar a qualquer hora em Opções ou na tela inicial.`],
-  ['Extras', `Sequência: dias seguidos com pelo menos uma diária. Baú: fechou o dia com todas as diárias, ganha item surpresa. Conquistas: medalhas por marcos. Diário: o histórico de cada dia.`],
+  ['Extras', `Trilha: cada dia em que você faz pelo menos 60% das diárias (a mínima vale) é um passo. Nos marcos (3, 7, 14, 30, 60, 100 dias…) tem um baú. Falhou um dia? Volta pro último marco, não pro zero. Cada diária também tem a trilha dela: toque na chama. Baú: fechou o dia com todas as diárias, ganha item surpresa. Conquistas: medalhas por marcos. Diário: o histórico de cada dia.`],
   ['Salvar', `Salva sozinho. Tudo o que você faz fica guardado primeiro no aparelho (funciona sem internet) e depois sobe pro seu Google Drive, numa pasta Daily Legends que o próprio jogo cria. O botão no topo mostra se está tudo na nuvem. Em outro celular ou no computador, é só entrar com a mesma conta Google.`],
   ['Jogar no King Bot', `1. Instale o jogo na tela inicial e entre com Google.<br>2. Crie um agente novo no King Bot e cole o prompt do guia em PDF.<br>3. Conecte o plugin Google Sheets nesse agente (e Todoist, Google Tasks ou Gmail, se quiser lembretes).<br>4. O agente acha a planilha Daily Legends - Save no seu Drive, monta diárias e chefões com você e, todo dia, escreve o que você fez na aba dele. O jogo junta tudo quando você abre.`]
 ];
@@ -3337,7 +3547,7 @@ function tirarProva(){ prova={}; provaPet={}; Som.sfx('clique'); atualizaPalco()
 function usarHeroi(id){ prova={}; S.herois.ativo=id; Som.sfx('equipar'); marcaSujo(); selItem=null; atualizaPalco(); render(); toast(nomeH(id)+' em campo'); }
 
 function abrirBau(){
-  if (S.baus<=0){ Som.sfx('erro'); toast('Nenhum baú fechado. Feche um dia com todas as diárias.'); return; }
+  if (S.baus<=0){ Som.sfx('erro'); toast('Nenhum baú fechado. Chegue no próximo marco da trilha.'); return; }
   const peso={comum:60,raro:28,epico:10,lendario:2};
   const pool=ITENS.filter(i=>!i.fora && !S.mochila.includes(i.id));
   let premio;
@@ -3383,7 +3593,7 @@ function carregar(file){
 }
 function aplicaConfig(){ const c=S.config||{}; Som.musica = c.musica!=null?c.musica:0.6; Som.som = c.som!=null?c.som:0.7; Som.chiado = c.chiado!=null?c.chiado:1; Som.mudo=!!c.mudo; Som.trocar(c.faixa||0); aplicaCenario(); }
 const CEN_CACHE={};
-function aplicaCenario(){ const id=(S.config&&S.config.cenario)||'castelo'; Ambiente.tema(id); document.body.style.setProperty('--cen', `url(${CEN_CACHE[id] || (CEN_CACHE[id]=cenario(id))})`); const n=$('#tCen'); if (n) n.textContent=(CENARIOS.find(c=>c[0]===id)||CENARIOS[0])[1]; const f=$('#tFaixa'); if (f) f.textContent=Som.FAIXAS[Som.faixa].nome; }
+function aplicaCenario(){ const id=(S.config&&S.config.cenario)||'castelo'; Ambiente.tema(id); if (stage && stage.setPlataforma) stage.setPlataforma(id); document.body.style.setProperty('--cen', `url(${CEN_CACHE[id] || (CEN_CACHE[id]=cenario(id))})`); const n=$('#tCen'); if (n) n.textContent=(CENARIOS.find(c=>c[0]===id)||CENARIOS[0])[1]; const f=$('#tFaixa'); if (f) f.textContent=Som.FAIXAS[Som.faixa].nome; }
 
 /* ---------- recomeçar do zero (dupla confirmação) ---------- */
 const PALAVRA_ZERAR = 'RECOMEÇAR';
@@ -3429,8 +3639,8 @@ function passoCria(){
     const cards = HEROIS.filter(h=>!h.lendario).map(h=>`<button class="hcard" data-cria-heroi="${h.id}"><img src="${Shots.hero(h,{})}" alt=""><div class="hn">${esc(h.nome)}</div><div class="hl">${esc(h.lema)}</div></button>`).join('');
     modal(`<p class="fraco">Esse vai ser o seu herói principal. Os outros você compra depois com ouro.</p><div class="hgrid">${cards}</div>`, 'Escolha seu herói');
   }
-  if (c.passo==='confirma'){ const h=HEROI[c.heroi];
-    modal(`<div class="conf"><img src="${Shots.heroFull(h,{})}" alt=""><div><p><b>${esc(h.nome)}</b>, ${esc(h.lema.toLowerCase())}.</p><p class="fraco">Tem certeza? O herói principal não troca depois. Dá pra comprar outros com ouro.</p>
+  if (c.passo==='confirma'){ const h=HEROI[c.heroi]; if (!c.pele || c.peleDe!==c.heroi){ c.pele=h.skin; c.peleDe=c.heroi; }
+    modal(`<div class="conf"><img id="pelePrev" src="${Shots.heroFull(heroiV(c.heroi,c.pele),{})}" alt=""><div><p><b>${esc(h.nome)}</b>, ${esc(h.lema.toLowerCase())}.</p><p class="fraco">Tom de pele (dá pra trocar depois):</p>${tonsHTML(c.pele,'data-pele')}<p class="fraco">Tem certeza? O herói principal não troca depois. Dá pra comprar outros com ouro.</p>
       <div class="acoes"><button class="btn" data-cria="heroi">Voltar</button><button class="btn ouro" data-cria="nome">Confirmar</button></div></div></div>`, 'Seu herói principal');
   }
   if (c.passo==='nome'){ const h=HEROI[c.heroi];
@@ -3456,7 +3666,7 @@ function passoCria(){
 }
 function fimCria(){
   const c=cria, id=c.heroi;
-  S.herois.possui=[id]; S.herois.ativo=id; S.herois.equip[id]={}; S.herois.nomes=S.herois.nomes||{}; if (c.nome) S.herois.nomes[id]=c.nome;
+  S.herois.possui=[id]; S.herois.ativo=id; S.herois.equip[id]={}; S.herois.nomes=S.herois.nomes||{}; if (c.nome) S.herois.nomes[id]=c.nome; S.herois.pele=S.herois.pele||{}; if (c.pele && c.pele!==HEROI[id].skin) S.herois.pele[id]=c.pele;
   if (c.pet){ S.pets.possui=[{ id:'pet1', tipo:c.pet, cor:c.petCor||PET[c.pet].cores[0], nome:c.petNome||PET[c.pet].nome, real:true, gratis:true, equip:{}, d:S.hoje }]; S.pets.ativo='pet1'; S.pets.juntos=['pet1']; S.pets.desde=S.hoje; }
   S.config.faixa=c.faixa; cria=null;
   Som.sfx('nivel'); marcaSujo(); fechaModal(); $('#modal').classList.remove('largo'); entrar(); toast(`${nomeH(id)} pronto pra jornada.`);
@@ -3502,10 +3712,12 @@ function marcaTarefa(id, feita){
   S.log.forEach(e=>{ if (e.tipo==='tarefa' && e.tarefa===id && e.id) S.removidos.push(e.id); });
   S.log = S.log.filter(e=>!(e.tipo==='tarefa' && e.tarefa===id));
   if (t.feita===true) S.log.push({ id:uid('l'), d:t.d, area:t.area||null, txt:t.txt, xp:XP_TAREFA, tipo:'tarefa', tarefa:id, heroi:S.herois.ativo });
-  Som.sfx(t.feita===true?'moeda':'clique'); marcaSujo(); render();
+  const bt=document.querySelector(`[data-tarefa="${id}"][data-st="1"]`), rb=bt&&bt.getBoundingClientRect();
+  if (t.feita===true) Festa.add('tarefa', t.txt, rb ? { x:rb.left+rb.width/2, y:rb.top } : {}); else Som.sfx('clique');
+  marcaSujo(); render(); topo();
 }
 function normaliza(){
-  S.herois.nomes = S.herois.nomes || {}; S.pets = S.pets || { possui:[], ativo:null }; arrumaJuntos(); S.tarefas = S.tarefas || []; S.revelados = S.revelados || [];
+  S.herois.nomes = S.herois.nomes || {}; S.herois.pele = S.herois.pele || {}; S.pets = S.pets || { possui:[], ativo:null }; arrumaJuntos(); S.tarefas = S.tarefas || []; S.revelados = S.revelados || [];
   S.config = S.config || {}; if (S.config.faixa==null) S.config.faixa=0; if (!S.config.cenario) S.config.cenario='castelo';
   S.hoje = hojeReal(); // o dia do jogo é sempre o dia do aparelho (antes só andava pra frente e ficava preso no dia do servidor, em UTC)
   consertaDatas(S); // registros gravados com o dia errado (futuro) voltam pro dia local em que foram feitos
@@ -3530,9 +3742,9 @@ function entrar(){
       const pl=$('#placa'); if (!pl || getComputedStyle(pl).position!=='absolute') return null; const c=$('#palco3d').getBoundingClientRect(), p=pl.getBoundingClientRect();
       if (!p.height || p.right-c.left < w*0.3) return null; return 1 - 2*((p.top-c.top)-8)/h; };
     stage.onToque = (a)=>{ Som.tocar(); if (a.tipo==='heroi') Som.heroi(a.classe, a.sexo, a.raca); else Som.pet(a.pet); };
-    stage.resize(); } catch(e){ $('#palco3d').innerHTML='<p class="fraco">Não deu pra abrir o 3D neste aparelho.</p>'; } }
+    stage.setPlataforma((S.config&&S.config.cenario)||'castelo'); stage.resize(); } catch(e){ $('#palco3d').innerHTML='<p class="fraco">Não deu pra abrir o 3D neste aparelho.</p>'; } }
   if (!S.herois.ativo){ escolha(); return; }
-  atualizaPalco(); render();
+  atualizaPalco(); render(); setTimeout(()=>Festa.prox(), 400);
   if (S.novidades && S.novidades.length){
     Som.sfx('nivel');
     modal(`<ul class="novs">${S.novidades.map(n=>`<li>${esc(n)}</li>`).join('')}</ul><div class="acoes"><button class="btn ouro" data-fecha="1">Bora</button></div>`, 'Enquanto você dormia');
@@ -3561,6 +3773,10 @@ function liga(){
     if (d.criaPet){ if (d.criaPet==='nenhum'){ cria.pet=null; cria.passo='musica'; } else { if (cria.pet!==d.criaPet) cria.petCor=PET[d.criaPet].cores[0]; cria.pet=d.criaPet; cria.passo='petcor'; } Som.sfx('clique'); passoCria(); return; }
     if (d.criaFaixa!=null){ cria.faixa=+d.criaFaixa; Som.tocar(); Som.trocar(cria.faixa); document.querySelectorAll('.faixa').forEach(b=>b.classList.toggle('on', b.dataset.criaFaixa===d.criaFaixa)); return; }
     if (d.cor){ cria.petCor=d.cor; document.querySelectorAll('.swc').forEach(b=>b.classList.toggle('on', b.dataset.cor===d.cor)); $('#petPrev').src=Shots.pet({tipo:cria.pet, cor:d.cor}); Som.sfx('clique'); return; }
+    if (d.pele){ trocaPele(d.pele); return; }
+    if (d.pelede){ Som.sfx('clique'); abrePele(d.pelede); return; }
+    if (d.trilha){ Som.sfx('clique'); abreTrilha(d.trilha); return; }
+    if (t.id==='btnTrilha'){ Som.sfx('clique'); abreTrilha('dia'); return; }
     if (d.cuidar){ cuidar(d.pet, d.cuidar); return; }
     if (d.dispensar){ petDispensado[d.pet+':'+d.dispensar]=true; petBox(); return; }
     if (d.tarefa){ marcaTarefa(d.tarefa, d.st==='1'); return; }

@@ -446,19 +446,15 @@ body.treme #jogo{ animation:treme .55s; }
   #jogo.folha #tabs{ grid-column:2; grid-row:1 / span 2; border-left:3px solid var(--linha); }
 }
 
-/* minimapa da trilha */
-.minimapa{ position:absolute; top:10px; right:10px; z-index:6; width:132px; height:132px; padding:0; border:0; cursor:pointer; background:#1b1d16; overflow:hidden; }
-.minimapa .mmArea{ position:absolute; inset:6px; } .minimapa svg{ position:absolute; inset:0; width:100%; height:100%; }
-.minimapa .chao{ fill:#3d4a2e; } .minimapa .mont{ fill:#5d5a4a; stroke:#2b2a22; stroke-width:.8; } .minimapa .arv{ fill:#26402a; } .minimapa .tronco{ fill:#4a3420; }
-.minimapa .estrada{ fill:none; stroke:#8c7650; stroke-width:4.5; stroke-linejoin:round; stroke-linecap:round; stroke-dasharray:1 3.2; }
-.minimapa .feito{ fill:none; stroke:var(--ouro); stroke-width:3.2; stroke-linejoin:round; stroke-linecap:round; }
-.minimapa circle{ fill:#2a2620; stroke:#000; stroke-width:1; } .minimapa circle.ok{ fill:#ffd77a; } .minimapa circle.agora{ fill:#fff3c4; animation:pisca 1.2s steps(2) infinite; }
-.minimapa img{ position:absolute; width:20px; height:20px; transform:translate(-50%,-50%); pointer-events:none; }
-.minimapa .mmEu{ width:22px; height:22px; filter:drop-shadow(0 0 3px #ffb347); animation:pula 1s steps(2) infinite; }
-.minimapa .mmTxt{ position:absolute; left:0; right:0; bottom:0; padding:2px 6px; font-size:10px; color:var(--texto); background:rgba(12,15,15,.82); text-align:left; white-space:nowrap; }
-.minimapa .mmTxt b{ color:var(--ouro); }
+/* minimapa da História */
+.minimapa{ position:absolute; top:10px; right:10px; z-index:6; width:140px; height:140px; padding:0; border:0; cursor:pointer; background:#1b1d16; overflow:hidden; }
+.minimapa .mmArea{ position:absolute; inset:6px 6px 22px; overflow:hidden; } .minimapa svg{ position:absolute; inset:0; width:100%; height:100%; }
+.minimapa .chao{ fill:#d9c99c; } .minimapa .dia{ stroke:#1a1d1f; stroke-width:3; } .minimapa .dia.hoje{ stroke:var(--ouro); stroke-width:5; } .minimapa .fut{ fill:none; stroke:#8a7350; stroke-width:2.5; stroke-dasharray:4 4; } .minimapa .novo{ fill:#d0503f; stroke:#1a1d1f; stroke-width:2; }
+.minimapa .mmEu{ position:absolute; width:30px; height:30px; transform:translate(-50%,-62%); pointer-events:none; image-rendering:auto; filter:drop-shadow(0 0 2px #000); }
+.minimapa .mmTxt{ position:absolute; left:0; right:0; bottom:0; height:22px; display:flex; align-items:center; gap:4px; padding:0 6px; font-size:10px; color:var(--texto); background:#0c0f0f; white-space:nowrap; overflow:hidden; }
+.minimapa .mmTxt img{ width:14px; height:14px; }
 #jogo.folha .minimapa{ display:none; }
-@media (max-width: 860px){ .minimapa{ width:120px; height:120px; top:8px; right:8px; } .minimapa img{ width:16px; height:16px; } .minimapa .mmEu{ width:18px; height:18px; } .minimapa .mmTxt{ font-size:9px; } .humorbtn .hsel{ width:116px; gap:4px; } .humorbtn .hsel small{ font-size:9px; } .humorbtn select{ font-size:10.5px; min-height:28px; padding:4px 20px 4px 6px; background-position:right 6px center; } }
+@media (max-width: 860px){ .minimapa{ width:124px; height:124px; top:8px; right:8px; } .minimapa .mmEu{ width:26px; height:26px; } .minimapa .mmTxt{ font-size:9px; } .humorbtn .hsel{ width:116px; gap:4px; } .humorbtn .hsel small{ font-size:9px; } .humorbtn select{ font-size:10.5px; min-height:28px; padding:4px 20px 4px 6px; background-position:right 6px center; } }
 </style>
 </head>
 <body>
@@ -560,8 +556,8 @@ const SAVE = {
  "mod": {},
  "rev": 0
 };
-const DL_VERSAO = "2026.10.13-0959";
-const DL_RETRATOS = "c4768c6cbd";
+const DL_VERSAO = "2026.10.13-1043";
+const DL_RETRATOS = "7133ffdf03";
 
 /* ===== Voxel v2: bonecos esculpidos em meia resolução (voxel = 0,5 do mundo) ===== */
 const VS = 0.5;
@@ -1814,7 +1810,7 @@ function enfeitaPlat(vm, tema, R){
 
 function addLights(scene){ // // luz de estúdio: quente, suave, sombra comprida
   scene.add(new THREE.HemisphereLight(0xfff2e2, 0x5a4636, 0.78));
-  const k = new THREE.DirectionalLight(0xffe2c0, 1.0); k.position.set(55,42,38); k.castShadow = true; k.shadow.mapSize.set(2048,2048);
+  const k = new THREE.DirectionalLight(0xffe2c0, 1.0); k.position.set(55,42,38); k.castShadow = true; k.shadow.mapSize.set(1024,1024);   // era 2048: no celular pesava a cada quadro
   const c=k.shadow.camera; c.left=-55; c.right=55; c.top=60; c.bottom=-25; c.near=1; c.far=260; k.shadow.bias=-0.0015; k.shadow.radius=3; scene.add(k);
   const f = new THREE.DirectionalLight(0xc8d8ff, 0.28); f.position.set(-45,25,30); scene.add(f);
   const r = new THREE.DirectionalLight(0xffd8b0, 0.32); r.position.set(-30,40,-50); scene.add(r);
@@ -1922,7 +1918,7 @@ class Stage {
     this.el = el;
     this.renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
     this.renderer.setPixelRatio(Math.min(1.5, window.devicePixelRatio||1));   // 1.5 no máximo: no celular (tela 3x) desenhar em 2x pesava a cada quadro
-    this.renderer.shadowMap.enabled = true; this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.enabled = true; this.renderer.shadowMap.type = THREE.PCFShadowMap;   // PCF com raio (shadow.radius) fica macio e custa menos que o Soft
     el.appendChild(this.renderer.domElement);
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(28, 1, 1, 600);
@@ -1940,7 +1936,14 @@ class Stage {
     new ResizeObserver(()=>this.resize()).observe(el);
     this.resize();
     const jogo = document.getElementById('jogo');
-    const loop = (t)=>{ if (!(jogo && jogo.hidden)) this.frame(t); else this.ult = t; requestAnimationFrame(loop); }; requestAnimationFrame(loop);
+    // parado (só girando e andando no lugar): 30 quadros por segundo; tocou, arrastou, golpe, arena ou efeito: 60
+    let ultDesenho = 0;
+    const loop = (t)=>{ requestAnimationFrame(loop);
+      if (jogo && jogo.hidden){ this.ult = t; return; }
+      const agito = this.drag || this.anim || this.cena || this.arena || this.treme || (this.fx && this.fx.length);
+      if (!agito && t - ultDesenho < 30) return;
+      ultDesenho = t; this.frame(t); };
+    requestAnimationFrame(loop);
   }
   setPlataforma(tema){ if (tema===this.platTema) return; const esc0=this.plat.scale.x; this.scene.remove(this.plat); disposeGroup(this.plat); this.plat = platform(tema); this.plat.scale.setScalar(esc0); this.scene.add(this.plat); this.platTema = tema; }
   setModel(vm, heroi){
@@ -2124,8 +2127,14 @@ const Shots = {
   //  - o que já foi desenhado fica guardado no aparelho (IndexedDB) e volta na hora nas próximas vezes;
   //  - a fila espera o jogador parar de clicar e só desenha nos intervalos livres.
   fila:[], rodando:false, ultToque:0,
+  // retrato vai pra tela como endereço curto (blob:) e não como o PNG inteiro em texto: aba com muitos retratos (Heróis, Loja)
+  // montava um HTML de quase 1 MB a cada troca e o navegador tinha que ler tudo de novo
+  burl:{},
+  pub(key){ const d=this.cache[key]; if (!d) return ''; if (this.burl[key]) return this.burl[key];
+    try { const i=d.indexOf(','), bin=atob(d.slice(i+1)), u=new Uint8Array(bin.length); for (let k=0;k<bin.length;k++) u[k]=bin.charCodeAt(k);
+      return (this.burl[key] = URL.createObjectURL(new Blob([u], { type:'image/png' }))); } catch(e){ return d; } },
   shot(key, vm, frame, sil){
-    if (this.cache[key]) return this.cache[key];
+    if (this.cache[key]) return this.pub(key);
     if (!this.r) return '';
     const ph = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==#'+encodeURIComponent(key);
     if (!this.fila.some(x=>x.key===key)) this.fila.push({ key, vm, frame, sil, ph });
@@ -2141,7 +2150,7 @@ const Shots = {
       if (performance.now() - this.ultToque < 450){ setTimeout(()=>livre(passo), 150); return; }
       const j = this.fila.shift();
       let url = this.cache[j.key] || ''; if (!url){ try { url = this.desenha(j.key, typeof j.vm==='function' ? j.vm() : j.vm, j.frame, j.sil); this.guarda(j.key, url); } catch(e){ console.error(e); } }
-      if (url) this.troca(j.ph, url);
+      if (url) this.troca(j.ph, this.pub(j.key));
       setTimeout(()=>livre(passo), 40); };
     setTimeout(()=>livre(passo), 60);
   },
@@ -2149,7 +2158,7 @@ const Shots = {
   db:null, carregado:false,
   abreDB(){
     const ver = typeof DL_RETRATOS!=='undefined' ? DL_RETRATOS : 'dev';
-    const fim = ()=>{ this.carregado = true; this.fila = this.fila.filter(j=>{ if (this.cache[j.key]){ this.troca(j.ph, this.cache[j.key]); return false; } return true; }); this.agenda(); };
+    const fim = ()=>{ this.carregado = true; this.fila = this.fila.filter(j=>{ if (this.cache[j.key]){ this.troca(j.ph, this.pub(j.key)); return false; } return true; }); this.agenda(); };
     try {
       if (!window.indexedDB) return fim();
       const rq = indexedDB.open('dl-retratos', 1);
@@ -3657,12 +3666,16 @@ const Som = (()=>{
     const comp = ctx.createDynamicsCompressor(); comp.threshold.value=-20; comp.ratio.value=3;
     musicVol = ctx.createGain(); musicBus = ctx.createGain(); musicBus.gain.value=0.9;
     musicBus.connect(lp); lp.connect(comp); comp.connect(musicVol); musicVol.connect(master);
-    const rev = ctx.createConvolver(); rev.buffer = impulse(1.8,2.4); /* era 3.2s: eco longo pesava no celular */ revIn = ctx.createGain(); revIn.gain.value=0.32;
-    revIn.connect(rev); rev.connect(lp);
+    revIn = ctx.createGain(); revIn.gain.value=0.32;
     sfxBus = ctx.createGain(); sfxBus.connect(master); palcoBus = ctx.createGain(); palcoBus.gain.value = 0.38; palcoBus.connect(sfxBus);
     noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate); const nd=noiseBuf.getChannelData(0); for (let i=0;i<nd.length;i++) nd[i]=Math.random()*2-1;
     ambBus = ctx.createGain(); ambBus.gain.value = 0; ambBus.connect(master);
-    vinil(); aplicar(); if (ambTema) ambiente(ambTema, true);
+    aplicar();
+    // o pesado (eco, chiado, som do mapa) sai aos poucos depois do toque, um pedaço por vez: o primeiro toque não trava
+    const depois = (fn, ms)=> setTimeout(()=>{ try { fn(); } catch(e){ console.warn(e); } }, ms);
+    depois(()=>{ const rev = ctx.createConvolver(); rev.buffer = impulse(1.8,2.4); revIn.connect(rev); rev.connect(lp); }, 120);
+    depois(()=>{ vinil(); aplicar(); }, 320);
+    depois(()=>{ if (ambTema) ambiente(ambTema, true); }, 520);
   }
   function aplicar(){
     if (!ctx) return; const t=ctx.currentTime;
@@ -5027,32 +5040,33 @@ function trilhaHTML(t, rotulo){
     <div class="tcaminho">${ini?`<span class="pedra base" title="Marco ${ini}">${ico('mapa','pm')}<i>${ini}</i></span>`:''}${pedras}</div>
     <div class="fraco tnota">${ini?`Falhou um ${t.unidade==='semana'?'semana':'dia'}? Volta pro marco ${ini}, não pro zero.`:`Falhou antes do marco 3? Volta pro começo.`} Recorde: ${t.melhor}.</div></div>`;
 }
-/* minimapa da trilha no palco (canto de cima, à direita): do último marco até o baú do próximo; toque abre a trilha */
+/* minimapa da História no palco (canto de cima, à direita): pedaço do mapa do mês em volta de hoje; toque abre a aba História */
 const Minimapa = {
   chave:'',
-  // caminho em zigue-zague (0..100), de baixo pra cima
-  WP:[[14,88],[46,84],[80,74],[70,58],[34,54],[18,40],[34,26],[66,24],[84,12]],
-  ponto(u){ const W=this.WP; if (!this.L){ this.L=[0]; for (let i=1;i<W.length;i++) this.L.push(this.L[i-1]+Math.hypot(W[i][0]-W[i-1][0], W[i][1]-W[i-1][1])); }
-    const L=this.L, alvo=Math.max(0,Math.min(1,u))*L[L.length-1]; let i=1; while (i<L.length-1 && L[i]<alvo) i++;
-    const k=(alvo-L[i-1])/((L[i]-L[i-1])||1); return [W[i-1][0]+(W[i][0]-W[i-1][0])*k, W[i-1][1]+(W[i][1]-W[i-1][1])*k]; },
   pinta(c){
     let el=document.getElementById('minimapa');
-    if (!el){ const palco=document.querySelector('.palco'); if (!palco) return; el=document.createElement('button'); el.id='minimapa'; el.className='minimapa moldura'; el.title='Trilha do dia'; el.setAttribute('aria-label','Abrir a trilha do dia'); palco.appendChild(el); this.chave=''; }
-    const t=(c||calc()).trilha, ini=marcoAte(t.pos), fim=marcoDepois(t.pos), aberto=t.hist.length && t.hist[t.hist.length-1].st==='aberto';
-    const chave=[t.pos,ini,fim,aberto,t.precisa,t.feitasHoje].join('|'); if (chave===this.chave) return; this.chave=chave;
-    const n=fim-ini, f2=v=>v.toFixed(1), pts=this.WP.map(p=>p.join(',')).join(' ');
-    const uPos=(t.pos-ini)/n, cut=[]; for (let i=0;i<=40;i++){ const u=i/40*uPos; cut.push(this.ponto(u).map(f2).join(',')); }
-    let nos=''; const passo=Math.max(1, Math.ceil(n/12));
-    for (let i=1;i<n;i++){ if (i%passo) continue; const [x,y]=this.ponto(i/n), ok=ini+i<=t.pos, agora=ini+i===t.pos+1 && aberto;
-      nos+=`<circle cx="${f2(x)}" cy="${f2(y)}" r="${agora?3.6:2.8}" class="${ok?'ok':''} ${agora?'agora':''}"/>`; }
-    const deco=[[8,16,'a'],[24,10,'a'],[92,40,'a'],[86,90,'b'],[56,40,'b'],[6,64,'b'],[94,64,'a']].map(([x,y,k])=>k==='a'
-      ? `<path d="M${x-5} ${y+4}L${x} ${y-5}L${x+5} ${y+4}Z" class="mont"/>` : `<path d="M${x-3.5} ${y+3}L${x} ${y-5}L${x+3.5} ${y+3}Z" class="arv"/><rect x="${x-0.8}" y="${y+3}" width="1.6" height="2" class="tronco"/>`).join('');
-    const [hx,hy]=this.ponto(uPos), [bx,by]=this.ponto(1), [sx,sy]=this.ponto(0);
-    el.innerHTML=`<div class="mmArea"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><rect width="100" height="100" class="chao"/>${deco}
-      <polyline points="${pts}" class="estrada"/><polyline points="${cut.join(' ')}" class="feito"/>${nos}</svg>
-      <img class="px mmIni" src="${pix('mapa')}" alt="" style="left:${sx}%;top:${sy}%"><img class="px mmBau" src="${pix('chest')}" alt="" style="left:${bx}%;top:${by}%">
-      <img class="px mmEu" src="${pix('flame')}" alt="" style="left:${hx}%;top:${hy}%"></div>
-      <span class="mmTxt"><b>${t.pos}</b> ${t.precisa?`· ${fim-t.pos} pro baú`:'· sem diárias'}</span>`;
+    if (!el){ const palco=document.querySelector('.palco'); if (!palco) return; el=document.createElement('button'); el.id='minimapa'; el.className='minimapa moldura'; el.title='História'; el.setAttribute('aria-label','Abrir o mapa da História'); palco.appendChild(el); this.chave=''; }
+    if (!S.herois.ativo || !S.hoje){ el.hidden=true; return; } el.hidden=false;
+    const lg=S.log[S.log.length-1];
+    const chave=[S.hoje, S.log.length, lg&&lg.id, (S.diarias||[]).length, (S.habilidades||[]).length, S.herois.ativo, JSON.stringify(eqAtivo()||{})].join('|'); if (chave===this.chave) return; this.chave=chave;
+    c = c || calc();
+    const meses=mesesDoJogo(), ym=meses[meses.length-1], M=mapaMes(ym, c), lidas=new Set(lidasHist());
+    // janela quadrada do mapa, centrada em hoje (como minimapa de jogo)
+    const iH = M.pos.findIndex(p=>p.d===S.hoje), cen = iH>=0 ? M.pos[iH] : M.pos[M.pos.length-1] || { x:M.W/2, y:M.H/2 };
+    const L = Math.min(M.W, Math.max(M.H, 200)), y0 = Math.max(0, Math.min(M.H - L, cen.y - L/2)), x0 = (M.W - L)/2;
+    let nos='', eu=null;
+    M.pos.forEach(p=>{ if (p.y < y0-20 || p.y > y0+L+20) return; const A=analisaDia(p.d, c);
+      if (A.estado==='futuro'){ nos+=`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="9" class="fut"/>`; return; }
+      const novo = A.estado!=='aberto' && p.d>=addDias(S.hoje,-3) && !lidas.has(p.d);
+      nos+=`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${p.d===S.hoje?16:13}" fill="${HIST_COR[A.estado]}" class="dia ${p.d===S.hoje?'hoje':''}"/>`+(novo?`<circle cx="${(p.x+10).toFixed(1)}" cy="${(p.y-10).toFixed(1)}" r="5" class="novo"/>`:'');
+      if (p.d===S.hoje) eu = p; });
+    const done = M.ate>=0 ? `<path d="${M.path}" fill="none" stroke="#5c4a2e" stroke-width="6" stroke-linecap="round" pathLength="1000" stroke-dasharray="${(M.pos.length>1 ? M.ate/(M.pos.length-1) : 1)*1000} 1000"/>` : '';
+    const h=heroAtivo(), retrato = h ? Shots.hero(heroiV(h.id), eqAtivo()) : '';
+    const pc = v=>v.toFixed(1)+'%';
+    el.innerHTML=`<div class="mmArea"><svg viewBox="${x0.toFixed(1)} ${y0.toFixed(1)} ${L.toFixed(1)} ${L.toFixed(1)}" aria-hidden="true"><rect x="${x0}" y="${y0}" width="${L}" height="${L}" class="chao"/>${M.enfeites}
+      <path d="${M.path}" fill="none" stroke="#8a7350" stroke-width="8" stroke-linecap="round" stroke-dasharray="2 10" opacity=".8"/>${done}${nos}</svg>
+      ${eu && retrato ? `<img class="mmEu" src="${retrato}" alt="" style="left:${pc((eu.x-x0)/L*100)};top:${pc((eu.y-y0)/L*100)}">` : ''}</div>
+      <span class="mmTxt">${ico('book','st')} Cap. ${meses.length} · ${MESES[+ym.slice(5)-1]}</span>`;
   }
 };
 function abreTrilha(id){
@@ -5751,7 +5765,7 @@ function liga(){
     if (d.arena){ Som.sfx('clique'); abreArena(d.arena); return; }
     if (t.id==='btnSaiArena'){ Som.sfx('clique'); stage && stage.fechaArena(); arenaUI(false); return; }
     if (d.trilha){ Som.sfx('clique'); abreTrilha(d.trilha); return; }
-    if (t.id==='minimapa'){ Som.sfx('clique'); abreTrilha('dia'); return; }
+    if (t.id==='minimapa'){ Som.sfx('aba'); aba='diario'; capVendo=null; confirmando=null; render(); $('#conteudo').scrollTop=0; if (ehMovel()) abreFolha(true); return; }
     if (t.id==='btnTrilha'){ Som.sfx('clique'); abreTrilha('dia'); return; }
     if (d.cuidar){ cuidar(d.pet, d.cuidar); return; }
     if (d.dispensar){ petDispensado[d.pet+':'+d.dispensar]=true; petBox(); return; }

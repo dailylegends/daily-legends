@@ -265,6 +265,24 @@ body.conectando::after{ content:'Conectando ao Google…'; position:fixed; inset
 .btn.duplo{ display:grid; gap:0; padding:6px 10px; } .btn.duplo small{ font-size:11px; font-weight:400; opacity:.8; text-transform:lowercase; letter-spacing:1px; }
 .petbox{ position:absolute; right:8px; bottom:8px; width:min(260px, calc(100% - 16px)); padding:10px 12px; display:grid; gap:8px; font-size:13px; }
 .petbox div{ display:flex; gap:6px; } .petbox .btn{ min-height:38px; padding:4px 10px; font-size:13px; flex:1; }
+.falabalao{ position:absolute; z-index:5; max-width:min(78%, 300px); padding:8px 11px; background:#f4ecd6; color:#1a1d1f; border:2px solid #1a1d1f; box-shadow:0 3px 0 #1a1d1f; font-family:var(--corpo); font-size:14px; line-height:1.3; pointer-events:auto; cursor:pointer; }
+.falabalao::after{ content:''; position:absolute; left:calc(var(--rabo, 50%) - 6px); bottom:-10px; border:6px solid transparent; border-top:8px solid #1a1d1f; }
+.falabalao.entra{ animation:falaEntra .22s ease-out; } .falabalao.sai{ animation:falaSai .2s ease-in forwards; }
+@keyframes falaEntra{ from{ transform:scale(.6) translateY(8px); opacity:0; } to{ transform:none; opacity:1; } }
+@keyframes falaSai{ to{ transform:scale(.8) translateY(6px); opacity:0; } }
+.humorbtn{ position:absolute; top:10px; left:10px; z-index:6; display:flex; align-items:flex-start; gap:8px; }
+#petbox:not([hidden]) ~ .humorbtn{ top:64px; }
+.humorbtn .hbtn{ position:relative; width:46px; height:46px; border-radius:50%; border:2px solid var(--linha); background:rgba(21,26,26,.82); font-size:26px; line-height:1; cursor:pointer; display:grid; place-items:center; padding:0; }
+.humorbtn .hbtn i{ position:absolute; right:-4px; top:-4px; width:18px; height:18px; border-radius:50%; background:var(--ouro); color:#1a1d1f; font:700 12px/18px var(--corpo); font-style:normal; }
+.humorbtn.vazio:not(.aberto) .hbtn{ animation:humPulsa 1.6s ease-in-out infinite; }
+@keyframes humPulsa{ 50%{ transform:scale(1.1); box-shadow:0 0 0 6px rgba(231,176,74,.25); } }
+.humorbtn .hpainel{ padding:8px 10px; max-width:min(300px, calc(100vw - 90px)); animation:falaEntra .18s ease-out; }
+.humorbtn .hpainel > span{ display:block; font-size:13px; margin-bottom:6px; }
+.humorbtn .hlista{ display:grid; grid-template-columns:repeat(4, 1fr); gap:4px; }
+.humorbtn .hlista button{ background:transparent; border:1px solid transparent; border-radius:8px; color:var(--texto); cursor:pointer; padding:4px 2px; display:grid; justify-items:center; gap:1px; }
+.humorbtn .hlista button b{ font-size:24px; line-height:1.1; font-weight:400; } .humorbtn .hlista button small{ font-size:10px; color:var(--fraco); }
+.humorbtn .hlista button:hover, .humorbtn .hlista button.on{ border-color:var(--ouro); background:rgba(231,176,74,.12); }
+#jogo.folha .humorbtn{ display:none; }
 .ppet{ display:block; color:var(--bom); font-size:12px; margin-top:2px; } .plema b{ color:var(--ouro); font-weight:600; }
 .bwrap{ position:relative; outline:none; } .bwrap:focus-visible{ box-shadow:0 0 0 2px var(--ouro); }
 .balao{ display:none; position:absolute; left:calc(100% + 10px); top:4px; width:min(280px, 60vw); z-index:5; background:#f1e6c8; color:#2a2014; padding:10px 12px; font-size:13px; line-height:1.45; box-shadow:0 0 0 2px #000, 4px 4px 0 #0008; }
@@ -500,8 +518,8 @@ const SAVE = {
  "mod": {},
  "rev": 0
 };
-const DL_VERSAO = "2026.10.13-0102";
-const DL_RETRATOS = "240016001d";
+const DL_VERSAO = "2026.10.13-0140";
+const DL_RETRATOS = "fe44abbbf5";
 
 /* ===== Voxel v2: bonecos esculpidos em meia resolução (voxel = 0,5 do mundo) ===== */
 const VS = 0.5;
@@ -3207,7 +3225,7 @@ const ROSTO_CLASSE = { guerreiro:['bravo','grito'], mago:['mira','surpreso'], ba
 
   /* ---------- herói ---------- */
   P.poseHeroi = function(s, dt, a){
-    const p = this.model.userData.parts, m = this.model, h = this.heroi || {}, E = estiloAndar(h), f = h.sexo==='f';
+    const p = this.model.userData.parts, m = this.model, h = this.heroi || {}, E = this.passoHumor ? this.passoHumor(estiloAndar(h)) : estiloAndar(h), f = h.sexo==='f';
     const querAndar = (a && a.alvo==='heroi') || this.cena ? 0 : 1;
     this.andar = (this.andar==null ? 1 : this.andar) + (querAndar - (this.andar==null ? 1 : this.andar)) * Math.min(1, dt*8);
     this.fase = (this.fase||0) + dt*Math.PI*E.freq;
@@ -3304,6 +3322,7 @@ const ROSTO_CLASSE = { guerreiro:['bravo','grito'], mago:['mira','surpreso'], ba
       e = a.rosto || (def && def.rosto) || (def===ANIM_HEROI[cl] ? (ROSTO_CLASSE[cl]||ROSTO_CLASSE._)[0] : def===(ANIM_HEROI2[cl]||ANIM_HEROI2._) ? (ROSTO_CLASSE[cl]||ROSTO_CLASSE._)[1] : 'bravo'); }
     else if (this.arena) e = 'bravo';
     else if (this.sorriso > 0){ this.sorriso -= dt; e = 'feliz'; }
+    else if (this.rostoHumor){ const eh = this.rostoHumor(); if (eh) e = eh; }
     this.piscaT = (this.piscaT==null ? 2 : this.piscaT) - dt;
     if (this.piscaT < 0){ if (e==='neutro' || e==='bravo' || e==='feliz' || e==='mira') e = e==='feliz' ? 'alegre' : 'pisca'; if (this.piscaT < -0.14) this.piscaT = 2.2 + Math.random()*3.8; }
     r.set(e);
@@ -3615,6 +3634,309 @@ const ANIM_PET3 = (()=>{
   const setPets0 = P.setPets;
   P.setPets = function(lista, extra){ const r = setPets0.call(this, lista, extra); this.pets.forEach(pt=>{ const mesh = pt.corpo.children[0]; pt.olhos = mesh && mesh.userData.olhos; }); return r; };
 })();
+
+/* ===== Humor: o jogador escolhe como está no botão do canto do palco (ou o agente manda, tipo "humor"), e o herói fica assim o dia todo.
+   Balão com emoji em cima do ombro, ritmo do passo (corre, pula, arrasta o pé), cabeça baixa e lágrimas.
+   S.humor[dia] = { energia:-3..3, afeto:-3..3, emocao, em }. Vale o de hoje; sem o de hoje, o de ontem. ===== */
+const EMOCOES = {
+  feliz:   { nome:'Feliz',     emoji:'😄', cara:'😄' },
+  calmo:   { nome:'De boa',    emoji:'😌', cara:'😌' },
+  agitado: { nome:'Elétrico',  emoji:'⚡', cara:'🤪' },
+  cansado: { nome:'Cansado',   emoji:'💤', cara:'😴' },
+  triste:  { nome:'Triste',    emoji:'😢', cara:'😢' },
+  ansioso: { nome:'Ansioso',   emoji:'😰', cara:'😰' },
+  raiva:   { nome:'Puto',      emoji:'💢', cara:'😡' }
+};
+// sem emoção escrita, sai dos números (energia e afeto de -3 a +3)
+function emocaoDe(h){
+  if (!h) return null;
+  if (h.emocao && EMOCOES[h.emocao]) return h.emocao;
+  const e = Number(h.energia)||0, a = Number(h.afeto)||0;
+  if (a <= -2) return 'triste';
+  if (e >= 2) return 'agitado';
+  if (e <= -2) return 'cansado';
+  if (a <= -1 && e <= -1) return 'triste';
+  if (a >= 1) return 'feliz';
+  return 'calmo';
+}
+function humorAtual(){
+  // vale só o dia: amanhã ele pergunta de novo
+  const H = (typeof S!=='undefined' && S.humor) || {}, hoje = hojeReal();
+  const dia = H[hoje] ? hoje : null; if (!dia) return null;
+  const h = H[dia], emo = emocaoDe(h);
+  return { dia, emo, energia:Number(h.energia)||0, afeto:Number(h.afeto)||0, hoje: dia===hoje };
+}
+
+(function(){
+  const P = Stage.prototype;
+
+  // ritmo do passo por emoção (multiplica o jeito de andar da classe)
+  const PASSO = {
+    agitado: { freq:1.9, passo:1.3, bracos:1.5, quica:1.6 },
+    feliz:   { freq:1.15, quica:1.5, bracos:1.15 },
+    raiva:   { freq:1.25, passo:1.15, bracos:1.4, quica:0.8 },
+    ansioso: { freq:1.35, passo:0.8, bracos:0.7 },
+    cansado: { freq:0.55, passo:0.7, bracos:0.5, quica:0.35 },
+    triste:  { freq:0.7, passo:0.75, bracos:0.45, quica:0.5 },
+    calmo:   {}
+  };
+  P.passoHumor = function(E){
+    const m = this.humor && PASSO[this.humor.emo]; if (!m) return E;
+    const o = Object.assign({}, E); for (const k in m) o[k] = (o[k]||0) * m[k]; return o;
+  };
+  // por cima da pose de andar: cabeça baixa, pulinhos, tremidinha
+  P.poseHumor = function(s, dt, a){
+    const h = this.humor; if (!h || !this.model || this.cena || this.arena || (a && a.alvo==='heroi')) return;
+    const p = this.model.userData.parts, m = this.model, wk = this.andar==null ? 1 : this.andar;
+    if (h.emo==='triste' || h.emo==='cansado'){
+      p.head.rotation.x += (h.emo==='triste' ? 0.32 : 0.22);
+      p.armL.rotation.z += 0.05; p.armR.rotation.z -= 0.05;
+      if (p.torso) p.torso.rotation.x += 0.06;
+    }
+    if (h.emo==='agitado'){
+      // pulinho a cada ~1,6 s
+      const ciclo = 1.6, t = s % ciclo, dur = 0.42;
+      if (t < dur){ const k = t/dur; m.position.y += Math.sin(k*Math.PI) * 3.2 * wk; p.legL.rotation.x -= Math.sin(k*Math.PI)*0.5; p.legR.rotation.x -= Math.sin(k*Math.PI)*0.5; }
+    }
+    if (h.emo==='feliz'){ p.head.rotation.z += Math.sin(s*3.2)*0.08; }
+    if (h.emo==='raiva'){ p.head.rotation.x += 0.12; m.rotation.x += 0.05; }
+    if (h.emo==='ansioso'){ m.position.x += Math.sin(s*47)*0.12; p.head.rotation.y += Math.sin(s*1.7)*0.25; }
+    if (h.emo==='triste') this.lagrimas(dt);
+  };
+  // rosto (no modelo que tem rosto): expressão do humor quando não tem animação
+  P.rostoHumor = function(){
+    const h = this.humor; if (!h) return null;
+    return { feliz:'feliz', raiva:'bravo', ansioso:'surpreso', agitado:'alegre' }[h.emo] || null;
+  };
+
+  /* ---------- lágrimas: gotinhas azuis que caem dos olhos ---------- */
+  const V = new THREE.Vector3();
+  P.lagrimas = function(dt){
+    const p = this.model.userData.parts; if (!p.head) return;
+    this.lagT = (this.lagT||0) - dt; if (this.lagT > 0) return; this.lagT = 0.28 + Math.random()*0.2;
+    const lado = (this.lagLado = -(this.lagLado||1));
+    this.model.updateMatrixWorld(true);
+    const hb = this.hb || { y1:32 }, hy = (p.head.userData.base||[0,hb.y1-8,0])[1];
+    V.set(lado*2.2, hy + 5.6, 4.9); this.model.localToWorld(V); this.root.worldToLocal(V);
+    if (!this.fxMat.lagrima) this.fxMat.lagrima = new THREE.MeshBasicMaterial({ color:0x6fc3ff, transparent:true, opacity:0.95 });
+    const g = new THREE.Mesh(this.fxGeo, this.fxMat.lagrima); g.position.copy(V); g.scale.setScalar(0.75);
+    this.fxG.add(g);
+    this.fx.push({ m:g, vel:new THREE.Vector3(lado*0.6, 1.2, 1.4), vida:1.0, total:1.0, tam:0.75, grav:16, gira:0 });
+  };
+
+  /* ---------- balão com emoji, do lado da cabeça (fica parado na tela, o palco gira por baixo) ---------- */
+  function texturaBalao(emoji){
+    // alta resolução e suavizado: emoji nítido, nada de quadriculado
+    const W = 256, H = 236, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const g = cv.getContext('2d');
+    const bolha = ()=>{ g.beginPath(); const x=10, y=8, w=W-20, h=H-56, r=46;
+      g.moveTo(x+r,y); g.lineTo(x+w-r,y); g.quadraticCurveTo(x+w,y,x+w,y+r); g.lineTo(x+w,y+h-r); g.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+      g.lineTo(x+86,y+h); g.lineTo(x+34,y+h+40); g.lineTo(x+52,y+h); g.lineTo(x+r,y+h); g.quadraticCurveTo(x,y+h,x,y+h-r); g.lineTo(x,y+r); g.quadraticCurveTo(x,y,x+r,y); g.closePath(); };
+    g.save(); g.translate(0,6); bolha(); g.fillStyle='rgba(0,0,0,0.35)'; g.fill(); g.restore();
+    bolha(); g.fillStyle='#fbf6ea'; g.fill(); g.lineWidth=8; g.strokeStyle='#1a1d1f'; g.stroke();
+    g.font = '128px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(emoji, W/2, 8 + (H-56)/2 + 8);
+    const t = new THREE.CanvasTexture(cv); t.magFilter = THREE.LinearFilter; t.minFilter = THREE.LinearMipmapLinearFilter; t.generateMipmaps = true;
+    if (THREE.SRGBColorSpace) t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+    return t;
+  }
+  P.setHumor = function(h){
+    const emo = h && h.emo, mostra = emo && emo!=='calmo';
+    this.humor = h || null;
+    if (this.balao && this.balao.userData.emo !== emo){ this.scene.remove(this.balao); this.balao.material.map.dispose(); this.balao.material.dispose(); this.balao = null; }
+    if (mostra && !this.balao){
+      const mat = new THREE.SpriteMaterial({ map:texturaBalao(EMOCOES[emo].emoji), transparent:true, depthTest:false });
+      this.balao = new THREE.Sprite(mat); this.balao.renderOrder = 10; this.balao.userData.emo = emo; this.balao.scale.set(0.001,0.001,1);
+      this.scene.add(this.balao); this.balaoT = 0;
+    }
+  };
+  // aparece com um pulinho, fica uns segundos, some, volta (triste e cansado ficam mais tempo)
+  P.balaoPasso = function(dt, a){
+    const b = this.balao; if (!b) return;
+    const h = this.humor, longo = h && (h.emo==='triste' || h.emo==='cansado');
+    const vis = longo ? 7 : 4.5, ciclo = vis + (longo ? 3 : 5);
+    this.balaoT = ((this.balaoT||0) + dt) % ciclo;
+    const t = this.balaoT, hb = this.hb || { y1:32, r:10 };
+    let k = 0;
+    if (!(this.cena || this.arena || (a && a.alvo==='heroi'))){
+      if (t < 0.25) { const x = t/0.25; k = x<0.7 ? x/0.7*1.15 : 1.15 - (x-0.7)/0.3*0.15; }
+      else if (t < vis - 0.2) k = 1;
+      else if (t < vis) k = (vis - t)/0.2;
+    }
+    const tam = 7.2;
+    b.visible = k > 0.01;
+    b.scale.set(tam*256/236*k, tam*k, 1);
+    b.position.set(Math.min(hb.r*0.55, 7) + tam*0.45, hb.y1 - 2.6 - tam*0.15 + Math.sin(this.balaoT*2.4)*0.25, 0);
+  };
+
+  // liga tudo na pose do herói
+  const pose0 = P.poseHeroi;
+  P.poseHeroi = function(s, dt, a){
+    pose0.call(this, s, dt, a);
+    this.poseHumor(s, dt, a);
+    this.balaoPasso(dt, a);
+  };
+})();
+
+/* ===== Falas do herói: quando o jogo abre, ele comenta o dia de ontem (o que fez e o que deixou passar) num balão de texto.
+   Varia a frase e a pessoa (eu / você / a gente). O Mestre pode mandar a fala dele (tipo "fala"), que vem antes das automáticas. ===== */
+const FALAS = {
+  falhou: [
+    'Porra, esqueci {x} ontem.',
+    'Ah, ontem eu esqueci a porra da missão: {x}...',
+    'Caralho, {x} ficou pra trás ontem.',
+    'Vacilamos feio ontem, hein: {x}.',
+    'Ô, você esqueceu {x} ontem. Bora compensar.',
+    'Puta merda, nem lembrei disso ontem: {x}.',
+    'Ontem foi foda, {x} ficou sem fazer.',
+    'Droga... {x} passou batido ontem.',
+    'Nossa, eu devia ter feito {x} ontem...',
+    'Caramba, mano. Esqueci {x}.'
+  ],
+  varias: [
+    'Ontem foi foda: {n} missões pra trás. Hoje a gente vira essa porra.',
+    'Caralho, {n} missões sem fazer ontem. Uma de cada vez, bora.',
+    'Putz, ontem deixamos {n} missões passar. Começa pela mais fácil.',
+    'Ontem foi zoado, {n} missões pro saco. Hoje é outro dia.'
+  ],
+  fez: [
+    'Mandamos bem pra caralho ontem: {x}!',
+    '{x} ontem? Feito, porra!',
+    'Ainda tô no gás de ontem: {x}, feito.',
+    'Ontem teve {x}. Tô ficando monstro.',
+    'Fizemos {x} ontem. Bora repetir essa merda hoje.',
+    'Olha nós: {x} feito ontem.'
+  ],
+  tudo: [
+    'Ontem a gente fez TUDO, caralho! Que dia.',
+    'Todas as missões de ontem feitas. Lendário pra porra.',
+    'Dia perfeito ontem. Nem acredito, mano.'
+  ],
+  tarefaFeita: [
+    'Ontem eu matei essa: {x}. Boa, porra!',
+    'Riscado da lista: {x}. Isso aí!',
+    'Lembra de {x}? Feito, caralho.'
+  ],
+  tarefa: [
+    'Porra, aquela tarefa ficou pra trás: {x}.',
+    'Nossa, eu devia ter feito isso: {x}.',
+    'Caralho, esqueci a tarefa: {x}.',
+    'Ei, lembra disso? {x}. Ficou na mão.',
+    'Ainda tá pendente essa merda: {x}.'
+  ],
+  chefao: [
+    'A gente derrubou {x}, caralho! Ainda tô tremendo.',
+    '{x} caiu, porra! Quem é o próximo?'
+  ],
+  hojeFez: [
+    '{x} hoje: feito, porra. Próxima?',
+    'Já matamos {x} hoje. Isso aí!'
+  ],
+  humor: {
+    triste: ['Ah, hoje tá foda...', 'Hoje tá pesado pra caralho. Faz só o mínimo, já conta.', 'Dia de merda, né? Tô aqui contigo.'],
+    cansado: ['Tô morto hoje, mano. Bora devagar.', 'Sem bateria nenhuma hoje. Versão mínima e foda-se.', 'Hoje eu só queria deitar, porra.'],
+    agitado: ['Tô a mil hoje, caralho! Segura eu.', 'Energia lá em cima! Vou sair correndo.', 'Hoje eu tô elétrico pra porra.'],
+    raiva: ['Puta que pariu, hoje eu tô puto.', 'Hoje não, porra. Melhor descontar no treino.', 'Tô bravo pra caralho hoje. Respira comigo.'],
+    ansioso: ['Coração acelerado pra caralho hoje... respira.', 'Hoje a cabeça tá a mil. Uma coisa de cada vez.', 'Ansiedade do caralho hoje. A gente dá conta.'],
+    feliz: ['Hoje o dia tá bom pra caralho!', 'Tô de bom humor hoje, porra!', 'Hoje tá foda, no bom sentido.']
+  }
+};
+const Falas = {
+  fila:[], i:0,
+  sorteia(lista, x, n){ const t = lista[Math.floor(Math.random()*lista.length)]; return t.replace('{x}', x).replace('{n}', n); },
+  nomeDiaria(e){ const m = (S.diarias||[]).find(x=>x.id===e.diaria); return (m && m.nome) || e.txt || e.diaria; },
+  // monta o que o herói tem pra falar hoje, do mais importante pro menos
+  monta(){
+    const hoje = hojeReal(), ontem = addDias(hoje, -1), out = [];
+    const mestre = Object.values(S.falas||{}).filter(f=>f.d===hoje).sort((a,b)=>(a.em||0)-(b.em||0));
+    mestre.forEach(f=>out.push(f.txt));
+    const di = S.log.filter(e=>e.tipo==='diaria' && e.d===ontem);
+    const falhou = di.filter(e=>!(e.estrelas>0)), fez = di.filter(e=>e.estrelas>0);
+    if (falhou.length > 2) out.push(this.sorteia(FALAS.varias, '', falhou.length));
+    else falhou.forEach(e=>out.push(this.sorteia(FALAS.falhou, this.nomeDiaria(e))));
+    if (fez.length && !falhou.length && fez.length >= 3) out.push(this.sorteia(FALAS.tudo));
+    else if (fez.length){ const e = fez.slice().sort((a,b)=>(b.estrelas||0)-(a.estrelas||0))[0]; out.push(this.sorteia(FALAS.fez, this.nomeDiaria(e))); }
+    (S.tarefas||[]).filter(t=>t.d===ontem && t.feita!==true).slice(0,1).forEach(t=>out.push(this.sorteia(FALAS.tarefa, t.txt)));
+    (S.tarefas||[]).filter(t=>t.d===ontem && t.feita===true).slice(0,1).forEach(t=>out.push(this.sorteia(FALAS.tarefaFeita, t.txt)));
+    (S.derrotados||[]).filter(x=>x.d===ontem || x.d===hoje).forEach(x=>{ const c=(S.chefoes||[]).find(b=>b.id===x.id); out.push(this.sorteia(FALAS.chefao, (c&&c.nome)||x.id)); });
+    const hm = humorAtual(); if (hm && hm.hoje && FALAS.humor[hm.emo]) out.push(this.sorteia(FALAS.humor[hm.emo]));
+    const fezHoje = S.log.filter(e=>e.tipo==='diaria' && e.d===hoje && e.estrelas>0);
+    if (fezHoje.length) out.push(this.sorteia(FALAS.hojeFez, this.nomeDiaria(fezHoje[fezHoje.length-1])));
+    return out.slice(0, 5);
+  },
+  // quando o jogo abre: a 1ª vez no dia fala tudo em sequência; nas outras, só uma (a próxima da lista)
+  abre(){
+    if (!stage || typeof S==='undefined' || !S.herois || !S.herois.ativo) return;
+    if (Festa.ocupado || Festa.fila.length || stage.anim || stage.cena || stage.arena || (typeof HumorBtn!=='undefined' && HumorBtn.aberto)){ setTimeout(()=>this.abre(), 1500); return; }
+    const lista = this.monta(); if (!lista.length) return;
+    const hoje = hojeReal(), visto = lsGet('dl.falaDia');
+    if (visto !== hoje){ lsSet('dl.falaDia', hoje); lsSet('dl.falaI', 0); this.fila = lista.slice(); }
+    else { const i = (lsGet('dl.falaI')||0) % lista.length; lsSet('dl.falaI', i+1); this.fila = [lista[i]]; }
+    this.prox();
+  },
+  prox(){ const t = this.fila.shift(); if (t) stage.falar(t, ()=>setTimeout(()=>this.prox(), 500)); }
+};
+
+(function(){
+  const P = Stage.prototype, V = new THREE.Vector3();
+  // balão de texto (HTML por cima do palco), preso acima da cabeça do herói
+  P.falar = function(txt, fim){
+    let el = this.falaEl;
+    if (!el){ el = this.falaEl = document.createElement('div'); el.className = 'falabalao'; this.el.appendChild(el);
+      el.addEventListener('pointerdown', e=>{ e.stopPropagation(); this.falaT = Math.min(this.falaT, 0.25); }); }
+    el.textContent = ''; el.hidden = false; el.classList.remove('sai'); void el.offsetWidth; el.classList.add('entra');
+    this.falaTxt = String(txt); this.falaN = 0; this.falaT = 2.6 + this.falaTxt.length*0.055; this.falaFim = fim || null; this.sorriso = 0;
+  };
+  P.falaPasso = function(dt, a){
+    const el = this.falaEl; if (!el || el.hidden) return;
+    const ocupado = this.cena || this.arena;
+    if (ocupado){ el.style.visibility = 'hidden'; return; } el.style.visibility = '';
+    // texto vai aparecendo letra por letra, depois conta o tempo
+    if (this.falaN < this.falaTxt.length){ this.falaN = Math.min(this.falaTxt.length, this.falaN + dt*38); el.textContent = this.falaTxt.slice(0, Math.ceil(this.falaN)); }
+    else { this.falaT -= dt; if (this.falaT <= 0){ el.classList.remove('entra'); el.classList.add('sai'); const f = this.falaFim; this.falaFim = null; setTimeout(()=>{ if (el.classList.contains('sai')) el.hidden = true; }, 220); if (f) f(); } }
+    // posição: acima da cabeça, na tela
+    const hb = this.hb || { y1:32 }; V.set(0, hb.y1 - 1.5, 0).project(this.camera);
+    const w = this.el.clientWidth, h = this.el.clientHeight;
+    const x = (V.x*0.5+0.5)*w, y = (-V.y*0.5+0.5)*h;
+    el.style.left = Math.max(8, Math.min(w - el.offsetWidth - 8, x - el.offsetWidth*0.5)) + 'px';
+    el.style.top = Math.max(6, y - el.offsetHeight - 4) + 'px';
+    el.style.setProperty('--rabo', Math.max(14, Math.min(el.offsetWidth-14, x - parseFloat(el.style.left))) + 'px');
+  };
+  const pose1 = P.poseHeroi;
+  P.poseHeroi = function(s, dt, a){
+    pose1.call(this, s, dt, a);
+    this.falaPasso(dt, a);
+    // falando: esconde o balão de emoji
+    if (this.balao && this.falaEl && !this.falaEl.hidden) this.balao.visible = false;
+  };
+})();
+
+
+/* ===== Botão de humor no canto do palco: o jogo pergunta uma vez por dia; tocou no emoji, o herói fica assim o dia todo ===== */
+const HumorBtn = {
+  aberto:false,
+  el(){ let el = document.getElementById('humorBtn');
+    if (!el){ const palco = document.querySelector('.palco'); if (!palco) return null;
+      el = document.createElement('div'); el.id = 'humorBtn'; el.className = 'humorbtn'; palco.appendChild(el);
+      el.addEventListener('click', e=>{ e.stopPropagation(); const b = e.target.closest('button'); if (!b) return;
+        if (b.dataset.hum) this.escolhe(b.dataset.hum); else if (b.dataset.humtoggle!=null){ Som.sfx('clique'); this.aberto = !this.aberto; this.pinta(); } }); }
+    return el; },
+  pinta(){
+    const el = this.el(); if (!el) return;
+    const hm = humorAtual(), cara = hm ? EMOCOES[hm.emo].cara : '🙂';
+    el.classList.toggle('vazio', !hm); el.classList.toggle('aberto', this.aberto);
+    el.innerHTML = `<button class="hbtn" data-humtoggle title="Seu humor hoje">${cara}${hm?'':'<i>?</i>'}</button>`+
+      (this.aberto ? `<div class="hpainel moldura"><span>Como você tá hoje?</span><div class="hlista">${Object.entries(EMOCOES).map(([id,e])=>`<button data-hum="${id}" class="${hm&&hm.emo===id?'on':''}" title="${e.nome}"><b>${e.cara}</b><small>${e.nome}</small></button>`).join('')}</div></div>` : '');
+  },
+  escolhe(id){
+    S.humor = S.humor || {}; S.humor[hojeReal()] = { emocao:id, em:Date.now() };
+    this.aberto = false; Som.sfx('equipar'); marcaSujo(); atualizaPalco(); this.pinta();
+    if (stage && FALAS.humor[id] && stage.falar) stage.falar(Falas.sorteia(FALAS.humor[id]));
+    else if (stage && id==='calmo' && stage.falar) stage.falar(Falas.sorteia(['Tô de boa hoje.', 'Dia tranquilo, bora.', 'Na paz hoje, mano.']));
+  },
+  // ao entrar no jogo: sem humor de hoje, abre o painelzinho perguntando
+  entrar(){ this.aberto = !humorAtual(); this.pinta(); }
+};
 
 /* ===== Pixel art: cenário e ícones 8x8 ===== */
 function cenario(tema){
@@ -4441,6 +4763,9 @@ function mesclar(local, remoto, primeiraVez){
   });
   // páginas da história escritas pelo Mestre: por dia/mês, vale a mais nova
   out.capitulos = Object.assign({}, L.capitulos||{}); Object.entries(R.capitulos||{}).forEach(([k,v])=>{ const a=out.capitulos[k]; if (!a || (v&&v.em||0)>(a.em||0)) out.capitulos[k]=v; });
+  out.falas = Object.assign({}, R.falas||{}, L.falas||{});
+  // humor do dia (vem do agente): por dia, vale o mais novo
+  out.humor = Object.assign({}, L.humor||{}); Object.entries(R.humor||{}).forEach(([k,v])=>{ const a=out.humor[k]; if (!a || (v&&v.em||0)>(a.em||0)) out.humor[k]=v; });
   out.hoje = [L.hoje, R.hoje].filter(Boolean).sort().pop() || L.hoje;
   out.rev = Math.max(L.rev||0, R.rev||0);
   const rem = new Set(out.removidos||[]);
@@ -4514,6 +4839,15 @@ function aplicaUma(l, d){
     case 'novidade': { const t = typeof d==='string' ? d : obj(d,['txt']).txt; return { novidade:String(t) }; }
     case 'capitulo': { obj(d,['texto']); const k = d.mes ? String(d.mes).slice(0,7) : (d.d||hoje); if (!/^\d{4}-\d{2}(-\d{2})?$/.test(k)) throw new Error('use "d":"AAAA-MM-DD" (página do dia) ou "mes":"AAAA-MM" (resumo do mês)');
       S.capitulos = S.capitulos || {}; S.capitulos[k] = { titulo: d.titulo ? String(d.titulo).slice(0,60) : '', texto: String(d.texto).slice(0,1200), em: agora }; return; }
+    case 'humor': { obj(d); const dia=d.d||hoje; if (!/^\d{4}-\d{2}-\d{2}$/.test(dia)) throw new Error('use "d":"AAAA-MM-DD"');
+      const num=(k)=>{ if (d[k]==null || d[k]==='') return null; const n=Number(d[k]); if (!isFinite(n) || n<-3 || n>3) throw new Error('"'+k+'" vai de -3 a 3'); return Math.round(n); };
+      const en=num('energia'), af=num('afeto'), emo=d.emocao!=null && d.emocao!=='' ? String(d.emocao).toLowerCase() : null;
+      if (emo && !EMOCOES[emo]) throw new Error('emocao "'+emo+'" não existe (use: '+Object.keys(EMOCOES).join(', ')+')');
+      if (en==null && af==null && !emo) throw new Error('mande "energia", "afeto" ou "emocao"');
+      S.humor = S.humor || {}; S.humor[dia] = Object.assign({ em: agora }, en!=null?{energia:en}:{}, af!=null?{afeto:af}:{}, emo?{emocao:emo}:{}); return; }
+    case 'fala': { obj(d,['txt']); const dia=d.d||hoje; if (!/^\d{4}-\d{2}-\d{2}$/.test(dia)) throw new Error('use "d":"AAAA-MM-DD"');
+      S.falas = S.falas || {}; S.falas['ag:'+l.id] = { d:dia, txt:String(d.txt).slice(0,140), em:agora };
+      Object.keys(S.falas).forEach(k=>{ if (S.falas[k].d < addDias(hoje,-14)) delete S.falas[k]; }); return; }
     case 'save_importar': { obj(d,['log']); importaSave(d, true); return; }
     default: throw new Error('tipo "'+l.tipo+'" desconhecido');
   }
@@ -4774,6 +5108,8 @@ function linhasResumo(){
   S.chefoes.forEach(b=>{ const morto=S.derrotados.some(x=>x.id===b.id); const pr = b.tipo==='valor' ? `${b.atual}/${b.alvo}` : b.tipo==='fases' ? (b.fases||[]).filter(f=>f.ok).length+'/'+(b.fases||[]).length+' fases' : b.tipo==='data' ? 'até '+b.data : ''; R.push(['', b.id, b.area, b.nome, b.meta, (morto?'DERROTADO ':'')+pr]); });
   R.push([]); R.push(['TAREFAS', 'id', 'dia', 'texto', 'status']);
   S.tarefas.filter(t=>t.d>=addDias(S.hoje,-7)).forEach(t=>R.push(['', t.id, t.d, t.txt, t.feita===true?'feita':t.feita===false?'não feita':'aberta']));
+  R.push([]); R.push(['HUMOR (últimos 7 dias)', 'dia', 'energia', 'afeto', 'emoção no herói']);
+  Object.keys(S.humor||{}).filter(k=>k>=addDias(S.hoje,-7)).sort().reverse().forEach(k=>{ const h=S.humor[k]; R.push(['', k, h.energia!=null?h.energia:'', h.afeto!=null?h.afeto:'', emocaoDe(h)]); });
   R.push([]); R.push(['HABILIDADES', 'área', 'nome', 'desde']);
   S.habilidades.forEach(x=>R.push(['', x.area, x.nome, x.d||'']));
   R.push([]); R.push(['LINHAS DO AGENTE', 'aplicadas', (S.aplicados||[]).length, 'última', (S.aplicados||[]).slice(-1)[0]||'']);
@@ -4783,7 +5119,7 @@ function linhasResumo(){
   return R;
 }
 
-const LEIA_VER = 8; // subir quando mudar o texto: o jogo reescreve a aba leia-me das planilhas antigas
+const LEIA_VER = 10; // subir quando mudar o texto: o jogo reescreve a aba leia-me das planilhas antigas
 const LEIA_ME = [
   'DAILY LEGENDS: planilha de save (instruções versão '+LEIA_VER+')',
   '',
@@ -4845,6 +5181,8 @@ const LEIA_ME = [
   'bau: {}  (1 baú extra, só em ocasião especial. Os baús normais o jogo já dá sozinho nos marcos da trilha: 3, 7, 14, 30, 60, 100 dias)',
   'novidade: {"txt":"Saúde subiu pro nível 3"}  (aparece no jogo quando a pessoa abrir)',
   'capitulo: {"d":"2026-10-12","titulo":"A noite do Rei de Pedra","texto":"3 a 5 frases curtas contando o dia como história de RPG"}  (página do dia na aba História. O jogo já escreve uma sozinho com o que a pessoa fez e deixou de fazer; a sua substitui a dele. Pro capítulo do mês, use "mes":"2026-10" no lugar de "d" e até 3 frases. Mesmo dia ou mês = substitui)',
+  'humor: o próprio jogador escolhe no jogo (botão de humor no canto do palco) e o herói fica assim o dia todo. Você não precisa escrever. Só se ele pedir: {"emocao":"triste"} (feliz, calmo, agitado, cansado, triste, ansioso, raiva). Não dá XP.',
+  'fala: {"d":"2026-10-13","txt":"Ontem a gente esqueceu o espanhol. Hoje 5 min já salva."}  (frase que o herói fala num balão quando o jogador abre o jogo no dia "d", até 140 letras. Fale como o herói: eu, você ou a gente. O jogo já fala sozinho do que foi feito ou não ontem; a sua vem antes das dele. Use pouco: 1 por dia no máximo)',
   'save_importar: o JSON inteiro de um save antigo do Daily Legends (com "log", "herois" etc.), numa linha só. Junta com o progresso atual. Uso: migração, uma vez só.',
   '',
   'RECOMEÇAR DO ZERO',
@@ -5426,6 +5764,7 @@ function atualizaPalco(){
   const h=heroAtivo(); if (!h) return;
   const provando = aba==='loja' ? Object.values(prova) : [];
   const juntos = petsJuntos(), pet = juntos[0], pprova = aba==='loja' ? Object.values(provaPet) : [];
+  if (stage) stage.setHumor(humorAtual());
   if (stage){ const eqV = provando.length ? Object.assign({}, eqAtivo(), prova) : eqAtivo(); stage.setModel(buildVModel(heroiV(h.id), eqV), h, eqV.arma || h.arma); stage.setPets(juntos, pprova.length ? provaPet : null); }
   const c=calc(), lv=nivelDe(c.heroi[h.id]||0);
   const nomes = [...provando.map(id=>ITEM[id].nome), ...pprova.map(id=>PET_ITEM[id].nome)];
@@ -5433,6 +5772,7 @@ function atualizaPalco(){
     <div class="pnv"><b>Nv ${lv.n}</b>${barra(lv.r,lv.p,'xp')}<span class="pfr">${num(lv.r)}/${num(lv.p)}</span></div>
     <button class="btn trocar" data-ir="herois">Trocar</button>
     ${nomes.length ? `<div class="provabar"><span>Provando: ${nomes.map(esc).join(', ')}</span><button class="btn" data-acao="tirarProva">Tirar</button></div>` : ''}`;
+  if (typeof HumorBtn!=='undefined' && document.getElementById('humorBtn')) HumorBtn.pinta();
   petBox(); if (stage) stage.resize(); // a placa pode ter mudado de altura
 }
 function petBox(){
@@ -5653,6 +5993,7 @@ function vDiario(){
 const GUIA = [
   ['O que é', `O Daily Legends transforma a sua vida num RPG. Você é o herói, e cada coisa que faz de verdade (cuidar da saúde, estudar, trabalhar, arrumar a casa) vira XP. Quem registra tudo é o agente do jogo no King Bot.`],
   ['Começo', `Você escolhe o herói principal (com confirmação, porque ele não troca), dá um nome, diz se tem cachorro, gato, pássaro ou peixe na vida real e escolhe a trilha sonora.`],
+  ['Humor e falas', `O herói sente junto com você. Se você conta pro agente como foi o seu dia (energia e humor, tipo um diário), o herói reage na tela: chora quando o dia tá triste, corre e pula quando você tá agitado, arrasta o pé quando tá cansado, e um balão mostra a emoção. Quando você abre o jogo, ele também comenta o dia de ontem: o que vocês fizeram e o que ficou pra trás. Toque no balão pra pular.`],
   ['Atributos', `As áreas da sua vida que você quer evoluir, cada uma com XP e nível próprios. Não vêm prontas: o agente conversa com você e cria as que fazem sentido pra sua vida (ex.: Saúde, Estudos, Trabalho, Família). Dá pra pedir pra ele criar, renomear ou tirar uma área a qualquer hora. Habilidade nova que você conquista entra na área sozinha.`],
   ['Missões diárias', `Os hábitos do dia, montados com o agente. Cada uma tem versão mínima pra dia ruim, que conta como feita.<br>★ mínimo ou atrasada: +4 XP<br>★★ normal: +10 XP<br>★★★ acima da meta ou bem cedo: +15 XP<br>Não fez: −5 XP.`],
   ['Tarefas do dia', `Coisas de uma vez só (mandar um e-mail, ir ao banco). Uma vez por dia o agente pergunta o que você tem pra fazer, anota as tarefas e cria lembretes. Tarefas, diárias e chefões só entram pelo Mestre no chat: o app só mostra. Fez? Conta pra ele. Cada tarefa feita dá +${XP_TAREFA} XP fixo, sem estrela.`],
@@ -5931,7 +6272,7 @@ function entrar(){
     stage.onToque = (a)=>{ Som.tocar(); if (a.tipo==='heroi') Som.heroi(a.classe, a.sexo, a.raca); else Som.pet(a.pet); };
     stage.setPlataforma((S.config&&S.config.cenario)||'castelo'); stage.resize(); } catch(e){ $('#palco3d').innerHTML='<p class="fraco">Não deu pra abrir o 3D neste aparelho.</p>'; } }
   if (!S.herois.ativo){ escolha(); return; }
-  atualizaPalco(); render(); setTimeout(()=>Festa.prox(), 400);
+  atualizaPalco(); render(); setTimeout(()=>Festa.prox(), 400); HumorBtn.entrar(); setTimeout(()=>Falas.abre(), 1400);
   if (S.novidades && S.novidades.length){
     Som.sfx('nivel');
     modal(`<ul class="novs">${S.novidades.map(n=>`<li>${esc(n)}</li>`).join('')}</ul><div class="acoes"><button class="btn ouro" data-fecha="1">Bora</button></div>`, tituloNovidades || 'Enquanto você dormia'); tituloNovidades=null;

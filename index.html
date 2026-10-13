@@ -556,8 +556,8 @@ const SAVE = {
  "mod": {},
  "rev": 0
 };
-const DL_VERSAO = "2026.10.13-1043";
-const DL_RETRATOS = "7133ffdf03";
+const DL_VERSAO = "2026.10.13-1120";
+const DL_RETRATOS = "e79c724d44";
 
 /* ===== Voxel v2: bonecos esculpidos em meia resolução (voxel = 0,5 do mundo) ===== */
 const VS = 0.5;
@@ -1401,11 +1401,14 @@ function buildVModel(h, equip, opts){
 /* ---------- estilo novo: corpo mais alto, roupa com estampa, peças em camadas ---------- */
 const PERNA_K = 1.6, PERNA_Y0 = 9, PERNA_Y1 = 23;
 const PERNA_D = Math.round((PERNA_Y1-PERNA_Y0+1)*PERNA_K) - (PERNA_Y1-PERNA_Y0+1);
+// lê "x,y,z" sem split (mais rápido nos laços grandes do boneco)
+const _kx=[0,0,0];
+function kxyz(k){ const a=k.indexOf(','), b=k.indexOf(',',a+1); _kx[0]=+k.slice(0,a); _kx[1]=+k.slice(a+1,b); _kx[2]=+k.slice(b+1); return _kx; }
 function estilizar(m,h,leve){
   // 1) pernas mais compridas: estica a faixa da canela à coxa e sobe o resto
   for (const p in m.parts){
     const novo = new Map();
-    m.parts[p].forEach((c,k)=>{ const [x,y,z]=k.split(',').map(Number);
+    m.parts[p].forEach((c,k)=>{ const q=kxyz(k), x=q[0], y=q[1], z=q[2];
       if (y<PERNA_Y0) novo.set(k,c);
       else if (y>PERNA_Y1) novo.set(x+','+(y+PERNA_D)+','+z,c);
       else { const a = PERNA_Y0 + Math.ceil((y-PERNA_Y0)*PERNA_K), b = PERNA_Y0 + Math.ceil((y+1-PERNA_Y0)*PERNA_K) - 1; for (let ny=a; ny<=b; ny++) novo.set(x+','+ny+','+z,c); } });
@@ -1428,7 +1431,7 @@ function estilizar(m,h,leve){
 const RES_NOVO = 2;
 function esculpir(m){
   const R = RES_NOVO;
-  for (const p in m.parts){ const novo = new Map(); m.parts[p].forEach((c,k)=>{ const [x,y,z]=k.split(',').map(Number);
+  for (const p in m.parts){ const novo = new Map(); m.parts[p].forEach((c,k)=>{ const q=kxyz(k), x=q[0], y=q[1], z=q[2];
     for (let a=0;a<R;a++) for (let b=0;b<R;b++) for (let d=0;d<R;d++) novo.set((x*R+a)+','+(y*R+b)+','+(z*R+d), c); }); m.parts[p] = novo; }
   for (const k in m.piv) m.piv[k] = m.piv[k].map(v=>v*R);
   m.res = R;
@@ -1437,26 +1440,30 @@ function esculpir(m){
   const perfilPerna = y=>{ if (y<boot) return 1; const t=(y-boot)/(pernaTopo-boot); if (t<0.12) return 0.74+t*0.6; if (t<0.45) return 0.82+0.12*Math.sin(Math.PI*(t-0.12)/0.33); if (t<0.52) return 0.83; return 0.84+0.16*(t-0.52)/0.48; };
   const perfilBraco = (y,pv)=>{ const top=pv[1], cot=top-7*R, pulso=top-13*R; if (y>top-3*R) return 1; if (y>cot) return 0.9+0.1*(y-cot)/(4*R); if (y>pulso) return 0.82+0.08*(y-pulso)/(cot-pulso); return 1; };
   const corta = (p, n, perfil)=>{
-    const map=m.parts[p], fat=new Map(); map.forEach((c,k)=>{ const [x,y,z]=k.split(',').map(Number); let f=fat.get(y); if (!f){ f=[1e9,-1e9,1e9,-1e9]; fat.set(y,f); } f[0]=Math.min(f[0],x); f[1]=Math.max(f[1],x); f[2]=Math.min(f[2],z); f[3]=Math.max(f[3],z); });
-    for (const k of [...map.keys()]){ const [x,y,z]=k.split(',').map(Number); const f=fat.get(y), k2 = perfil ? perfil(y) : 1;
+    const map=m.parts[p], fat=new Map(), ks=[], P=[];
+    map.forEach((c,k)=>{ const q=kxyz(k), x=q[0], y=q[1], z=q[2]; ks.push(k); P.push(x,y,z); let f=fat.get(y); if (!f){ f=[1e9,-1e9,1e9,-1e9]; fat.set(y,f); } if (x<f[0]) f[0]=x; if (x>f[1]) f[1]=x; if (z<f[2]) f[2]=z; if (z>f[3]) f[3]=z; });
+    const kp = new Map();   // perfil por altura: calcula uma vez por linha
+    for (let i=0;i<ks.length;i++){ const x=P[3*i], y=P[3*i+1], z=P[3*i+2]; const f=fat.get(y); let k2 = kp.get(y); if (k2===undefined){ k2 = perfil ? perfil(y) : 1; kp.set(y,k2); }
       const cx=(f[0]+f[1]+1)/2, cz=(f[2]+f[3]+1)/2, a=(f[1]-f[0]+1)/2*k2+0.35, b=(f[3]-f[2]+1)/2*k2+0.35;
-      if (Math.pow(Math.abs((x+0.5-cx)/a),n) + Math.pow(Math.abs((z+0.5-cz)/b),n) > 1) map.delete(k); }
+      if (Math.pow(Math.abs((x+0.5-cx)/a),n) + Math.pow(Math.abs((z+0.5-cz)/b),n) > 1) map.delete(ks[i]); }
   };
   corta('legL', 2.3, perfilPerna); corta('legR', 2.3, perfilPerna);
   corta('armL', 2.4, y=>perfilBraco(y,m.piv.armL)); corta('armR', 2.4, y=>perfilBraco(y,m.piv.armR));
   corta('torso', 3.2, null);
   // cabeça: arredonda a nuca, as laterais e o topo (o rosto na frente fica intacto)
   { const map=m.parts.head, zf=HZ1*R, fat=new Map(), fx=new Map();
-    map.forEach((c,k)=>{ const [x,y,z]=k.split(',').map(Number); let f=fat.get(y); if (!f){ f=[1e9,-1e9,1e9,-1e9]; fat.set(y,f); } f[0]=Math.min(f[0],x); f[1]=Math.max(f[1],x); f[2]=Math.min(f[2],z); f[3]=Math.max(f[3],z);
+    map.forEach((c,k)=>{ const q=kxyz(k), x=q[0], y=q[1], z=q[2]; let f=fat.get(y); if (!f){ f=[1e9,-1e9,1e9,-1e9]; fat.set(y,f); } f[0]=Math.min(f[0],x); f[1]=Math.max(f[1],x); f[2]=Math.min(f[2],z); f[3]=Math.max(f[3],z);
       let g=fx.get(x); if (!g){ g=[1e9,-1e9,1e9,-1e9]; fx.set(x,g); } g[0]=Math.min(g[0],y); g[1]=Math.max(g[1],y); g[2]=Math.min(g[2],z); g[3]=Math.max(g[3],z); });
-    for (const k of [...map.keys()]){ const [x,y,z]=k.split(',').map(Number); if (z>=zf-1) continue;
+    for (const k of [...map.keys()]){ const q=kxyz(k), x=q[0], y=q[1], z=q[2]; if (z>=zf-1) continue;
       const f=fat.get(y), cx=(f[0]+f[1]+1)/2, cz=(f[2]+f[3]+1)/2, a=(f[1]-f[0]+1)/2+0.3, b=(f[3]-f[2]+1)/2+0.3;
       if (Math.pow(Math.abs((x+0.5-cx)/a),3.2) + Math.pow(Math.abs((z+0.5-cz)/b),3.2) > 1){ map.delete(k); continue; }
       const g=fx.get(x), cy=(g[0]+g[1]+1)/2, ay=(g[1]-g[0]+1)/2+0.3, cz2=(g[2]+g[3]+1)/2, bz=(g[3]-g[2]+1)/2+0.3;
       if (y>cy && Math.pow(Math.abs((y+0.5-cy)/ay),3.2) + Math.pow(Math.abs((z+0.5-cz2)/bz),3.2) > 1) map.delete(k); } }
   // tira o miolo (só a casca aparece): menos peso pra montar a malha
-  for (const p in m.parts){ const map=m.parts[p], tira=[]; map.forEach((c,k)=>{ const [x,y,z]=k.split(',').map(Number);
-    if (map.has((x+1)+','+y+','+z) && map.has((x-1)+','+y+','+z) && map.has(x+','+(y+1)+','+z) && map.has(x+','+(y-1)+','+z) && map.has(x+','+y+','+(z+1)) && map.has(x+','+y+','+(z-1))) tira.push(k); });
+  // (chave numérica: vizinho = soma; com texto isso levava mais de 1 s por boneco)
+  for (const p in m.parts){ const map=m.parts[p], tira=[], ks=[], ns=[], N=new Set();
+    map.forEach((c,k)=>{ const a=k.indexOf(','), b=k.indexOf(',',a+1), v=((+k.slice(0,a))*1024 + (+k.slice(a+1,b)))*1024 + (+k.slice(b+1)); ks.push(k); ns.push(v); N.add(v); });
+    for (let i=0;i<ns.length;i++){ const v=ns[i]; if (N.has(v+1048576) && N.has(v-1048576) && N.has(v+1024) && N.has(v-1024) && N.has(v+1) && N.has(v-1)) tira.push(ks[i]); }
     tira.forEach(k=>map.delete(k)); }
 }
 // peças por cima da roupa (por herói); o resto dos heróis ganha só o estilo
@@ -1628,23 +1635,30 @@ const AOL = [0.38, 0.6, 0.82, 1.0];
 const colCache = {};
 function rgbOf(hex){ if (colCache[hex]) return colCache[hex]; const c=new THREE.Color(hex); return colCache[hex]=[c.r,c.g,c.b]; }
 
+// chave numérica do bloco (x,y,z entre -512 e 511): vizinho = soma, sem montar texto. Era o que mais pesava pra montar o boneco.
+const PK = (x,y,z)=> (x*1024 + y)*1024 + z;
+const PK_X = 1048576, PK_Y = 1024;
+const _occN = new WeakMap();
+function setNum(set){ let n = _occN.get(set); if (n) return n; n = new Set(); for (const k of set.keys()){ const a=k.indexOf(','), b=k.indexOf(',',a+1); n.add(PK(+k.slice(0,a), +k.slice(a+1,b), +k.slice(b+1))); } _occN.set(set, n); return n; }
+FACES.forEach(f=>{ f.nk = f.n[0]*PK_X + f.n[1]*PK_Y + f.n[2]; f.uk = f.u[0]*PK_X + f.u[1]*PK_Y + f.u[2]; f.wk = f.w[0]*PK_X + f.w[1]*PK_Y + f.w[2]; });
+const CANTOS = [[-1,-1],[1,-1],[1,1],[-1,1]];
 function meshPart(map, occ, pv, sc, sil){
   const pos=[], nor=[], col=[], idx=[];
-  const K=(x,y,z)=> x+','+y+','+z;
+  const occN = setNum(occ), mapN = setNum(map);
+  const ao=[0,0,0,0];
   map.forEach((c,k)=>{
-    const [x,y,z]=k.split(',').map(Number);
+    const a1=k.indexOf(','), b1=k.indexOf(',',a1+1), x=+k.slice(0,a1), y=+k.slice(a1+1,b1), z=+k.slice(b1+1), me=PK(x,y,z);
     const base = sil ? [0.07,0.065,0.09] : rgbOf(c);
     const j = sil ? 1 : 0.95 + hash3(x,y,z)*0.1;
     for (const f of FACES){
-      const nx=x+f.n[0], ny=y+f.n[1], nzz=z+f.n[2];
-      if (map.has(K(nx,ny,nzz))) continue;
-      const ao=[], v0=pos.length/3;
-      const corners = [[-1,-1],[1,-1],[1,1],[-1,1]];
-      for (const [su,sw] of corners){
-        const s1 = occ.has(K(nx+f.u[0]*su, ny+f.u[1]*su, nzz+f.u[2]*su)) ? 1:0;
-        const s2 = occ.has(K(nx+f.w[0]*sw, ny+f.w[1]*sw, nzz+f.w[2]*sw)) ? 1:0;
-        const cc = occ.has(K(nx+f.u[0]*su+f.w[0]*sw, ny+f.u[1]*su+f.w[1]*sw, nzz+f.u[2]*su+f.w[2]*sw)) ? 1:0;
-        const a = (s1&&s2) ? 0 : 3-(s1+s2+cc); ao.push(a);
+      const nb = me + f.nk;
+      if (mapN.has(nb)) continue;
+      const v0=pos.length/3;
+      for (let q=0;q<4;q++){ const su=CANTOS[q][0], sw=CANTOS[q][1];
+        const s1 = occN.has(nb + f.uk*su) ? 1:0;
+        const s2 = occN.has(nb + f.wk*sw) ? 1:0;
+        const cc = occN.has(nb + f.uk*su + f.wk*sw) ? 1:0;
+        const a = (s1&&s2) ? 0 : 3-(s1+s2+cc); ao[q]=a;
         const px = x+0.5 + f.n[0]*0.5 + f.u[0]*0.5*su + f.w[0]*0.5*sw;
         const py = y+0.5 + f.n[1]*0.5 + f.u[1]*0.5*su + f.w[1]*0.5*sw;
         const pz = z+0.5 + f.n[2]*0.5 + f.u[2]*0.5*su + f.w[2]*0.5*sw;
@@ -2127,14 +2141,10 @@ const Shots = {
   //  - o que já foi desenhado fica guardado no aparelho (IndexedDB) e volta na hora nas próximas vezes;
   //  - a fila espera o jogador parar de clicar e só desenha nos intervalos livres.
   fila:[], rodando:false, ultToque:0,
-  // retrato vai pra tela como endereço curto (blob:) e não como o PNG inteiro em texto: aba com muitos retratos (Heróis, Loja)
-  // montava um HTML de quase 1 MB a cada troca e o navegador tinha que ler tudo de novo
-  burl:{},
-  pub(key){ const d=this.cache[key]; if (!d) return ''; if (this.burl[key]) return this.burl[key];
-    try { const i=d.indexOf(','), bin=atob(d.slice(i+1)), u=new Uint8Array(bin.length); for (let k=0;k<bin.length;k++) u[k]=bin.charCodeAt(k);
-      return (this.burl[key] = URL.createObjectURL(new Blob([u], { type:'image/png' }))); } catch(e){ return d; } },
+  // retrato vai pra tela como endereço curto (blob:), não como o PNG inteiro em texto (34 KB cada): a aba Heróis montava ~700 KB de HTML.
+  // E já nasce e fica guardado como arquivo (Blob): nada de converter texto em imagem ao abrir a aba (isso travava o boneco).
   shot(key, vm, frame, sil){
-    if (this.cache[key]) return this.pub(key);
+    if (this.cache[key]) return this.cache[key];
     if (!this.r) return '';
     const ph = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==#'+encodeURIComponent(key);
     if (!this.fila.some(x=>x.key===key)) this.fila.push({ key, vm, frame, sil, ph });
@@ -2149,16 +2159,16 @@ const Shots = {
       // clicou agora há pouco: deixa a interface responder primeiro
       if (performance.now() - this.ultToque < 450){ setTimeout(()=>livre(passo), 150); return; }
       const j = this.fila.shift();
-      let url = this.cache[j.key] || ''; if (!url){ try { url = this.desenha(j.key, typeof j.vm==='function' ? j.vm() : j.vm, j.frame, j.sil); this.guarda(j.key, url); } catch(e){ console.error(e); } }
-      if (url) this.troca(j.ph, this.pub(j.key));
-      setTimeout(()=>livre(passo), 40); };
+      const segue = url=>{ if (url) this.troca(j.ph, url); setTimeout(()=>livre(passo), 40); };
+      if (this.cache[j.key]) return segue(this.cache[j.key]);
+      try { this.desenha(j.key, typeof j.vm==='function' ? j.vm() : j.vm, j.frame, j.sil, segue); } catch(e){ console.error(e); segue(''); } };
     setTimeout(()=>livre(passo), 60);
   },
   // guardados no aparelho: chave = versão dos modelos + retrato
   db:null, carregado:false,
   abreDB(){
     const ver = typeof DL_RETRATOS!=='undefined' ? DL_RETRATOS : 'dev';
-    const fim = ()=>{ this.carregado = true; this.fila = this.fila.filter(j=>{ if (this.cache[j.key]){ this.troca(j.ph, this.pub(j.key)); return false; } return true; }); this.agenda(); };
+    const fim = ()=>{ this.carregado = true; this.fila = this.fila.filter(j=>{ if (this.cache[j.key]){ this.troca(j.ph, this.cache[j.key]); return false; } return true; }); this.agenda(); };
     try {
       if (!window.indexedDB) return fim();
       const rq = indexedDB.open('dl-retratos', 1);
@@ -2168,13 +2178,13 @@ const Shots = {
         const cur = st.openCursor(); const t0 = Date.now();
         cur.onsuccess = ()=>{ const c = cur.result; if (!c){ fim(); return; }
           const k = String(c.key), i = k.indexOf('|');
-          if (k.slice(0,i)===ver){ if (!this.cache[k.slice(i+1)]) this.cache[k.slice(i+1)] = c.value; } else c.delete();
+          if (k.slice(0,i)===ver){ const v=c.value, nm=k.slice(i+1); if (!this.cache[nm] && v) this.cache[nm] = (typeof Blob!=='undefined' && v instanceof Blob) ? URL.createObjectURL(v) : v; } else c.delete();
           c.continue(); };
         cur.onerror = fim; setTimeout(()=>{ if (!this.carregado) fim(); }, 4000); };
     } catch(e){ fim(); }
   },
   guarda(key, url){ if (!this.db || !url) return; try { const ver = typeof DL_RETRATOS!=='undefined' ? DL_RETRATOS : 'dev'; this.db.transaction('r','readwrite').objectStore('r').put(url, ver+'|'+key); } catch(e){} },
-  desenha(key, vm, frame, sil){
+  desenha(key, vm, frame, sil, fim){
     const g = buildMesh(vm, { sil, leve: true, so: frame==='busto' ? ['torso','head','armL','armR'] : null }); const b = cellBounds(vm);
     let cx=(b.mn[0]+b.mx[0])/2, cy=(b.mn[1]+b.mx[1])/2, cz=(b.mn[2]+b.mx[2])/2;
     let size = Math.max(b.mx[0]-b.mn[0], b.mx[1]-b.mn[1], b.mx[2]-b.mn[2])*0.62 + 1;
@@ -2185,9 +2195,11 @@ const Shots = {
     this.scene.add(piv);
     const c=this.cam; c.left=-size; c.right=size; c.top=size; c.bottom=-size; c.position.set(0,frame==='busto'?3:6,100); c.lookAt(0,0,0); c.updateProjectionMatrix();
     this.r.render(this.scene, c);
-    const url = this.r.domElement.toDataURL('image/png');
     this.scene.remove(piv); disposeGroup(g);
-    this.cache[key] = url; return url;
+    const cv = this.r.domElement;
+    const comoTexto = ()=>{ const u = cv.toDataURL('image/png'); this.cache[key] = u; this.guarda(key, u); return u; };
+    if (fim && cv.toBlob){ cv.toBlob(b=>{ if (!b) return fim(comoTexto()); const u = URL.createObjectURL(b); this.cache[key] = u; this.guarda(key, b); fim(u); }, 'image/png'); return; }
+    const u = comoTexto(); if (fim) fim(u); return u;
   },
   item(it, sil){ return this.shot('i:'+it.id+(sil?':s':''), ()=>buildItemVModel(it), it.slot==='arma' && !['alaude','arco','adagas','baquetas','besta','escudo'].includes(it.c.k) ? 'arma' : null, sil); },
   hero(h, eq, sil){ return this.shot('h:'+h.id+':'+h.skin+':'+JSON.stringify(eq||{})+(sil?':s':''), ()=>buildVModel(h, eq, { leve:true }), 'busto', sil); },

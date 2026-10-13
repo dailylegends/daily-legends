@@ -30,7 +30,6 @@
 html,body{ margin:0; }
 /* cenário numa camada fixa do tamanho da tela: no iPhone, background fixed + cover esticava a imagem pela página inteira (zoom enorme) */
 body::before{ content:''; position:fixed; inset:0; z-index:-1; pointer-events:none; background:var(--pedra) var(--cen, none) center bottom / cover no-repeat; image-rendering:pixelated; }
-body.ps2::before{ image-rendering:auto; } body.ps2 #ambiente{ image-rendering:auto !important; filter:blur(0.6px); }
 body{ background:var(--pedra); image-rendering:pixelated; color:var(--texto); font-family:var(--corpo); font-size:15px; line-height:1.35; min-height:100vh; }
 img.px{ image-rendering:pixelated; width:16px; height:16px; vertical-align:middle; }
 img.vox{ display:block; width:100%; height:auto; image-rendering:auto; }
@@ -415,6 +414,51 @@ button.stat{ background:none; border:0; color:inherit; font:inherit; padding:0; 
 body.treme #jogo{ animation:treme .55s; }
 @keyframes treme{ 0%,100%{ transform:none; } 20%{ transform:translate(-6px,3px); } 40%{ transform:translate(5px,-4px); } 60%{ transform:translate(-4px,-2px); } 80%{ transform:translate(3px,2px); } }
 @media (prefers-reduced-motion: reduce){ .fconf, .ffai{ display:none; } }
+
+/* ===== 13/10: palco maior, abas numa coluna à direita (maiores), mapa e faixa embaixo do emoji ===== */
+.humorbtn{ display:block; }
+.humorbtn .hcol{ display:grid; gap:8px; justify-items:start; }
+.humorbtn .hsel{ display:grid; gap:6px; width:156px; }
+.humorbtn .hsel label{ display:grid; gap:2px; }
+.humorbtn .hsel small{ font-size:10px; color:var(--fraco); text-shadow:0 1px 0 #000; padding-left:2px; }
+.humorbtn select{ width:100%; appearance:none; -webkit-appearance:none; background:rgba(21,26,26,.9) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0h10L5 6z' fill='%23c9c3ad'/%3E%3C/svg%3E") no-repeat right 8px center; color:var(--texto); border:2px solid var(--linha); border-radius:0; font:12px var(--corpo); padding:6px 24px 6px 8px; min-height:34px; cursor:pointer; }
+.humorbtn select:focus-visible{ outline:2px solid var(--ouro); }
+.humorbtn .hpainel{ position:absolute; left:56px; top:0; z-index:2; }
+.main{ grid-template-columns:minmax(0,1.35fr) minmax(0,1fr); }
+.painel{ grid-template-columns:minmax(0,1fr) 104px; grid-template-rows:auto minmax(0,1fr); }
+.folhaTopo{ grid-column:1; grid-row:1; }
+#conteudo{ grid-column:1; grid-row:1 / span 2; }
+#tabs{ grid-column:2; grid-row:1 / span 2; display:flex; flex-direction:column; gap:6px; padding:8px; border-bottom:0; border-left:3px solid var(--linha); overflow-y:auto; overflow-x:hidden; scrollbar-width:none; }
+#tabs::-webkit-scrollbar{ display:none; }
+.tab{ flex:0 0 auto; min-height:64px; padding:8px 4px 6px; font-size:11.5px; gap:5px; }
+.tab img{ width:28px; height:28px; }
+.tab span{ white-space:normal; line-height:1.15; text-align:center; }
+@media (max-width: 860px){
+  .main{ grid-template-columns:1fr; }
+  .palco{ right:88px; }
+  .placa{ bottom:max(8px, env(safe-area-inset-bottom)); }
+  .painel{ top:0; left:auto; right:0; bottom:0; width:88px; border-width:0 0 0 3px; }
+  #tabs{ order:0; flex:1 1 auto; flex-direction:column; overflow-y:auto; overflow-x:hidden; gap:6px; padding:8px 6px; padding-bottom:max(8px, env(safe-area-inset-bottom)); border-top:0; border-left:0; touch-action:pan-y; }
+  .tab{ flex:0 0 auto; width:100%; min-height:60px; padding:7px 2px 5px; font-size:10.5px; } .tab img{ width:24px; height:24px; }
+  #jogo.folha .painel{ top:34%; left:0; width:auto; display:grid; grid-template-columns:minmax(0,1fr) 88px; grid-template-rows:auto minmax(0,1fr); border-width:3px 0 0; }
+  #jogo.folha .folhaTopo{ grid-column:1; grid-row:1; }
+  #jogo.folha #conteudo{ grid-column:1; grid-row:2; }
+  #jogo.folha #tabs{ grid-column:2; grid-row:1 / span 2; border-left:3px solid var(--linha); }
+}
+
+/* minimapa da trilha */
+.minimapa{ position:absolute; top:10px; right:10px; z-index:6; width:132px; height:132px; padding:0; border:0; cursor:pointer; background:#1b1d16; overflow:hidden; }
+.minimapa .mmArea{ position:absolute; inset:6px; } .minimapa svg{ position:absolute; inset:0; width:100%; height:100%; }
+.minimapa .chao{ fill:#3d4a2e; } .minimapa .mont{ fill:#5d5a4a; stroke:#2b2a22; stroke-width:.8; } .minimapa .arv{ fill:#26402a; } .minimapa .tronco{ fill:#4a3420; }
+.minimapa .estrada{ fill:none; stroke:#8c7650; stroke-width:4.5; stroke-linejoin:round; stroke-linecap:round; stroke-dasharray:1 3.2; }
+.minimapa .feito{ fill:none; stroke:var(--ouro); stroke-width:3.2; stroke-linejoin:round; stroke-linecap:round; }
+.minimapa circle{ fill:#2a2620; stroke:#000; stroke-width:1; } .minimapa circle.ok{ fill:#ffd77a; } .minimapa circle.agora{ fill:#fff3c4; animation:pisca 1.2s steps(2) infinite; }
+.minimapa img{ position:absolute; width:20px; height:20px; transform:translate(-50%,-50%); pointer-events:none; }
+.minimapa .mmEu{ width:22px; height:22px; filter:drop-shadow(0 0 3px #ffb347); animation:pula 1s steps(2) infinite; }
+.minimapa .mmTxt{ position:absolute; left:0; right:0; bottom:0; padding:2px 6px; font-size:10px; color:var(--texto); background:rgba(12,15,15,.82); text-align:left; white-space:nowrap; }
+.minimapa .mmTxt b{ color:var(--ouro); }
+#jogo.folha .minimapa{ display:none; }
+@media (max-width: 860px){ .minimapa{ width:120px; height:120px; top:8px; right:8px; } .minimapa img{ width:16px; height:16px; } .minimapa .mmEu{ width:18px; height:18px; } .minimapa .mmTxt{ font-size:9px; } .humorbtn .hsel{ width:116px; gap:4px; } .humorbtn .hsel small{ font-size:9px; } .humorbtn select{ font-size:10.5px; min-height:28px; padding:4px 20px 4px 6px; background-position:right 6px center; } }
 </style>
 </head>
 <body>
@@ -425,11 +469,9 @@ body.treme #jogo{ animation:treme .55s; }
       <button class="btn ouro" id="btnEntrarT">Entrar com Google</button>
       <button class="btn" id="btnComecar">Começar</button>
       <p class="fraco tConta"></p>
-      <label class="sl2"><span>música</span><input type="range" id="volM" min="0" max="1" step="0.05" value="0.6"></label>
-      <label class="sl2"><span>som</span><input type="range" id="volS" min="0" max="1" step="0.05" value="0.7"></label>
-      <button class="btn duplo" id="btnFaixaT"><small>faixa</small><span id="tFaixa">Taverna ao Luar</span></button>
-      <button class="btn duplo" id="btnCenT"><small>cenário</small><span id="tCen">Castelo ao Luar</span></button>
-      <button class="btn" id="btnGuiaT">Como jogar</button>
+      <button class="btn" id="btnConfigT">Configurações</button>
+      <button class="btn" id="btnGuiaT">Guia</button>
+      <button class="btn ruim" id="btnZerarT" hidden>Zerar jogo</button>
       <p class="fraco" id="tData"></p>
     </div>
   </div>
@@ -518,8 +560,8 @@ const SAVE = {
  "mod": {},
  "rev": 0
 };
-const DL_VERSAO = "2026.10.13-0140";
-const DL_RETRATOS = "fe44abbbf5";
+const DL_VERSAO = "2026.10.13-0959";
+const DL_RETRATOS = "c4768c6cbd";
 
 /* ===== Voxel v2: bonecos esculpidos em meia resolução (voxel = 0,5 do mundo) ===== */
 const VS = 0.5;
@@ -744,7 +786,6 @@ function paintFace(m,h){
   headShape(m,h);
   if (h.raca==='lobo') return paintWolf(m,h);
   const white='#f4f0e6';
-  if (m.ps2) return paintFacePS2(m,h);
   // olhos 3x2: branco por fora, íris 2x2 por dentro com brilho
   for (const s of [-1,1]){
     const xo = s<0 ? -6 : 5, xi1 = s<0 ? -5 : 4, xi2 = s<0 ? -4 : 3;
@@ -772,10 +813,10 @@ function paintFace(m,h){
   else m.box('head',-2,1,47,47,Z,Z,(x)=> (x===-2||x===1)? shade(S,-0.25) : '#5a2a22');
   // bochechas
   if (f){ for (const x of [-7,-6,5,6]) m.set('head',x,49,Z,shade(S,-0.06)); }
-  paintFacePS2(m,h,true);
+  paintFaceVol(m,h,true);
 }
-// parte do rosto que é volume (orelha, presa, barba): no PS2 olhos, boca e sobrancelha vêm da textura
-function paintFacePS2(m,h,classico){
+// parte do rosto que é volume (orelha, presa, barba)
+function paintFaceVol(m,h,classico){
   const S=h.skin, SD=shade(S,-0.18), Z=HZ1, ZP=HZ1+1;
   // orelhas
   if (h.raca==='orc'){
@@ -820,7 +861,7 @@ function paintWolf(m,h){
   for (const s of [-1,1]) for (let y=45;y<=50;y++) for (let z=1;z<=Z;z++){ const x = s<0?HX0:HX1; if (m.has('head',x,y,z)) m.set('head',x,y,z, hash3(x,y,z)>0.4? mz : shade(mz,-0.1)); }
   m.box('head',-6,5,45,49,Z,Z,(x,y,z)=> (Math.abs(x+0.5)>3.5)? mz : null);
   // olhos âmbar com testa escura
-  if (!m.ps2) for (const s of [-1,1]){
+  for (const s of [-1,1]){
     const xo = s<0 ? -6 : 5, xi = s<0 ? -5 : 4, xin = s<0 ? -4 : 3;
     m.set('head',xo,52,Z,'#e7b04a'); m.set('head',xi,52,Z,'#e7b04a'); m.set('head',xin,52,Z,'#141414');
     m.set('head',xo,51,Z,'#c08a2a'); m.set('head',xi,51,Z,'#141414'); m.set('head',xin,51,Z,fd);
@@ -1334,16 +1375,12 @@ const BOSS_VISUAL = {
 };
 
 
-const BASE_PS2 = {};
 function buildVModel(h, equip, opts){
   const m = new VModel();
   opts = opts || {};
-  m.ps2 = typeof RENDER_PS2!=='undefined' && RENDER_PS2 && ESTILO_NOVO && !opts.voxel; m.heroi = h;
+  m.heroi = h;
   paintBody(m,h); paintFace(m,h); paintHair(m,h);
-  if (m.ps2){ const bk = (h.sexo||'m')+'|'+(h.raca||'');
-    if (!BASE_PS2[bk]){ const b = new VModel(); b.ps2 = true; paintBody(b,Object.assign({},h,{classe:''}),true); headShape(b,h); estilizar(b,h); BASE_PS2[bk] = { parts:Object.fromEntries(Object.entries(b.parts).map(([k,v])=>[k,new Set(v.keys())])) }; }
-    m.base = BASE_PS2[bk]; }
-  if (ESTILO_NOVO) camadas(m,h);
+  camadas(m,h);
   const eq = equip || {};
   const order = ['pernas','maos','peito','acess','cabeca','arma'];
   let antes = null; const guarda = ()=>{ antes = { L:new Map(m.parts.armL), R:new Map(m.parts.armR) }; };
@@ -1361,16 +1398,11 @@ function buildVModel(h, equip, opts){
   { const id = eq.arma || h.arma, c = eq.arma ? ITEM[eq.arma].c : null;
     const base = { marteloBase:'hammer', machadoBase:'axe', lanca:'spear', varinha:'wand', pincelBase:'brush' };
     m.arma = { id, k: c ? c.k : (base[id] ? 'pole' : id), kind: c ? (c.kind||'') : (base[id]||''), small: id==='marteloBase' || id==='varinha' || id==='maca' }; }
-  const fios = m.ps2 ? [...m.hairOrig.keys()] : null;
-  if (ESTILO_NOVO) estilizar(m,h,opts.leve);
-  if (fios){ const R = m.res||1; m.hairKeys = new Set(); for (const k of fios){ const [x,y,z]=k.split(',').map(Number), yy = y>PERNA_Y1 ? y+PERNA_D : y;
-    for (let a=0;a<R;a++) for (let b=0;b<R;b++) for (let d=0;d<R;d++) m.hairKeys.add((x*R+a)+','+(yy*R+b)+','+(z*R+d)); } }
+  estilizar(m,h,opts.leve);
   return m;
 }
 
 /* ---------- estilo novo: corpo mais alto, roupa com estampa, peças em camadas ---------- */
-let ESTILO_NOVO = false;
-ESTILO_NOVO = true; try { const v=localStorage.getItem('dl.visual')||''; if (v==='blocos' || v.startsWith('ps1')) ESTILO_NOVO = false; } catch(e){}
 const PERNA_K = 1.6, PERNA_Y0 = 9, PERNA_Y1 = 23;
 const PERNA_D = Math.round((PERNA_Y1-PERNA_Y0+1)*PERNA_K) - (PERNA_Y1-PERNA_Y0+1);
 function estilizar(m,h,leve){
@@ -1414,7 +1446,6 @@ function esculpir(m){
       const cx=(f[0]+f[1]+1)/2, cz=(f[2]+f[3]+1)/2, a=(f[1]-f[0]+1)/2*k2+0.35, b=(f[3]-f[2]+1)/2*k2+0.35;
       if (Math.pow(Math.abs((x+0.5-cx)/a),n) + Math.pow(Math.abs((z+0.5-cz)/b),n) > 1) map.delete(k); }
   };
-  if (m.ps2) return;   // no PS2 o corpo vem esculpido em polígono: os voxels só servem de molde e de cor
   corta('legL', 2.3, perfilPerna); corta('legR', 2.3, perfilPerna);
   corta('armL', 2.4, y=>perfilBraco(y,m.piv.armL)); corta('armR', 2.4, y=>perfilBraco(y,m.piv.armR));
   corta('torso', 3.2, null);
@@ -1427,8 +1458,8 @@ function esculpir(m){
       if (Math.pow(Math.abs((x+0.5-cx)/a),3.2) + Math.pow(Math.abs((z+0.5-cz)/b),3.2) > 1){ map.delete(k); continue; }
       const g=fx.get(x), cy=(g[0]+g[1]+1)/2, ay=(g[1]-g[0]+1)/2+0.3, cz2=(g[2]+g[3]+1)/2, bz=(g[3]-g[2]+1)/2+0.3;
       if (y>cy && Math.pow(Math.abs((y+0.5-cy)/ay),3.2) + Math.pow(Math.abs((z+0.5-cz2)/bz),3.2) > 1) map.delete(k); } }
-  // tira o miolo (só a casca aparece): menos peso pra montar a malha (no PS2 o volume precisa ficar cheio)
-  if (!m.ps2) for (const p in m.parts){ const map=m.parts[p], tira=[]; map.forEach((c,k)=>{ const [x,y,z]=k.split(',').map(Number);
+  // tira o miolo (só a casca aparece): menos peso pra montar a malha
+  for (const p in m.parts){ const map=m.parts[p], tira=[]; map.forEach((c,k)=>{ const [x,y,z]=k.split(',').map(Number);
     if (map.has((x+1)+','+y+','+z) && map.has((x-1)+','+y+','+z) && map.has(x+','+(y+1)+','+z) && map.has(x+','+(y-1)+','+z) && map.has(x+','+y+','+(z+1)) && map.has(x+','+y+','+(z-1))) tira.push(k); });
     tira.forEach(k=>map.delete(k)); }
 }
@@ -1597,7 +1628,7 @@ const FACES = [
   { n:[0,0,1], u:[1,0,0], w:[0,1,0] }, { n:[0,0,-1], u:[1,0,0], w:[0,1,0] }
 ];
 FACES.forEach(f=>{ const c=[f.u[1]*f.w[2]-f.u[2]*f.w[1], f.u[2]*f.w[0]-f.u[0]*f.w[2], f.u[0]*f.w[1]-f.u[1]*f.w[0]]; f.flip = (c[0]*f.n[0]+c[1]*f.n[1]+c[2]*f.n[2]) < 0; });
-const AOL = (typeof ESTILO_NOVO!=='undefined' && ESTILO_NOVO) ? [0.38, 0.6, 0.82, 1.0] : [0.52, 0.7, 0.86, 1.0];
+const AOL = [0.38, 0.6, 0.82, 1.0];
 const colCache = {};
 function rgbOf(hex){ if (colCache[hex]) return colCache[hex]; const c=new THREE.Color(hex); return colCache[hex]=[c.r,c.g,c.b]; }
 
@@ -1636,81 +1667,14 @@ function meshPart(map, occ, pv, sc, sil){
   g.setIndex(pos.length/3 > 65000 ? new THREE.Uint32BufferAttribute(idx,1) : new THREE.Uint16BufferAttribute(idx,1));
   return g;
 }
-/* ---------- visual PS1: os blocos viram malha de polígonos facetada (surface nets), mesmas cores ---------- */
-let RENDER_PS1 = false, PS1_SUAVE = 0;
-try { const v=localStorage.getItem('dl.visual')||''; RENDER_PS1 = v.startsWith('ps1'); PS1_SUAVE = v==='ps1suave' ? 2 : 0; } catch(e){}
-function meshPartNets(map, pv, sc, sil){
-  if (!map.size) return null;
-  const K=(x,y,z)=> x+','+y+','+z, has=(x,y,z)=> map.has(K(x,y,z));
-  let mn=[1e9,1e9,1e9], mx=[-1e9,-1e9,-1e9];
-  map.forEach((c,k)=>{ const v=k.split(',').map(Number); for (let i=0;i<3;i++){ mn[i]=Math.min(mn[i],v[i]); mx[i]=Math.max(mx[i],v[i]); } });
-  // vértice de cada célula (cubo entre 8 centros de voxel) que cruza a superfície: média dos meios das arestas que mudam
-  const cel = new Map();
-  const E = [[0,0,0,1,0,0],[0,1,0,1,1,0],[0,0,1,1,0,1],[0,1,1,1,1,1],[0,0,0,0,1,0],[1,0,0,1,1,0],[0,0,1,0,1,1],[1,0,1,1,1,1],[0,0,0,0,0,1],[1,0,0,1,0,1],[0,1,0,0,1,1],[1,1,0,1,1,1]];
-  const vert = (x,y,z)=>{ const k=K(x,y,z); if (cel.has(k)) return cel.get(k);
-    let sx=0,sy=0,sz=0,n=0;
-    for (const e of E){ const a=has(x+e[0],y+e[1],z+e[2]), b=has(x+e[3],y+e[4],z+e[5]); if (a!==b){ sx+=x+(e[0]+e[3])/2+0.5; sy+=y+(e[1]+e[4])/2+0.5; sz+=z+(e[2]+e[5])/2+0.5; n++; } }
-    const v = n ? [sx/n, sy/n, sz/n] : [x+1,y+1,z+1]; cel.set(k,v); return v; };
-  const pos=[], nor=[], col=[], quads=[];
-  const tri=(a,b,c,cor,nx,ny,nz)=>{
-    const ux=b[0]-a[0], uy=b[1]-a[1], uz=b[2]-a[2], wx=c[0]-a[0], wy=c[1]-a[1], wz=c[2]-a[2];
-    let fx=uy*wz-uz*wy, fy=uz*wx-ux*wz, fz=ux*wy-uy*wx; const l=Math.hypot(fx,fy,fz); if (l<1e-6) return;
-    if (fx*nx+fy*ny+fz*nz < 0){ const t=b; b=c; c=t; fx=-fx; fy=-fy; fz=-fz; }
-    for (const v of [a,b,c]){ pos.push((v[0]-pv[0])*sc, (v[1]-pv[1])*sc, (v[2]-pv[2])*sc); nor.push(fx/l,fy/l,fz/l); col.push(cor[0],cor[1],cor[2]); }
-  };
-  // cada par de voxels vizinhos (um cheio, um vazio) vira um quadrado ligando as 4 células em volta da aresta
-  for (let x=mn[0]-1;x<=mx[0];x++) for (let y=mn[1]-1;y<=mx[1];y++) for (let z=mn[2]-1;z<=mx[2];z++){
-    const a = has(x,y,z);
-    for (let ax=0; ax<3; ax++){
-      const bx=x+(ax===0), by=y+(ax===1), bz=z+(ax===2), b = has(bx,by,bz);
-      if (a===b) continue;
-      const cheio = a ? K(x,y,z) : K(bx,by,bz), hx = map.get(cheio);
-      const [cx,cy,cz] = cheio.split(',').map(Number);
-      const base = sil ? [0.07,0.065,0.09] : rgbOf(hx), j = sil ? 1 : 0.94 + hash3(cx,cy,cz)*0.12, cor=[base[0]*j, base[1]*j, base[2]*j];
-      let q;
-      if (ax===0) q=[vert(x,y-1,z-1),vert(x,y,z-1),vert(x,y,z),vert(x,y-1,z)];
-      else if (ax===1) q=[vert(x-1,y,z-1),vert(x,y,z-1),vert(x,y,z),vert(x-1,y,z)];
-      else q=[vert(x-1,y-1,z),vert(x,y-1,z),vert(x,y,z),vert(x-1,y,z)];
-      const s = a ? 1 : -1, n=[ax===0?s:0, ax===1?s:0, ax===2?s:0];
-      quads.push([q,cor,n]);
-    }
-  }
-  // alisa: cada vértice anda um pouco pra média dos vizinhos (formas mais redondas, cara de modelo de polígono)
-  if (PS1_SUAVE){
-    const viz = new Map(); quads.forEach(([q])=>{ for (let i=0;i<4;i++){ const a=q[i], b=q[(i+1)%4]; if (!viz.has(a)) viz.set(a,new Set()); if (!viz.has(b)) viz.set(b,new Set()); viz.get(a).add(b); viz.get(b).add(a); } });
-    for (let it=0; it<PS1_SUAVE; it++){ const novo = new Map(); viz.forEach((vs,v)=>{ let sx=0,sy=0,sz=0; vs.forEach(u=>{ sx+=u[0]; sy+=u[1]; sz+=u[2]; }); const n=vs.size; novo.set(v,[v[0]*0.5+sx/n*0.5, v[1]*0.5+sy/n*0.5, v[2]*0.5+sz/n*0.5]); }); novo.forEach((p,v)=>{ v[0]=p[0]; v[1]=p[1]; v[2]=p[2]; }); }
-  }
-  quads.forEach(([q,cor,n])=>{ tri(q[0],q[1],q[2],cor,n[0],n[1],n[2]); tri(q[0],q[2],q[3],cor,n[0],n[1],n[2]); });
-  const g = new THREE.BufferGeometry();
-  g.setAttribute('position', new THREE.Float32BufferAttribute(pos,3));
-  g.setAttribute('normal', new THREE.Float32BufferAttribute(nor,3));
-  g.setAttribute('color', new THREE.Float32BufferAttribute(col,3));
-  return g;
-}
-// tremidinha de vértice do PS1: arredonda a posição na tela pra uma grade baixa
-function matPS1(){
-  const m = new THREE.MeshLambertMaterial({ vertexColors:true });
-  m.onBeforeCompile = sh=>{ sh.vertexShader = sh.vertexShader.replace('#include <project_vertex>', '#include <project_vertex>\n  { vec2 grade = vec2(200.0, 150.0); gl_Position.xy = floor(gl_Position.xy / gl_Position.w * grade + 0.5) / grade * gl_Position.w; }'); };
-  return m;
-}
 let MAT_ARMA = null;
-let MAT_PS1 = null;
 function buildMesh(vm, o){
   o = o || {};
-  if (vm.ps2 && typeof buildMeshPS2==='function') return buildMeshPS2(vm, o);
-  if (vm.pet && typeof RENDER_PS2!=='undefined' && RENDER_PS2 && PET_PS2[vm.pet]) return buildPetPS2(vm, o); const RES = vm.res || 1, sc = o.scale || VS/RES;
+  const RES = vm.res || 1, sc = o.scale || VS/RES;
   const g = new THREE.Group(); const parts = {};
   const occ = new Set(); for (const name in vm.parts) if (name!=='armaL' && name!=='armaR') for (const k of vm.parts[name].keys()) occ.add(k);
-  const ps1 = RENDER_PS1 && !o.blocos; if (ps1 && !MAT_PS1) MAT_PS1 = matPS1();
-  const ps2 = typeof RENDER_PS2!=='undefined' && RENDER_PS2 && !o.blocos; if (ps2 && !MAT_PS2) MAT_PS2 = matPS2();
-  // no PS2, voxel grande (pet, item solto) é dividido antes de alisar
-  const up = ps2 && RES<2 ? 2 : 1;
-  const malha = (map, pv, it)=>{
-    let geo;
-    if (ps2){ const m2 = up>1 ? dobraRes(map, up) : map; geo = meshSmooth(m2, pv.map(v=>v*up), sc/up, { iter: it==null ? 4 : it, sil:o.sil, blend:o.blend }); }
-    else geo = ps1 ? meshPartNets(map, pv, sc, o.sil) : meshPart(map, occ, pv, sc, o.sil);
-    const mesh = new THREE.Mesh(geo, ps2 ? MAT_PS2 : ps1 ? MAT_PS1 : MAT); mesh.castShadow = true; mesh.receiveShadow = true; return mesh; };
-  const sobra = ps2 ? 2*RES : 0;   // no PS2, cotovelo e joelho se sobrepõem um pouco (sem buraco quando dobra)
+  const malha = (map, pv)=>{ const mesh = new THREE.Mesh(meshPart(map, occ, pv, sc, o.sil), MAT); mesh.castShadow = true; mesh.receiveShadow = true; return mesh; };
+  const sobra = 0;
   for (const name in vm.parts){
     if (name==='armaL' || name==='armaR') continue;   // arma segurada: vai junto com o antebraço
     const map = vm.parts[name], pv = o.pivot0 ? ((o.piv && o.piv[name]) || [0,0,0]) : ((vm.piv && vm.piv[name]) || PIV[name] || [0,0,0]);
@@ -1724,12 +1688,12 @@ function buildMesh(vm, o){
       if (cima.size) pg.add(malha(cima, pv));
       const fg = new THREE.Group(); fg.position.set((fv[0]-pv[0])*sc, (fv[1]-pv[1])*sc, (fv[2]-pv[2])*sc); fg.userData.base = [fg.position.x, fg.position.y, fg.position.z]; fg.userData.piv = fv;
       if (baixo.size) fg.add(malha(baixo, fv));
-      if (arma && arma.size && !ps2){
+      if (arma && arma.size){
         // arma: peça própria presa no punho (gira em volta do cabo dentro da mão, conforme a pegada de cada arma)
         let hy = 1e9; map.forEach((c,k)=>{ const y = +k.split(',')[1]; if (y<hy) hy = y; });
         const sx = name==='armL' ? -1 : 1, punho = [ (sx>0 ? GX+1 : -12.5) * RES, hy + 3*RES, (GZ+1)*RES ];
         if (!MAT_ARMA){ MAT_ARMA = MAT.clone(); MAT_ARMA.polygonOffset = true; MAT_ARMA.polygonOffsetFactor = 1; MAT_ARMA.polygonOffsetUnits = 2; }
-        const ao = new Set(arma.keys()), mesh = ps1 ? malha(arma, punho) : new THREE.Mesh(meshPart(arma, ao, punho, sc, o.sil), o.sil ? MAT : MAT_ARMA);
+        const ao = new Set(arma.keys()), mesh = new THREE.Mesh(meshPart(arma, ao, punho, sc, o.sil), o.sil ? MAT : MAT_ARMA);
         mesh.castShadow = true; mesh.receiveShadow = true;
         const pq = new THREE.Group(); pq.position.set((punho[0]-fv[0])*sc, (punho[1]-fv[1])*sc, (punho[2]-fv[2])*sc); pq.add(mesh);
         let y0 = 1e9, y1 = -1e9; arma.forEach((c,k)=>{ const y = +k.split(',')[1]; if (y<y0) y0 = y; if (y>y1) y1 = y; });
@@ -1737,7 +1701,6 @@ function buildMesh(vm, o){
         pq.userData = { mesh, baixo:(y0-punho[1])*sc, cima:(y1+1-punho[1])*sc, desliza:(punho[1] - (y0 + 3*RES))*sc };
         fg.add(pq); parts['pega'+lado] = pq;
       }
-      if (arma && arma.size && ps2){ const am = malha(arma, fv, 1); am.userData.arma = true; fg.add(am); }
       pg.add(fg); parts['fore'+lado] = fg;
     } else if (!o.pivot0 && (name==='legL' || name==='legR')){
       // joelho: a canela e o pé viram peça filha que dobra
@@ -1808,9 +1771,8 @@ function platform(tema){
   // enfeites: [cor, quantidade, altura extra]; longe do centro pra não entrar no herói
   let k=0; P.enf.forEach(([cor,n,alt])=>{ for (let i=0;i<n;i++,k++){ const a=hash3(k,4,4)*Math.PI*2, rr=7+hash3(k,5,5)*13, x=Math.round(Math.cos(a)*rr), z=Math.round(Math.sin(a)*rr);
     vm.set('torso',x,0,z,cor); for (let y=1;y<=(alt||0);y++) vm.set('torso',x,y,z, y===alt && alt>1 ? shade(cor,0.15) : cor); } });
-  if (ESTILO_NOVO) enfeitaPlat(vm, tema||'castelo', R);
-  if (typeof RENDER_PS2!=='undefined' && RENDER_PS2) return platformPS2(vm, R);
-  return buildMesh(vm, { pivot0:true, blocos:true });
+  enfeitaPlat(vm, tema||'castelo', R);
+  return buildMesh(vm, { pivot0:true });
 }
 /* enfeites 3D da plataforma por cenário (estilo novo): ficam no fundo e nas laterais, longe do herói e dos pets */
 function enfeitaPlat(vm, tema, R){
@@ -1850,21 +1812,13 @@ function enfeitaPlat(vm, tema, R){
   if (tema==='vila'){ barril(...k(2)); caixa(...k(4)); poste(...k(10)); barril(...k(12)); [0,7,13].forEach(i=>tufo(...k(i),'#5a7a40')); }
 }
 
-function addLights(scene){
-  if (ESTILO_NOVO){ // luz de estúdio: quente, suave, sombra comprida
-    scene.add(new THREE.HemisphereLight(0xfff2e2, 0x5a4636, 0.78));
-    const k = new THREE.DirectionalLight(0xffe2c0, 1.0); k.position.set(55,42,38); k.castShadow = true; k.shadow.mapSize.set(2048,2048);
-    const c=k.shadow.camera; c.left=-55; c.right=55; c.top=60; c.bottom=-25; c.near=1; c.far=260; k.shadow.bias=-0.0015; k.shadow.radius=3; scene.add(k);
-    const f = new THREE.DirectionalLight(0xc8d8ff, 0.28); f.position.set(-45,25,30); scene.add(f);
-    const r = new THREE.DirectionalLight(0xffd8b0, 0.32); r.position.set(-30,40,-50); scene.add(r);
-    return;
-  }
-  scene.add(new THREE.HemisphereLight(0xe6eef0, 0x3a3028, 0.9));
-  const d = new THREE.DirectionalLight(0xfff0d8, 0.75); d.position.set(30,60,45);
-  d.castShadow = true; d.shadow.mapSize.set(1024,1024);
-  const sc=d.shadow.camera; sc.left=-30; sc.right=30; sc.top=45; sc.bottom=-10; sc.near=1; sc.far=200; d.shadow.bias=-0.002;
-  scene.add(d);
-  const rim = new THREE.DirectionalLight(0x9ab8ff, 0.35); rim.position.set(-40,30,-40); scene.add(rim);
+function addLights(scene){ // // luz de estúdio: quente, suave, sombra comprida
+  scene.add(new THREE.HemisphereLight(0xfff2e2, 0x5a4636, 0.78));
+  const k = new THREE.DirectionalLight(0xffe2c0, 1.0); k.position.set(55,42,38); k.castShadow = true; k.shadow.mapSize.set(2048,2048);
+  const c=k.shadow.camera; c.left=-55; c.right=55; c.top=60; c.bottom=-25; c.near=1; c.far=260; k.shadow.bias=-0.0015; k.shadow.radius=3; scene.add(k);
+  const f = new THREE.DirectionalLight(0xc8d8ff, 0.28); f.position.set(-45,25,30); scene.add(f);
+  const r = new THREE.DirectionalLight(0xffd8b0, 0.32); r.position.set(-30,40,-50); scene.add(r);
+
 }
 
 /* ---------- animações: quadros-chave suaves ---------- */
@@ -1966,8 +1920,8 @@ const MAX_PETS_JUNTOS = PET_LUGAR.length;
 class Stage {
   constructor(el){
     this.el = el;
-    this.renderer = new THREE.WebGLRenderer({ antialias:!RENDER_PS1, alpha:true });
-    this.renderer.setPixelRatio(RENDER_PS1 ? 0.5 : Math.min(2, window.devicePixelRatio||1)); if (RENDER_PS1){ this.renderer.domElement.style.imageRendering='pixelated'; }
+    this.renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
+    this.renderer.setPixelRatio(Math.min(1.5, window.devicePixelRatio||1));   // 1.5 no máximo: no celular (tela 3x) desenhar em 2x pesava a cada quadro
     this.renderer.shadowMap.enabled = true; this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     el.appendChild(this.renderer.domElement);
     this.scene = new THREE.Scene();
@@ -1985,7 +1939,8 @@ class Stage {
     c.addEventListener('pointerup', up); c.addEventListener('pointercancel', up);
     new ResizeObserver(()=>this.resize()).observe(el);
     this.resize();
-    const loop = (t)=>{ this.frame(t); requestAnimationFrame(loop); }; requestAnimationFrame(loop);
+    const jogo = document.getElementById('jogo');
+    const loop = (t)=>{ if (!(jogo && jogo.hidden)) this.frame(t); else this.ult = t; requestAnimationFrame(loop); }; requestAnimationFrame(loop);
   }
   setPlataforma(tema){ if (tema===this.platTema) return; const esc0=this.plat.scale.x; this.scene.remove(this.plat); disposeGroup(this.plat); this.plat = platform(tema); this.plat.scale.setScalar(esc0); this.scene.add(this.plat); this.platTema = tema; }
   setModel(vm, heroi){
@@ -2102,8 +2057,9 @@ class Stage {
     const hb = this.hb || { y0:0, y1:32, r:10 }, pb = this.pb;
     const y0 = Math.min(hb.y0, pb ? pb.y0 : 0), y1 = Math.max(hb.y1, pb ? pb.y1 : 0), R = Math.max(hb.r, pb ? pb.r : 0, 8);
     // faixa livre (em NDC, -1..1): margem de 5% e, no layout largo, sem ficar atrás da placa do nome
-    const mx = 0.92; let yb = -0.92, yt = 0.92;
+    let yb = -0.92, yt = 0.92;
     const pl = this.livre ? this.livre(w,h) : null;
+    const mx = (pl && typeof pl==='object' && pl.mx) || 0.92;   // celular: herói menor, sobra espaço pro minimapa
     if (pl!=null && typeof pl==='object'){ if (pl.yb!=null) yb = Math.max(yb, pl.yb); if (pl.yt!=null) yt = Math.min(yt, pl.yt); if (yt-yb < 0.5) yt = Math.min(0.92, yb+0.5); }
     else if (pl!=null) yb = Math.max(yb, pl);
     const cy = (y0+y1)/2, pitch = 0.1;
@@ -2114,6 +2070,7 @@ class Stage {
     const mede = ()=>{ let ax=0, lo=9, hi=-9; for (const p of pts){ v.set(p[0],p[1],p[2]).project(cam); ax=Math.max(ax,Math.abs(v.x)); lo=Math.min(lo,v.y); hi=Math.max(hi,v.y); } return { ax, lo, hi }; };
     let a = R*1.2+2, z = 4000;
     for (let k=0;k<32;k++){ const d=(a+z)/2; poe(d); const m=mede(); if (m.ax<=mx && (m.hi-m.lo)<=(yt-yb)) z=d; else a=d; }
+    if (pl && typeof pl==='object' && pl.longe) z *= pl.longe;   // celular: câmera mais longe = herói menor
     poe(z); const m = mede();
     // desloca a imagem pra centralizar o conteúdo na faixa livre (setViewOffset move em pixels; 1 NDC = h/2 px)
     const off = Math.round((((yt+yb)/2) - ((m.hi+m.lo)/2)) * h/2);
@@ -2230,569 +2187,6 @@ const Shots = {
   heroFull(h, eq){ return this.shot('hf:'+h.id+':'+h.skin+':'+JSON.stringify(eq||{}), ()=>buildVModel(h, eq, { leve:true })); },
   boss(b){ const ks=Object.keys(BOSS_VISUAL); const vis = BOSS_VISUAL[b.visual] ? b.visual : ks[parseInt(hashTxt(String(b.id||b.nome)),36)%ks.length]; b={...b, visual:vis}; const v = BOSS_VISUAL[vis]; const eq={}; v.eq.forEach(id=>eq[ITEM[id].slot]=id); return this.shot('b:'+b.visual, ()=>buildVModel(Object.assign({sexo:'m'},v.h), eq, {cor:v.cor, leve:true})); }
 };
-
-/* ===== Visual PS2: os voxels viram malha lisa (surface nets + alisamento Taubin + normais suaves) ===== */
-// desligado: ele preferiu o voxel (12/10). Liga com localStorage dl.visual = 'ps2'
-let RENDER_PS2 = false;
-try { RENDER_PS2 = (localStorage.getItem('dl.visual')||'')==='ps2'; } catch(e){}
-let MAT_PS2 = null;
-function matPS2(){ return new THREE.MeshPhongMaterial({ vertexColors:true, shininess:22, specular:0x2a2620 }); }
-
-// map: Map "x,y,z" -> cor; pv: pivô (voxel); sc: tamanho do voxel no mundo
-// o.iter: passadas de alisamento; o.blend: mistura a cor nos vértices (gradiente macio) ou cor chapada por face
-function meshSmooth(map, pv, sc, o){
-  o = o || {}; if (!map || !map.size) return null;
-  const iter = o.iter==null ? 4 : o.iter, sil = o.sil;
-  let x0=1e9,y0=1e9,z0=1e9,x1=-1e9,y1=-1e9,z1=-1e9; const pts=[];
-  map.forEach((c,k)=>{ const a=k.split(','), x=+a[0], y=+a[1], z=+a[2]; pts.push(x,y,z,c);
-    if (x<x0)x0=x; if (y<y0)y0=y; if (z<z0)z0=z; if (x>x1)x1=x; if (y>y1)y1=y; if (z>z1)z1=z; });
-  const P=1, nx=x1-x0+1+2*P, ny=y1-y0+1+2*P, nz=z1-z0+1+2*P, N=nx*ny*nz;
-  const id=(x,y,z)=> (x*ny + y)*nz + z;
-  const cor = new Int32Array(N); const pal=[null], palIx={};
-  for (let i=0;i<pts.length;i+=4){ const c=pts[i+3]; let ci=palIx[c]; if (ci==null){ ci=palIx[c]=pal.length; pal.push(sil ? [0.07,0.065,0.09] : rgbOf(c)); } cor[id(pts[i]-x0+P, pts[i+1]-y0+P, pts[i+2]-z0+P)] = ci; }
-  // miolo: tudo que o vazio de fora não alcança fica cheio (a casca oca não vira parede dupla)
-  const fora = new Uint8Array(N), fila = new Int32Array(N); let h=0,t=0; fila[t++]=0; fora[0]=1;
-  while (h<t){ const i=fila[h++]; const z=i%nz, y=((i-z)/nz)%ny, x=(i-z-y*nz)/(nz*ny);
-    if (x>0){ const j=i-ny*nz; if (!fora[j] && !cor[j]){ fora[j]=1; fila[t++]=j; } } if (x<nx-1){ const j=i+ny*nz; if (!fora[j] && !cor[j]){ fora[j]=1; fila[t++]=j; } }
-    if (y>0){ const j=i-nz; if (!fora[j] && !cor[j]){ fora[j]=1; fila[t++]=j; } } if (y<ny-1){ const j=i+nz; if (!fora[j] && !cor[j]){ fora[j]=1; fila[t++]=j; } }
-    if (z>0){ const j=i-1; if (!fora[j] && !cor[j]){ fora[j]=1; fila[t++]=j; } } if (z<nz-1){ const j=i+1; if (!fora[j] && !cor[j]){ fora[j]=1; fila[t++]=j; } } }
-  const S = i=> !fora[i];
-  // um vértice por célula (cubo de 8 centros) que cruza a superfície
-  const vid = new Int32Array(N).fill(-1); const vx=[], vy=[], vz=[];
-  const E = [[0,0,0,1,0,0],[0,1,0,1,1,0],[0,0,1,1,0,1],[0,1,1,1,1,1],[0,0,0,0,1,0],[1,0,0,1,1,0],[0,0,1,0,1,1],[1,0,1,1,1,1],[0,0,0,0,0,1],[1,0,0,1,0,1],[0,1,0,0,1,1],[1,1,0,1,1,1]];
-  const vert=(x,y,z)=>{ const i=id(x,y,z); if (vid[i]>=0) return vid[i];
-    let sx=0,sy=0,sz=0,n=0;
-    for (const e of E){ const a=S(id(x+e[0],y+e[1],z+e[2])), b=S(id(x+e[3],y+e[4],z+e[5])); if (a!==b){ sx+=(e[0]+e[3])/2; sy+=(e[1]+e[4])/2; sz+=(e[2]+e[5])/2; n++; } }
-    vx.push(x+0.5+(n?sx/n:0.5)); vy.push(y+0.5+(n?sy/n:0.5)); vz.push(z+0.5+(n?sz/n:0.5)); return vid[i]=vx.length-1; };
-  const quads=[];   // [a,b,c,d, corIdx, eixo*2+sinal]
-  for (let x=1;x<nx-1;x++) for (let y=1;y<ny-1;y++) for (let z=1;z<nz-1;z++){
-    const i=id(x,y,z), a=S(i);
-    for (let ax=0; ax<3; ax++){
-      const bx=x+(ax===0), by=y+(ax===1), bz=z+(ax===2); if (bx>=nx||by>=ny||bz>=nz) continue;
-      const j=id(bx,by,bz), b=S(j); if (a===b) continue;
-      const ci = a ? cor[i] : cor[j];
-      let q;
-      if (ax===0) q=[vert(x,y-1,z-1),vert(x,y,z-1),vert(x,y,z),vert(x,y-1,z)];
-      else if (ax===1) q=[vert(x-1,y,z-1),vert(x,y,z-1),vert(x,y,z),vert(x-1,y,z)];
-      else q=[vert(x-1,y-1,z),vert(x,y-1,z),vert(x,y,z),vert(x-1,y,z)];
-      quads.push(q[0],q[1],q[2],q[3], ci||1, ax*2+(a?0:1));
-    }
-  }
-  const nv = vx.length;
-  // alisamento Taubin (encolhe e estufa: arredonda sem murchar)
-  if (iter>0){
-    const viz = Array.from({length:nv},()=>[]);
-    const liga=(a,b)=>{ if (viz[a].indexOf(b)<0){ viz[a].push(b); viz[b].push(a); } };
-    for (let k=0;k<quads.length;k+=6) for (let e=0;e<4;e++) liga(quads[k+e], quads[k+(e+1)%4]);
-    const tx=new Float64Array(nv), ty=new Float64Array(nv), tz=new Float64Array(nv);
-    const passo=(f)=>{ for (let v=0;v<nv;v++){ const L=viz[v]; if (!L.length){ tx[v]=vx[v]; ty[v]=vy[v]; tz[v]=vz[v]; continue; } let sx=0,sy=0,sz=0; for (const u of L){ sx+=vx[u]; sy+=vy[u]; sz+=vz[u]; } const n=L.length; tx[v]=vx[v]+f*(sx/n-vx[v]); ty[v]=vy[v]+f*(sy/n-vy[v]); tz[v]=vz[v]+f*(sz/n-vz[v]); } for (let v=0;v<nv;v++){ vx[v]=tx[v]; vy[v]=ty[v]; vz[v]=tz[v]; } };
-    for (let k=0;k<iter;k++){ passo(0.6); passo(-0.63); }
-  }
-  // triângulos com a volta certa
-  const tris=[];
-  for (let k=0;k<quads.length;k+=6){
-    const [a,b,c,d,ci,dir] = [quads[k],quads[k+1],quads[k+2],quads[k+3],quads[k+4],quads[k+5]];
-    const ax=dir>>1, s=(dir&1)?-1:1;
-    const ux=vx[c]-vx[a], uy=vy[c]-vy[a], uz=vz[c]-vz[a], wx=vx[d]-vx[b], wy=vy[d]-vy[b], wz=vz[d]-vz[b];
-    const fn=[uy*wz-uz*wy, uz*wx-ux*wz, ux*wy-uy*wx][ax]*s;
-    if (fn>=0) tris.push(a,b,c,ci, a,c,d,ci); else tris.push(a,c,b,ci, a,d,c,ci);
-  }
-  // normais suaves por vértice
-  const nrx=new Float32Array(nv), nry=new Float32Array(nv), nrz=new Float32Array(nv);
-  for (let k=0;k<tris.length;k+=4){ const a=tris[k],b=tris[k+1],c=tris[k+2];
-    const ux=vx[b]-vx[a], uy=vy[b]-vy[a], uz=vz[b]-vz[a], wx=vx[c]-vx[a], wy=vy[c]-vy[a], wz=vz[c]-vz[a];
-    const fx=uy*wz-uz*wy, fy=uz*wx-ux*wz, fz=ux*wy-uy*wx; for (const v of [a,b,c]){ nrx[v]+=fx; nry[v]+=fy; nrz[v]+=fz; } }
-  for (let v=0;v<nv;v++){ const l=Math.hypot(nrx[v],nry[v],nrz[v])||1; nrx[v]/=l; nry[v]/=l; nrz[v]/=l; }
-  const g = new THREE.BufferGeometry();
-  const X=v=>(vx[v]-P+x0-pv[0])*sc, Y=v=>(vy[v]-P+y0-pv[1])*sc, Z=v=>(vz[v]-P+z0-pv[2])*sc;
-  if (o.blend){
-    const cr=new Float32Array(nv), cg=new Float32Array(nv), cb=new Float32Array(nv), cn=new Float32Array(nv);
-    for (let k=0;k<tris.length;k+=4){ const c=pal[tris[k+3]]; for (let e=0;e<3;e++){ const v=tris[k+e]; cr[v]+=c[0]; cg[v]+=c[1]; cb[v]+=c[2]; cn[v]++; } }
-    const pos=new Float32Array(nv*3), nor=new Float32Array(nv*3), col=new Float32Array(nv*3);
-    for (let v=0;v<nv;v++){ pos[v*3]=X(v); pos[v*3+1]=Y(v); pos[v*3+2]=Z(v); nor[v*3]=nrx[v]; nor[v*3+1]=nry[v]; nor[v*3+2]=nrz[v]; const n=cn[v]||1; col[v*3]=cr[v]/n; col[v*3+1]=cg[v]/n; col[v*3+2]=cb[v]/n; }
-    const idx=[]; for (let k=0;k<tris.length;k+=4) idx.push(tris[k],tris[k+1],tris[k+2]);
-    g.setAttribute('position', new THREE.BufferAttribute(pos,3)); g.setAttribute('normal', new THREE.BufferAttribute(nor,3)); g.setAttribute('color', new THREE.BufferAttribute(col,3));
-    g.setIndex(nv>65000 ? new THREE.Uint32BufferAttribute(idx,1) : new THREE.Uint16BufferAttribute(idx,1));
-  } else {
-    const n3=tris.length/4*3, pos=new Float32Array(n3*3), nor=new Float32Array(n3*3), col=new Float32Array(n3*3); let p=0;
-    for (let k=0;k<tris.length;k+=4){ const c=pal[tris[k+3]];
-      for (let e=0;e<3;e++){ const v=tris[k+e]; pos[p]=X(v); pos[p+1]=Y(v); pos[p+2]=Z(v); nor[p]=nrx[v]; nor[p+1]=nry[v]; nor[p+2]=nrz[v]; col[p]=c[0]; col[p+1]=c[1]; col[p+2]=c[2]; p+=3; } }
-    g.setAttribute('position', new THREE.BufferAttribute(pos,3)); g.setAttribute('normal', new THREE.BufferAttribute(nor,3)); g.setAttribute('color', new THREE.BufferAttribute(col,3));
-  }
-  return g;
-}
-// pets e cenário vêm em voxel grande: divide cada um em 8 antes de alisar (fica redondo sem perder a forma)
-function dobraRes(map, R){ const n=new Map(); map.forEach((c,k)=>{ const a=k.split(','), x=+a[0]*R, y=+a[1]*R, z=+a[2]*R; for (let i=0;i<R;i++) for (let j=0;j<R;j++) for (let l=0;l<R;l++) n.set((x+i)+','+(y+j)+','+(z+l), c); }); return n; }
-
-/* ---------- corpo esculpido (SDF): formas lisas no lugar dos blocos ----------
-   coordenadas em voxel do modelo (resolução 2, pernas esticadas): chão y=0, joelho 33, quadril 64, ombro 100, queixo ~108, topo da cabeça ~138; frente = +z */
-const sdE=(x,y,z,cx,cy,cz,rx,ry,rz)=>{ const a=(x-cx)/rx, b=(y-cy)/ry, c=(z-cz)/rz, k0=Math.sqrt(a*a+b*b+c*c); const k1=Math.sqrt(a*a/(rx*rx)+b*b/(ry*ry)+c*c/(rz*rz)); return k1>1e-6 ? k0*(k0-1)/k1 : -Math.min(rx,ry,rz); };
-const sdS=(x,y,z,cx,cy,cz,r)=> Math.hypot(x-cx,y-cy,z-cz)-r;
-function sdCone(x,y,z, a, b, r1, r2){ // cápsula que afina de r1 (em a) até r2 (em b)
-  const bx=b[0]-a[0], by=b[1]-a[1], bz=b[2]-a[2], px=x-a[0], py=y-a[1], pz=z-a[2], L2=bx*bx+by*by+bz*bz;
-  const h=Math.max(0,Math.min(1,(px*bx+py*by+pz*bz)/L2)); return Math.hypot(px-bx*h,py-by*h,pz-bz*h)-(r1+(r2-r1)*h);
-}
-const smin=(a,b,k)=>{ const h=Math.max(k-Math.abs(a-b),0)/k; return Math.min(a,b)-h*h*k*0.25; };
-// formas por parte; s = lado (-1 esquerdo, +1 direito); retorna a função distância (negativa dentro)
-function corpoSDF(h){
-  const f = h.sexo==='f', orc = h.raca==='orc', lobo = h.raca==='lobo', K = orc ? 1.12 : 1;
-  const L = {
-    torso:(x,y,z)=>{
-      const hipW = f?15.5:14.5, waistW = f?10.8:12.8, chestW = (f?13.5:16.5)*K;
-      let d = sdE(x,y,z, 0,71,0.5, hipW,9,8.2);
-      d = smin(d, sdE(x,y,z, 0,81,0.5, waistW,8,6.8), 5);
-      d = smin(d, sdE(x,y,z, 0,93,0, chestW,10.5,(f?7.8:8.6)*K), 6);
-      d = smin(d, sdE(x,y,z, 0,100,-0.5, (f?15:18)*K,4.5,6.5*K), 5);    // linha dos ombros
-      for (const s of [-1,1]) d = smin(d, sdS(x,y,z, s*(f?19:21)*K,99,-0.8, (f?4.8:5.8)*K), 4);   // deltoide
-      if (f) for (const s of [-1,1]) d = smin(d, sdS(x,y,z, s*5.6,92.5,5.2, 5.4), 3);
-      else d = smin(d, sdE(x,y,z, 0,95,3.5, 12*K,6,4.5), 4);          // peitoral
-      d = smin(d, sdCone(x,y,z,[0,100,-0.5],[0,113,0], f?4.2:5.2*K, f?3.8:4.8*K), 3); // pescoço
-      return d; },
-    legL:(x,y,z,s)=>{ const X=s*8.3; let d = sdCone(x,y,z,[X,66,0.3],[X,36,1], f?8.2:7.6, 5.4); d = smin(d, sdS(x,y,z,X,35,1.2,5.4),2); return d; },
-    shinL:(x,y,z,s)=>{ const X=s*8.3; let d = sdS(x,y,z,X,34,1.2,5.2);
-      d = smin(d, sdCone(x,y,z,[X,32,1],[X,9,0], 5.1, 3.8), 3); d = smin(d, sdE(x,y,z,X,23,-0.8, 5.2,8,5.3), 4);
-      let p = smin(sdCone(x,y,z,[X,6,-3.5],[X,4.2,8.5], 5.3, 4.2), sdE(x,y,z,X,9,-0.5,4.6,5,5.2), 3); p = Math.max(p, -y+0.2); // pé (sola reta)
-      return smin(d,p,3); },
-    armL:(x,y,z,s)=>{ const X=s*25.3; let d = sdE(x,y,z,s*23.6,99.5,-1, (f?4.8:5.8)*K,(f?5:6)*K,(f?4.8:5.6)*K); d = smin(d, sdCone(x,y,z,[s*24.2,98,-1],[X,87,-0.6], f?4.4:5.1*K, f?3.7:4.3*K), 3); d = smin(d, sdS(x,y,z,X,86,-0.6,f?3.6:4.2*K),2); return d; },
-    foreL:(x,y,z,s)=>{ const X=s*25.3; let d = sdS(x,y,z,X,86,-0.6,f?3.6:4.2*K); d = smin(d, sdCone(x,y,z,[X,85,-0.5],[X,73,0], f?3.6:4.2*K, f?2.8:3.3*K), 2.5);
-      d = smin(d, sdE(x,y,z,X-s*0.3,67,0.3, (f?3.2:3.8)*K,(f?4.6:5.2)*K,(f?3.6:4.3)*K), 3);  // mão fechada
-      d = smin(d, sdCone(x,y,z,[X-s*3.2,69,2.5],[X-s*2.4,65.5,4.4], 1.5*K, 1.3*K), 1.2);   // polegar
-      return d; },
-    head:(x,y,z)=>{
-      let d = sdE(x,y,z, -0.5,124.5,-0.8, (f?14.3:15)*K,15.8,14.6);       // crânio
-      d = smin(d, sdE(x,y,z, -0.5,115.5,2.6, (f?11.2:12.6)*K,10.5,10.6), 6); // maçãs e maxilar
-      d = smin(d, sdE(x,y,z, -0.5,109.5,5.2, (f?5:6.2)*K,4.2,5), 4);        // queixo
-      if (!lobo) d = smin(d, sdCone(x,y,z,[-0.5,121.5,12.6],[-0.5,117.2,15.4], 1.3, f?2.1:2.5), 1.6); // nariz
-      return d; }
-  };
-  return L;
-}
-
-const AMOSTRAS_COR = [[0,0,0],[0.7,0.35,-0.35],[-0.6,-0.45,0.4]];
-// polígonos a partir da função distância (surface nets com cruzamento interpolado); bb=[x0,y0,z0,x1,y1,z1] em voxel
-function meshSDF(fn, bb, st, pv, sc, corEm, o){
-  o = o || {};
-  const x0=bb[0]-st*1.5, y0=bb[1]-st*1.5, z0=bb[2]-st*1.5;
-  const nx=Math.ceil((bb[3]-bb[0])/st)+4, ny=Math.ceil((bb[4]-bb[1])/st)+4, nz=Math.ceil((bb[5]-bb[2])/st)+4;
-  const id=(i,j,k)=>(i*ny+j)*nz+k, V=new Float32Array(nx*ny*nz);
-  for (let i=0;i<nx;i++) for (let j=0;j<ny;j++) for (let k=0;k<nz;k++) V[id(i,j,k)] = fn(x0+i*st, y0+j*st, z0+k*st);
-  const vid=new Int32Array(nx*ny*nz).fill(-1), P=[];
-  const E=[[0,0,0,1,0,0],[0,1,0,1,1,0],[0,0,1,1,0,1],[0,1,1,1,1,1],[0,0,0,0,1,0],[1,0,0,1,1,0],[0,0,1,0,1,1],[1,0,1,1,1,1],[0,0,0,0,0,1],[1,0,0,1,0,1],[0,1,0,0,1,1],[1,1,0,1,1,1]];
-  const vert=(i,j,k)=>{ const c=id(i,j,k); if (vid[c]>=0) return vid[c]; let sx=0,sy=0,sz=0,n=0;
-    for (const e of E){ const a=V[id(i+e[0],j+e[1],k+e[2])], b=V[id(i+e[3],j+e[4],k+e[5])]; if ((a<0)!==(b<0)){ const t=a/(a-b); sx+=e[0]+(e[3]-e[0])*t; sy+=e[1]+(e[4]-e[1])*t; sz+=e[2]+(e[5]-e[2])*t; n++; } }
-    P.push(x0+(i+sx/n)*st, y0+(j+sy/n)*st, z0+(k+sz/n)*st); return vid[c]=P.length/3-1; };
-  const idx=[];
-  for (let i=1;i<nx-1;i++) for (let j=1;j<ny-1;j++) for (let k=1;k<nz-1;k++){
-    const a=V[id(i,j,k)]<0;
-    for (let ax=0;ax<3;ax++){ const i2=i+(ax===0), j2=j+(ax===1), k2=k+(ax===2); if (i2>=nx-1||j2>=ny-1||k2>=nz-1) continue;
-      const b=V[id(i2,j2,k2)]<0; if (a===b) continue;
-      let q; if (ax===0) q=[vert(i,j-1,k-1),vert(i,j,k-1),vert(i,j,k),vert(i,j-1,k)];
-      else if (ax===1) q=[vert(i-1,j,k-1),vert(i,j,k-1),vert(i,j,k),vert(i-1,j,k)];
-      else q=[vert(i-1,j-1,k),vert(i,j-1,k),vert(i,j,k),vert(i-1,j,k)];
-      // a dentro → normal pra +eixo; acerta a volta pelo produto vetorial das diagonais
-      const A=q[0]*3,B=q[1]*3,C=q[2]*3,D=q[3]*3, ux=P[C]-P[A], uy=P[C+1]-P[A+1], uz=P[C+2]-P[A+2], wx=P[D]-P[B], wy=P[D+1]-P[B+1], wz=P[D+2]-P[B+2];
-      const fn2=[uy*wz-uz*wy, uz*wx-ux*wz, ux*wy-uy*wx][ax]*(a?1:-1);
-      if (fn2>=0) idx.push(q[0],q[1],q[2], q[0],q[2],q[3]); else idx.push(q[0],q[2],q[1], q[0],q[3],q[2]);
-    } }
-  const nv=P.length/3, pos=new Float32Array(nv*3), nor=new Float32Array(nv*3), col=new Float32Array(nv*3), e=0.35;
-  for (let v=0;v<nv;v++){ const x=P[v*3], y=P[v*3+1], z=P[v*3+2];
-    let gx=fn(x+e,y,z)-fn(x-e,y,z), gy=fn(x,y+e,z)-fn(x,y-e,z), gz=fn(x,y,z+e)-fn(x,y,z-e); const l=Math.hypot(gx,gy,gz)||1;
-    nor[v*3]=gx/l; nor[v*3+1]=gy/l; nor[v*3+2]=gz/l;
-    pos[v*3]=(x-pv[0])*sc; pos[v*3+1]=(y-pv[1])*sc; pos[v*3+2]=(z-pv[2])*sc;
-    // cor: média de 5 amostras em volta (borda de cor macia, sem escadinha)
-    const bx=x-gx/l*0.6, by=y-gy/l*0.6, bz=z-gz/l*0.6; let r0=0,g0=0,b0=0;
-    for (const [dx,dy,dz] of AMOSTRAS_COR){ const c = corEm(bx+dx, by+dy, bz+dz); r0+=c[0]; g0+=c[1]; b0+=c[2]; }
-    col[v*3]=r0/AMOSTRAS_COR.length; col[v*3+1]=g0/AMOSTRAS_COR.length; col[v*3+2]=b0/AMOSTRAS_COR.length; }
-  const g=new THREE.BufferGeometry();
-  g.setAttribute('position', new THREE.BufferAttribute(pos,3)); g.setAttribute('normal', new THREE.BufferAttribute(nor,3)); g.setAttribute('color', new THREE.BufferAttribute(col,3));
-  g.setIndex(nv>65000 ? new THREE.Uint32BufferAttribute(idx,1) : new THREE.Uint16BufferAttribute(idx,1));
-  g.userData.P = P; return g;
-}
-// cor do voxel mais perto (campo pré-calculado por espalhamento até 5 voxels)
-function campoCor(maps, sil){
-  let x0=1e9,y0=1e9,z0=1e9,x1=-1e9,y1=-1e9,z1=-1e9; const xs=[], cs=[];
-  maps.forEach(map=> map && map.forEach((c,k)=>{ const a=k.split(','), x=+a[0], y=+a[1], z=+a[2]; xs.push(x,y,z); cs.push(c); if (x<x0)x0=x; if (y<y0)y0=y; if (z<z0)z0=z; if (x>x1)x1=x; if (y>y1)y1=y; if (z>z1)z1=z; }));
-  if (!cs.length) return ()=>[0.5,0.5,0.5];
-  const P=4, nx=x1-x0+1+2*P, ny=y1-y0+1+2*P, nz=z1-z0+1+2*P, N=nx*ny*nz, NYZ=ny*nz;
-  const C=new Int32Array(N), pal=[null], ix={}; let fila=new Int32Array(N), nf=0;
-  for (let i=0;i<cs.length;i++){ const c=cs[i]; let ci=ix[c]; if (ci==null){ ci=ix[c]=pal.length; pal.push(sil?[0.07,0.065,0.09]:rgbOf(c)); } const j=((xs[i*3]-x0+P)*ny+(xs[i*3+1]-y0+P))*nz+(xs[i*3+2]-z0+P); if (!C[j]){ C[j]=ci; fila[nf++]=j; } }
-  let nova=new Int32Array(N);
-  for (let r=0;r<P;r++){ let nn=0;
-    for (let q=0;q<nf;q++){ const i=fila[q], z=i%nz, y=((i-z)/nz)%ny, x=(i-z-y*nz)/NYZ, c=C[i];
-      if (x>0 && !C[i-NYZ]){ C[i-NYZ]=c; nova[nn++]=i-NYZ; } if (x<nx-1 && !C[i+NYZ]){ C[i+NYZ]=c; nova[nn++]=i+NYZ; }
-      if (y>0 && !C[i-nz]){ C[i-nz]=c; nova[nn++]=i-nz; } if (y<ny-1 && !C[i+nz]){ C[i+nz]=c; nova[nn++]=i+nz; }
-      if (z>0 && !C[i-1]){ C[i-1]=c; nova[nn++]=i-1; } if (z<nz-1 && !C[i+1]){ C[i+1]=c; nova[nn++]=i+1; } }
-    const t=fila; fila=nova; nova=t; nf=nn; }
-  const cinza=[0.5,0.5,0.5];
-  return (x,y,z)=>{ const a=Math.floor(x)-x0+P, b=Math.floor(y)-y0+P, c=Math.floor(z)-z0+P; if (a<0||b<0||c<0||a>=nx||b>=ny||c>=nz) return cinza; return pal[C[(a*ny+b)*nz+c]]||cinza; };
-}
-// caixa da peça no corpo esculpido (voxel)
-const PS2_BB = {
-  torso:[-22,58,-12,22,116,12], head:[-18,96,-18,17,142,20],
-  legL:[-18,32,-10,1,70,11], shinL:[-18,-1,-12,1,42,16],
-  armL:[-35,80,-10,-15,108,8], foreL:[-35,58,-8,-15,92,10]
-};
-const bbLado=(b,s)=> s<0 ? b : [-b[3],b[1],b[2],-b[0],b[4],b[5]];
-
-/* ---------- herói PS2: corpo esculpido + volumes do desenho (cabelo, roupa, itens) + rosto em textura ---------- */
-const PS2_CACHE = {};
-function buildMeshPS2(vm, o){
-  o = o || {}; const RES = vm.res||2, sc = VS/RES, h = vm.heroi || {};
-  if (!MAT_PS2) MAT_PS2 = matPS2();
-  const L = corpoSDF(h), base = vm.base, g = new THREE.Group(), parts = {};
-  const st = o.leve ? 1.5 : 1.0;   // passo da escultura (ícone pequeno pode ser mais grosso)
-  const mk = (geo)=>{ const m = new THREE.Mesh(geo, MAT_PS2); m.castShadow = true; m.receiveShadow = true; return m; };
-  const corpo = (nome, fn, bb, pv, mapas)=>{
-    const chave = [nome, h.sexo, h.raca||'', st, bb.join(',')].join('|');
-    // a forma é sempre a mesma pra cada tipo de corpo: guarda e só repinta
-    let geo; const cor = campoCor(mapas, o.sil);
-    if (PS2_CACHE[chave]){ geo = PS2_CACHE[chave].clone(); const P = geo.userData.P = PS2_CACHE[chave].userData.P, nor = geo.attributes.normal.array, col = new Float32Array(P.length);
-      for (let v=0; v<P.length/3; v++){ const bx=P[v*3]-nor[v*3]*0.6, by=P[v*3+1]-nor[v*3+1]*0.6, bz=P[v*3+2]-nor[v*3+2]*0.6; let r0=0,g0=0,b0=0;
-        for (const [dx,dy,dz] of AMOSTRAS_COR){ const c = cor(bx+dx, by+dy, bz+dz); r0+=c[0]; g0+=c[1]; b0+=c[2]; } const n=AMOSTRAS_COR.length; col[v*3]=r0/n; col[v*3+1]=g0/n; col[v*3+2]=b0/n; }
-      geo.setAttribute('color', new THREE.BufferAttribute(col,3)); }
-    else { geo = meshSDF(fn, bb, st, pv, sc, cor); PS2_CACHE[chave] = geo; geo = geo.clone(); geo.userData.P = PS2_CACHE[chave].userData.P; }
-    return geo; };
-  // volumes: o que o desenho acrescenta por fora do corpo (cabelo, gola, cinto, armadura, aljava...)
-  const volume = (map, baseMap, fn, filtro, semAjuste)=>{ const out = new Map(); map.forEach((c,k)=>{ if (baseMap && baseMap.has(k)) return; const a=k.split(','), x=+a[0], y=+a[1], z=+a[2]; if (filtro && !filtro(y)) return; out.set(k,c); });
-    const aj = semAjuste ? out : conforma(out, fn, baseMap); const fim = new Map(); aj.forEach((c,k)=>{ const a=k.split(','); if (fn(+a[0]+0.5,+a[1]+0.5,+a[2]+0.5) >= 0.6) fim.set(k,c); }); return fim; };
-  const vol = (map, pv, it)=>{ if (!map.size) return null; const geo = it===1 ? meshBlob(map, pv, sc, { r:1, n:1, thr:0.42, sil:o.sil, st:o.leve?1.2:0.75 }) : meshBlob(map, pv, sc, { r:1, n:2, thr:0.4, sil:o.sil, st:o.leve?1.5:1 }); return geo ? mk(geo) : null; };
-  for (const name of (o.so || ['torso','head','legL','legR','armL','armR'])){
-    const pv = (vm.piv && vm.piv[name]) || PIV[name], map = vm.parts[name], bmap = base && base.parts[name];
-    const pg = new THREE.Group(); pg.position.set(pv[0]*sc, pv[1]*sc, pv[2]*sc); pg.userData.base = [pv[0]*sc, pv[1]*sc, pv[2]*sc];
-    const s = name.endsWith('R') ? 1 : -1;
-    if (name==='armL' || name==='armR'){
-      const lado = name.slice(-1), cy = pv[1]-7*RES, fv = [pv[0], cy, pv[2]];
-      const fu = (x,y,z)=>L.armL(x,y,z,s), fl = (x,y,z)=>L.foreL(x,y,z,s);
-      pg.add(mk(corpo('armL'+s, fu, bbLado(PS2_BB.armL,s), pv, [map])));
-      const v1 = vol(volume(map, bmap, fu, y=> y>=cy-2), pv); if (v1) pg.add(v1);
-      const fg = new THREE.Group(); fg.position.set((fv[0]-pv[0])*sc, (fv[1]-pv[1])*sc, (fv[2]-pv[2])*sc); fg.userData.base = [fg.position.x, fg.position.y, fg.position.z]; fg.userData.piv = fv;
-      fg.add(mk(corpo('foreL'+s, fl, bbLado(PS2_BB.foreL,s), fv, [map])));
-      const v2 = vol(volume(map, bmap, (x,y,z)=>Math.min(fl(x,y,z), fu(x,y,z)), y=> y<cy+2), fv); if (v2) fg.add(v2);
-      const arma = vm.parts['arma'+lado]; if (arma && arma.size){ const am = vol(arma, fv, 1); if (am){ am.userData.arma = true; fg.add(am); } }
-      pg.add(fg); parts['fore'+lado] = fg;
-    } else if (name==='legL' || name==='legR'){
-      const lado = name.slice(-1), ky = Math.round(pv[1]*0.5), kv = [pv[0], ky, pv[2]];
-      const fu = (x,y,z)=>L.legL(x,y,z,s), fl = (x,y,z)=>L.shinL(x,y,z,s);
-      pg.add(mk(corpo('legL'+s, fu, bbLado(PS2_BB.legL,s), pv, [map])));
-      const v1 = vol(volume(map, bmap, fu, y=> y>=ky-2), pv); if (v1) pg.add(v1);
-      const sg = new THREE.Group(); sg.position.set(0, (ky-pv[1])*sc, 0); sg.userData.base = [0, sg.position.y, 0];
-      sg.add(mk(corpo('shinL'+s, fl, bbLado(PS2_BB.shinL,s), kv, [map])));
-      const v2 = vol(volume(map, bmap, (x,y,z)=>Math.min(fl(x,y,z), fu(x,y,z)), y=> y<ky+2), kv); if (v2) sg.add(v2);
-      pg.add(sg); parts['shin'+lado] = sg;
-    } else {
-      const fn = L[name];
-      const geo = corpo(name, fn, PS2_BB[name], pv, name==='torso' ? [map, vm.parts.armL, vm.parts.armR] : [map]);
-      pg.add(mk(geo));
-      let resto = map;
-      if (name==='head' && vm.hairKeys && vm.hairKeys.size){ const fios = new Map(); resto = new Map(); map.forEach((c,k)=> (vm.hairKeys.has(k) ? fios : resto).set(k,c));
-        const rem = remapCabeca(fios, h), perto = new Map(), solto = new Map();
-        rem.forEach((c,k)=>{ const a=k.split(','), x=+a[0], y=+a[1], z=+a[2]; (fn(x+0.5,y+0.5,z+0.5) > 3.5 && y < 121 ? solto : perto).set(k,c); });
-        if (solto.size < 40){ solto.forEach((c,k)=>perto.set(k,c)); solto.clear(); }
-        const cg = meshCabelo(perto, h, pv, sc, o.sil); if (cg){ const cm = mk(cg); cm.userData.cabelo = true; pg.add(cm); }
-        if (solto.size){ // mecha solta (rabo, trança, cortina): peça própria que balança
-          let my=-1e9; solto.forEach((c,k)=>{ my=Math.max(my, +k.split(',')[1]); }); let sx=0,sz=0,n=0; solto.forEach((c,k)=>{ const a=k.split(','); if (+a[1]>=my-2){ sx+=+a[0]; sz+=+a[2]; n++; } });
-          const piv = [sx/n+0.5, my+1, sz/n+0.5];
-          perto.forEach((c,k)=>{ const a=k.split(','), y=+a[1]; if (y>=my-1 && y<=my+3 && Math.hypot(+a[0]+0.5-piv[0], +a[2]+0.5-piv[2])<5) solto.set(k,c); });
-          const sgeo = meshCabelo(solto, h, piv, sc, o.sil);
-          if (sgeo){ const cgp = new THREE.Group(); cgp.position.set((piv[0]-pv[0])*sc, (piv[1]-pv[1])*sc, (piv[2]-pv[2])*sc); cgp.add(mk(sgeo)); pg.add(cgp); parts.cabelo = cgp; } } }
-      const v = vol(name==='head' ? remapCabeca(volume(resto, bmap, ()=>1, null, true), h) : volume(resto, bmap, fn), pv); if (v) pg.add(v);
-      if (name==='head' && !o.sil){ const r = rostoPS2(geo, h, pv, sc); if (r){ pg.add(r.mesh); g.userData.rosto = r; } }
-    }
-    g.add(pg); parts[name] = pg;
-  }
-  // partes extras do desenho (ex.: peças nas costas)
-  for (const name in vm.parts){ if (parts[name] || name.startsWith('arma') || !vm.parts[name].size) continue;
-    const pv = (vm.piv && vm.piv[name]) || [0,0,0]; const pg = new THREE.Group(); pg.position.set(pv[0]*sc, pv[1]*sc, pv[2]*sc); pg.userData.base=[pv[0]*sc, pv[1]*sc, pv[2]*sc];
-    const m = vol(vm.parts[name], pv); if (m) pg.add(m); g.add(pg); parts[name] = pg; }
-  if (parts.head) parts.head.scale.setScalar(o.cabeca || 0.9);
-  g.userData.parts = parts;
-  return g;
-}
-
-/* ---------- rosto: textura pintada sobre a frente da cabeça; troca de expressão = troca de textura ---------- */
-const ROSTO_TEX = {};
-function rostoPS2(geo, h, pv, sc){
-  const P = geo.userData.P, nor = geo.attributes.normal.array, ix = geo.index.array;
-  const U = x=> (x+16.5)/32, Vv = y=> (y-103)/32;
-  const uv = new Float32Array(P.length/3*2); for (let v=0; v<P.length/3; v++){ uv[v*2]=U(P[v*3]); uv[v*2+1]=Vv(P[v*3+1]); }
-  const sel=[]; for (let t=0;t<ix.length;t+=3){ let ok=true; for (let e=0;e<3;e++){ const v=ix[t+e]; const x=P[v*3], y=P[v*3+1], z=P[v*3+2]; if (z<2 || y<103 || y>135 || Math.abs(x+0.5)>15.5 || nor[v*3+2]<0.05){ ok=false; break; } } if (ok) sel.push(ix[t],ix[t+1],ix[t+2]); }
-  if (!sel.length) return null;
-  const fg = new THREE.BufferGeometry(); fg.setAttribute('position', geo.attributes.position); fg.setAttribute('normal', geo.attributes.normal); fg.setAttribute('uv', new THREE.BufferAttribute(uv,2));
-  fg.setIndex(sel.length/3*3 > 65000 || P.length/3 > 65000 ? new THREE.Uint32BufferAttribute(sel,1) : new THREE.Uint16BufferAttribute(sel,1));
-  const mat = new THREE.MeshPhongMaterial({ transparent:true, depthWrite:false, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-6, shininess:22, specular:0x2a2620 });
-  const mesh = new THREE.Mesh(fg, mat); mesh.renderOrder = 2;
-  const chave = [h.sexo, h.raca||'', h.skin, h.hair||'', h.eye||'', h.brow||''].join('|');
-  const r = { mesh, expr:null, set(e){ if (e===this.expr) return; this.expr = e; mat.map = texRosto(chave, h, e); mat.needsUpdate = true; } };
-  r.set('neutro'); return r;
-}
-function texRosto(chave, h, e){
-  const k = chave+'|'+e; if (ROSTO_TEX[k]) return ROSTO_TEX[k];
-  const W=256, cv=document.createElement('canvas'); cv.width=cv.height=W; const c=cv.getContext('2d');
-  desenhaRosto(c, W, h, e);
-  const t = new THREE.CanvasTexture(cv); t.anisotropy = 4; return ROSTO_TEX[k] = t;
-}
-// desenho em coordenadas de voxel do rosto: X(x), Y(y); 1 voxel = 8 px
-function desenhaRosto(c, W, h, e){
-  const X = x=> (x+16.5)/32*W, Y = y=> (1-(y-103)/32)*W, u = W/32;
-  const f = h.sexo==='f', orc = h.raca==='orc', lobo = h.raca==='lobo';
-  const pele = h.skin||'#c89870', iris = orc ? '#e8c03a' : lobo ? '#e7b04a' : (h.eye||'#4a2c18');
-  const sob = lobo ? shade(pele,-0.3) : (h.brow || (f ? shade(h.hair||'#2a1d14',-0.05) : shade(h.hair||'#2a1d14',-0.1)));
-  const linha = f ? '#1a1210' : shade(pele,-0.45);
-  const E = { neutro:{ ab:1, sob:0, ang:0, boca:'neutra' }, pisca:{ ab:0, sob:0, ang:0, boca:'neutra' }, feliz:{ ab:0.75, sob:0.6, ang:-0.08, boca:'sorriso', ri:1 },
-    bravo:{ ab:0.6, sob:-0.8, ang:0.32, boca:'dentes' }, grito:{ ab:0.85, sob:-0.5, ang:0.3, boca:'grito' }, surpreso:{ ab:1.25, sob:1.3, ang:-0.12, boca:'o' },
-    mira:{ ab:0.55, sob:-0.3, ang:0.15, boca:'firme', fecha:-1 }, uivo:{ ab:0, sob:0.4, ang:-0.1, boca:'neutra' }, alegre:{ ab:0, sob:0.7, ang:-0.12, boca:'sorriso', ri:1 } }[e] || { ab:1, sob:0, ang:0, boca:'neutra' };
-  // bochecha corada e sombra do nariz
-  if (!lobo){ c.globalAlpha = f ? 0.22 : 0.1; c.fillStyle = '#d04848'; for (const s of [-1,1]){ c.beginPath(); c.ellipse(X(s*8.4-0.5), Y(116.5), u*2.6, u*1.5, 0, 0, Math.PI*2); c.fill(); } c.globalAlpha = 1; }
-  if (!lobo){ c.globalAlpha = 0.25; c.fillStyle = shade(pele,-0.4); c.beginPath(); c.ellipse(X(-1.6), Y(116.8), u*0.6, u*0.4, 0.3, 0, Math.PI*2); c.ellipse(X(0.6), Y(116.8), u*0.6, u*0.4, -0.3, 0, Math.PI*2); c.fill(); c.globalAlpha = 1; }
-  // olhos
-  for (const s of [-1,1]){
-    const cx = X(s*7.6-0.5), cy = Y(121.8), w = u*(f?3.3:3.1), hgt = u*(f?2.0:1.75)*E.ab*(E.fecha===s?0:1);
-    const fechado = hgt < u*0.3;
-    if (!fechado){
-      c.save(); c.beginPath(); // contorno amendoado
-      c.moveTo(cx-w, cy); c.quadraticCurveTo(cx-w*0.2, cy-hgt*1.55, cx+w, cy-hgt*0.15*(s)); c.quadraticCurveTo(cx+w*0.1, cy+hgt*1.25, cx-w, cy); c.closePath();
-      c.fillStyle = '#f6f2ea'; c.fill(); c.clip();
-      const ir = u*(f?1.55:1.4), ix = cx + s*u*0.15;
-      c.fillStyle = iris; c.beginPath(); c.arc(ix, cy, ir, 0, Math.PI*2); c.fill();
-      c.fillStyle = shade(iris,-0.35); c.beginPath(); c.arc(ix, cy, ir, Math.PI*1.1, Math.PI*1.9); c.lineTo(ix,cy); c.fill();
-      c.fillStyle = lobo ? '#141414' : '#120c0a'; c.beginPath(); if (lobo) c.ellipse(ix, cy, ir*0.28, ir*0.75, 0, 0, Math.PI*2); else c.arc(ix, cy, ir*0.48, 0, Math.PI*2); c.fill();
-      c.fillStyle = '#ffffff'; c.beginPath(); c.arc(ix - ir*0.35, cy - ir*0.4, ir*0.28, 0, Math.PI*2); c.fill();
-      c.restore();
-      // cílio de cima (mais grosso nela, com o risquinho pra fora)
-      c.strokeStyle = linha; c.lineWidth = u*(f?0.75:0.45); c.lineCap='round';
-      c.beginPath(); c.moveTo(cx-w, cy); c.quadraticCurveTo(cx-w*0.2, cy-hgt*1.55, cx+w, cy-hgt*0.15*s); c.stroke();
-      if (f){ const ex = s>0 ? cx+w : cx-w, ey = s>0 ? cy-hgt*0.15 : cy; c.beginPath(); c.moveTo(ex, ey); c.lineTo(ex + s*u*1.0, ey - u*0.9); c.stroke(); }
-      if (E.ri){ c.strokeStyle = shade(pele,-0.3); c.lineWidth = u*0.35; c.beginPath(); c.moveTo(cx-w*0.8, cy+hgt*1.3); c.quadraticCurveTo(cx, cy+hgt*0.7, cx+w*0.8, cy+hgt*1.3); c.stroke(); }
-    } else { // olho fechado: arco
-      c.strokeStyle = linha; c.lineWidth = u*(f?0.7:0.5); c.lineCap='round'; c.beginPath();
-      if (E.ri || e==='alegre'){ c.moveTo(cx-w, cy+u*0.4); c.quadraticCurveTo(cx, cy-u*1.6, cx+w, cy+u*0.4); } else { c.moveTo(cx-w, cy); c.quadraticCurveTo(cx, cy+u*1.2, cx+w, cy); }
-      c.stroke(); if (f){ c.beginPath(); const ex = s>0 ? cx+w : cx-w; c.moveTo(ex, cy); c.lineTo(ex + s*u*0.8, cy + u*0.5); c.stroke(); }
-    }
-    // sobrancelha
-    const by = Y(126.4 + E.sob), bx0 = cx - w*1.05, bx1 = cx + w*1.05;
-    const dentro = s<0 ? bx1 : bx0, fora = s<0 ? bx0 : bx1, ang = E.ang*u*6;
-    c.strokeStyle = sob; c.lineCap='round'; c.lineWidth = u*(lobo?1.2:f?0.75:1.25);
-    c.beginPath(); c.moveTo(fora, by + u*(f?0.5:0.2)); c.quadraticCurveTo((fora+dentro)/2, by - u*(f?0.9:0.5) - ang*0.3, dentro, by + ang); c.stroke();
-  }
-  if (lobo) return;
-  // boca
-  const mx = X(-0.5), my = Y(112.4), mw = u*(f?2.6:2.9);
-  const labio = f ? (h.labio || '#b84a50') : shade(pele,-0.32), escuro = '#3a1414';
-  c.lineCap='round';
-  if (E.boca==='neutra' || E.boca==='firme'){
-    if (f){ c.fillStyle = labio; c.beginPath(); c.moveTo(mx-mw, my); c.quadraticCurveTo(mx-mw*0.4, my-u*0.9, mx, my-u*0.45); c.quadraticCurveTo(mx+mw*0.4, my-u*0.9, mx+mw, my); c.quadraticCurveTo(mx, my+u*1.3, mx-mw, my); c.fill();
-      c.strokeStyle = shade(labio,-0.35); c.lineWidth = u*0.3; c.beginPath(); c.moveTo(mx-mw*0.9, my); c.quadraticCurveTo(mx, my+u*0.2, mx+mw*0.9, my); c.stroke(); }
-    else { c.strokeStyle = escuro; c.lineWidth = u*0.5; c.beginPath(); c.moveTo(mx-mw, my+(E.boca==='firme'?u*0.2:0)); c.quadraticCurveTo(mx, my+u*(E.boca==='firme'?-0.2:0.35), mx+mw, my+(E.boca==='firme'?u*0.2:0)); c.stroke(); }
-  } else if (E.boca==='sorriso'){
-    c.fillStyle = escuro; c.beginPath(); c.moveTo(mx-mw*1.15, my-u*0.6); c.quadraticCurveTo(mx, my-u*0.1, mx+mw*1.15, my-u*0.6); c.quadraticCurveTo(mx, my+u*2.6, mx-mw*1.15, my-u*0.6); c.fill();
-    c.fillStyle = '#f4f0e6'; c.beginPath(); c.moveTo(mx-mw*0.95, my-u*0.45); c.quadraticCurveTo(mx, my+u*0.2, mx+mw*0.95, my-u*0.45); c.quadraticCurveTo(mx, my+u*0.75, mx-mw*0.95, my-u*0.45); c.fill();
-    if (f){ c.strokeStyle = labio; c.lineWidth = u*0.45; c.beginPath(); c.moveTo(mx-mw*1.15, my-u*0.6); c.quadraticCurveTo(mx, my+u*2.6, mx+mw*1.15, my-u*0.6); c.stroke(); }
-  } else if (E.boca==='dentes'){
-    c.fillStyle = escuro; c.beginPath(); c.ellipse(mx, my, mw*1.05, u*1.1, 0, 0, Math.PI*2); c.fill();
-    c.fillStyle = '#f4f0e6'; c.fillRect(mx-mw*0.85, my-u*0.75, mw*1.7, u*0.6); c.fillRect(mx-mw*0.8, my+u*0.25, mw*1.6, u*0.5);
-    if (f){ c.strokeStyle = labio; c.lineWidth = u*0.4; c.beginPath(); c.ellipse(mx, my, mw*1.05, u*1.1, 0, 0, Math.PI*2); c.stroke(); }
-  } else if (E.boca==='grito'){
-    c.fillStyle = escuro; c.beginPath(); c.ellipse(mx, my-u*0.3, mw*1.0, u*2.3, 0, 0, Math.PI*2); c.fill();
-    c.fillStyle = '#f4f0e6'; c.fillRect(mx-mw*0.75, my-u*2.4, mw*1.5, u*0.6);
-    c.fillStyle = '#c05050'; c.beginPath(); c.ellipse(mx, my+u*1.2, mw*0.6, u*0.7, 0, 0, Math.PI*2); c.fill();
-    if (f){ c.strokeStyle = labio; c.lineWidth = u*0.45; c.beginPath(); c.ellipse(mx, my-u*0.3, mw*1.0, u*2.3, 0, 0, Math.PI*2); c.stroke(); }
-  } else if (E.boca==='o'){
-    c.fillStyle = escuro; c.beginPath(); c.ellipse(mx, my-u*0.2, u*1.1, u*1.5, 0, 0, Math.PI*2); c.fill();
-    if (f){ c.strokeStyle = labio; c.lineWidth = u*0.5; c.stroke(); }
-  }
-}
-
-/* ---------- volume liso a partir dos voxels: ocupação borrada + superfície (cabelo, roupa, armadura, armas, pets) ---------- */
-// campo de densidade (0..1) dos voxels borrados; devolve amostrador trilinear e a caixa
-function campoDens(map, r, np){
-  let x0=1e9,y0=1e9,z0=1e9,x1=-1e9,y1=-1e9,z1=-1e9; const pts=[];
-  map.forEach((c,k)=>{ const a=k.split(','), x=+a[0], y=+a[1], z=+a[2]; pts.push(x,y,z); if (x<x0)x0=x; if (y<y0)y0=y; if (z<z0)z0=z; if (x>x1)x1=x; if (y>y1)y1=y; if (z>z1)z1=z; });
-  const P = r*np+3, nx=x1-x0+1+2*P, ny=y1-y0+1+2*P, nz=z1-z0+1+2*P, N=nx*ny*nz, NYZ=ny*nz, id=(x,y,z)=>(x*ny+y)*nz+z;
-  let D = new Float32Array(N); for (let i=0;i<pts.length;i+=3) D[id(pts[i]-x0+P, pts[i+1]-y0+P, pts[i+2]-z0+P)] = 1;
-  { const fora=new Uint8Array(N), fila=new Int32Array(N); let h=0,t=0; fila[t++]=0; fora[0]=1;
-    while (h<t){ const i=fila[h++]; const z=i%nz, y=((i-z)/nz)%ny, x=(i-z-y*nz)/NYZ;
-      if (x>0 && !fora[i-NYZ] && !D[i-NYZ]){ fora[i-NYZ]=1; fila[t++]=i-NYZ; } if (x<nx-1 && !fora[i+NYZ] && !D[i+NYZ]){ fora[i+NYZ]=1; fila[t++]=i+NYZ; }
-      if (y>0 && !fora[i-nz] && !D[i-nz]){ fora[i-nz]=1; fila[t++]=i-nz; } if (y<ny-1 && !fora[i+nz] && !D[i+nz]){ fora[i+nz]=1; fila[t++]=i+nz; }
-      if (z>0 && !fora[i-1] && !D[i-1]){ fora[i-1]=1; fila[t++]=i-1; } if (z<nz-1 && !fora[i+1] && !D[i+1]){ fora[i+1]=1; fila[t++]=i+1; } }
-    for (let i=0;i<N;i++) if (!fora[i]) D[i]=1; }
-  const T = new Float32Array(N), w = 1/(2*r+1);
-  for (let p=0;p<np;p++) for (let ax=0;ax<3;ax++){
-    const sx = ax===0 ? NYZ : ax===1 ? nz : 1, n = ax===0 ? nx : ax===1 ? ny : nz;
-    for (let i=0;i<N;i++){ const c = ax===0 ? (i/NYZ|0) : ax===1 ? ((i/nz|0)%ny) : i%nz; let s=0; const a=Math.max(-r,-c), b=Math.min(r,n-1-c); for (let d=a; d<=b; d++) s+=D[i+d*sx]; T[i]=s*w; }
-    D.set(T); }
-  const amostra = (x,y,z)=>{ const fx=x-0.5-x0+P, fy=y-0.5-y0+P, fz=z-0.5-z0+P; const i=Math.floor(fx), j=Math.floor(fy), k=Math.floor(fz);
-    if (i<0||j<0||k<0||i>=nx-1||j>=ny-1||k>=nz-1) return 0; const a=fx-i, b=fy-j, c=fz-k, o=id(i,j,k);
-    const v000=D[o], v100=D[o+NYZ], v010=D[o+nz], v110=D[o+NYZ+nz], v001=D[o+1], v101=D[o+NYZ+1], v011=D[o+nz+1], v111=D[o+NYZ+nz+1];
-    return ((v000*(1-a)+v100*a)*(1-b)+(v010*(1-a)+v110*a)*b)*(1-c) + ((v001*(1-a)+v101*a)*(1-b)+(v011*(1-a)+v111*a)*b)*c; };
-  amostra.bb = [x0-P+1, y0-P+1, z0-P+1, x1+P, y1+P, z1+P]; return amostra;
-}
-// o.r: raio do borrão (voxel), o.n: passadas, o.thr: limiar (0..1), o.st: passo da amostra
-function meshBlob(map, pv, sc, o){
-  o = o || {}; if (!map || !map.size) return null;
-  const r = o.r==null ? 1 : o.r, np = o.n==null ? 2 : o.n, thr = o.thr==null ? 0.45 : o.thr;
-  const dens = campoDens(map, r, np), cor = o.cor || campoCor([map], o.sil);
-  return meshSDF((x,y,z)=> thr - dens(x,y,z), dens.bb, o.st || 1, pv, sc, cor);
-}
-// o desenho da cabeça foi feito em volta de uma caixa; aqui a caixa vira a cabeça oval (cabelo, chapéu e orelha acompanham)
-function remapCabeca(map, h){
-  const f = h.sexo==='f', K = h.raca==='orc' ? 1.12 : 1, rx=(f?14.3:15)*K+0.6, ry=16.4, rz=15.2, cx=-0.5, cy=124, cz=-0.5;
-  const out = new Map(), soma = new Map();
-  map.forEach((c,k)=>{ const a=k.split(','), x=+a[0]+0.5-cx, y=+a[1]+0.5-cy, z=+a[2]+0.5-cz, L=Math.hypot(x,y,z);
-    let nx=x, ny=y, nz=z;
-    if (L>1e-3){ const ux=x/L, uy=y/L, uz=z/L, tb=Math.min(16/Math.max(1e-3,Math.abs(ux)), 16.5/Math.max(1e-3,Math.abs(uy)), 14.5/Math.max(1e-3,Math.abs(uz))), te=1/Math.sqrt((ux/rx)**2+(uy/ry)**2+(uz/rz)**2);
-      const L2 = L<=tb ? L*te/tb : L+(te-tb); nx=ux*L2; ny=uy*L2; nz=uz*L2; }
-    const kk = Math.floor(nx+cx)+','+Math.floor(ny+cy)+','+Math.floor(nz+cz); if (!out.has(kk)) out.set(kk,c); });
-  return out;
-}
-function meshCabelo(hair, h, pv, sc, sil){
-  if (!hair.size) return null;
-  const cor0 = campoCor([hair], sil);
-  // fios: listras finas que descem (variação pelo ângulo em volta da cabeça)
-  const cor = (x,y,z)=>{ const c = cor0(x,y,z); if (sil) return c; const ang = Math.atan2(x+0.5, z+0.8), k = 0.86 + 0.14*Math.sin(ang*38 + Math.sin(y*0.35)*1.5) + 0.06*Math.sin(ang*91+y*0.2); return [c[0]*k, c[1]*k, c[2]*k]; };
-  return meshBlob(hair, pv, sc, { r:1, n:2, thr:0.36, st:0.9, cor });
-}
-
-/* ---------- pets PS2: corpo esculpido, 4 patas soltas, olhos de verdade ----------
-   formas em voxel do pet (resolução 1, frente = +z); a malha sai em resolução 2 */
-const PET_PS2 = {
-  cachorro:{
-    piv:{ torso:[0,0,0], head:[-0.5,12,5], cauda:[-0.5,11.5,-8.2], pFL:[-3.5,7,4], pFR:[2.5,7,4], pBL:[-3.5,7,-7], pBR:[2.5,7,-7] },
-    sdf:{ torso:(x,y,z)=> smin(smin(sdE(x,y,z,-0.5,9.2,-1.6,4.2,3.5,7.0), sdS(x,y,z,-0.5,9.6,2.6,3.9),3), sdCone(x,y,z,[-0.5,10.5,3.5],[-0.5,13.5,6],2.9,2.5),2),
-      head:(x,y,z)=>{ let d=sdE(x,y,z,-0.5,15.2,7,3.9,3.6,3.5); d=smin(d,sdCone(x,y,z,[-0.5,13.8,9.3],[-0.5,13.3,12.6],2.2,1.65),1.6); d=smin(d,sdS(x,y,z,-0.5,13.9,13.1,0.95),0.5);
-        for (const s of [-1,1]) d=smin(d,sdE(x,y,z,-0.5+s*4.0,14.4,6.6,0.85,2.9,1.7),0.8); return d; },
-      cauda:(x,y,z)=> sdCone(x,y,z,[-0.5,11.6,-8.2],[-0.5,16.6,-10.6],1.05,0.55),
-      pata:(x,y,z,X,Z,tras)=>{ let d=sdCone(x,y,z,[X,7.6,Z],[X,1,Z+0.2],1.4,1.05); if (tras) d=smin(d,sdE(x,y,z,X,6.4,Z,1.55,2.4,2.0),1.2); d=smin(d,Math.max(sdE(x,y,z,X,0.75,Z+0.45,1.25,0.85,1.55),-y),0.8); return d; } },
-    olhos:[[-2.1,15.6,10.0],[1.1,15.6,10.0]], olhoR:0.8, iris:'#2a1a10' },
-  gato:{
-    piv:{ torso:[0,0,0], head:[-0.5,10,4], cauda:[0,7,-6.3], pFL:[-2.5,5.5,2.5], pFR:[1.5,5.5,2.5], pBL:[-2.5,5.5,-5.5], pBR:[1.5,5.5,-5.5] },
-    sdf:{ torso:(x,y,z)=> smin(sdE(x,y,z,-0.5,7.5,-1.2,3.1,2.7,5.5), sdCone(x,y,z,[-0.5,8.5,3],[-0.5,11,4.8],2.2,2),2),
-      head:(x,y,z)=>{ let d=sdE(x,y,z,-0.5,12.6,6,3.9,3.3,3.2); d=smin(d,sdE(x,y,z,-0.5,11.2,8.4,1.7,1.2,1.2),1.2);
-        for (const s of [-1,1]) d=smin(d,sdCone(x,y,z,[-0.5+s*2.3,15,5.6],[-0.5+s*2.9,18.4,5.7],1.55,0.25),0.8); return d; },
-      cauda:(x,y,z)=>{ let d=sdCone(x,y,z,[0,7.3,-6.3],[0.2,10.5,-8.6],0.85,0.7); d=smin(d,sdCone(x,y,z,[0.2,10.5,-8.6],[1.2,15.5,-8.2],0.7,0.6),0.8); return d; },
-      pata:(x,y,z,X,Z,tras)=>{ let d=sdCone(x,y,z,[X,5.8,Z],[X,0.8,Z],1.05,0.85); if (tras) d=smin(d,sdE(x,y,z,X,5,Z,1.2,1.8,1.5),1); d=smin(d,Math.max(sdS(x,y,z,X,0.75,Z+0.3,1.0),-y),0.6); return d; } },
-    olhos:[[-2.1,12.8,8.9],[1.1,12.8,8.9]], olhoR:0.95, iris:'#5ac05a', fenda:true },
-  passaro:{
-    piv:{ torso:[0,0,0], head:[0,12,1.5], armL:[-4.2,11.5,-0.5], armR:[4.2,11.5,-0.5], cauda:[0,7.5,-4.2], pFL:[-1.5,4.8,0.3], pFR:[1.5,4.8,0.3] },
-    sdf:{ torso:(x,y,z)=> smin(sdE(x,y,z,0,9,0,4.1,4.6,4.5), sdS(x,y,z,0,11.5,1.2,3.4),2),
-      head:(x,y,z)=> smin(smin(sdS(x,y,z,0,15,2,3.4), sdCone(x,y,z,[0,14.6,4.8],[0,14.2,7.9],1.05,0.15),0.6), sdE(x,y,z,0,18.2,1.4,0.5,1.3,1.0),0.6),
-      armL:(x,y,z)=> sdE(x,y,z,-4.3,9.3,-0.8,0.75,3.3,4.2), armR:(x,y,z)=> sdE(x,y,z,4.3,9.3,-0.8,0.75,3.3,4.2),
-      cauda:(x,y,z)=> sdE(x,y,z,0,6.2,-6.4,1.9,0.55,2.8),
-      pata:(x,y,z,X)=>{ let d=sdCone(x,y,z,[X,4.8,0.2],[X,0.5,0.6],0.38,0.32); d=Math.min(d, sdCone(x,y,z,[X,0.4,0.6],[X,0.4,2.4],0.3,0.25), sdCone(x,y,z,[X,0.4,0.6],[X-0.9,0.4,1.9],0.28,0.22), sdCone(x,y,z,[X,0.4,0.6],[X+0.9,0.4,1.9],0.28,0.22)); return d; } },
-    olhos:[[-2.7,15.6,3.9],[2.7,15.6,3.9]], olhoR:0.7, iris:'#141414' },
-  peixe:{
-    piv:{ torso:[0,0,0], cauda:[0,14,-5.5], legL:[-2.6,13,0.5], legR:[2.6,13,0.5] },
-    sdf:{ torso:(x,y,z)=> smin(smin(sdE(x,y,z,0,14,0,2.5,4.1,6.2), sdE(x,y,z,0,18.2,-0.6,0.35,2.1,3.4),0.8), sdE(x,y,z,0,10.2,-2,0.3,1.2,2.2),0.6),
-      cauda:(x,y,z)=> smin(sdE(x,y,z,0,14,-6.8,1.0,2.2,1.6), smin(sdE(x,y,z,0,16.3,-9.6,0.35,2.6,2.3), sdE(x,y,z,0,11.7,-9.6,0.35,2.6,2.3),0.8),1),
-      legL:(x,y,z)=> sdE(x,y,z,-2.8,12.2,-0.2,0.35,1.3,2.1), legR:(x,y,z)=> sdE(x,y,z,2.8,12.2,-0.2,0.35,1.3,2.1) },
-    olhos:[[-2.1,15.3,3.2],[2.1,15.3,3.2]], olhoR:0.8, iris:'#141414' }
-};
-// patas: nome -> [X, Z, tras]
-const PET_PATAS = { cachorro:{ pFL:[-3.5,4,0], pFR:[2.5,4,0], pBL:[-3.5,-7,1], pBR:[2.5,-7,1] }, gato:{ pFL:[-2.5,2.5,0], pFR:[1.5,2.5,0], pBL:[-2.5,-5.5,1], pBR:[1.5,-5.5,1] }, passaro:{ pFL:[-1.5,0,0], pFR:[1.5,0,0] } };
-let MAT_OLHO = null;
-function buildPetPS2(vm, o){
-  o = o || {}; if (!MAT_PS2) MAT_PS2 = matPS2();
-  const tp = vm.pet, D = PET_PS2[tp], info = vm.petInfo || { tipo:tp }, R = 2, sc = VS/R;
-  const tudo = new Map(); for (const k in vm.parts) vm.parts[k].forEach((c,kk)=>tudo.set(kk,c));
-  const base = new Map(); { const b = buildPetVModel({ tipo:tp, cor:info.cor }, null, true); for (const k in b.parts) b.parts[k].forEach((c,kk)=>base.set(kk,c)); }
-  const corR1 = campoCor([tudo], o.sil), cor = (x,y,z)=> corR1(x/R, y/R, z/R);
-  const g = new THREE.Group(), parts = {};
-  const mk = geo=>{ const m = new THREE.Mesh(geo, MAT_PS2); m.castShadow = true; m.receiveShadow = true; return m; };
-  const nomes = Object.keys(D.piv);
-  // em que parte cada ponto fica: a forma mais perto
-  const fnDe = n=>{ if (n.startsWith('p') && n.length===3) { const [X,Z,tr] = PET_PATAS[tp][n]; return (x,y,z)=> D.sdf.pata(x,y,z,X,Z,tr); } return D.sdf[n]; };
-  const sdfs = Object.fromEntries(nomes.map(n=>[n, fnDe(n)]));
-  for (const n of nomes){
-    const pv = D.piv[n], fn = sdfs[n]; if (!fn) continue;
-    const pg = new THREE.Group(); pg.position.set(pv[0]*VS, pv[1]*VS, pv[2]*VS); pg.userData.base = [pg.position.x, pg.position.y, pg.position.z];
-    const f2 = (x,y,z)=> fn(x/R,y/R,z/R)*R;
-    // caixa: amostra a forma numa grade grossa pra achar os limites
-    let bb=[1e9,1e9,1e9,-1e9,-1e9,-1e9]; for (let x=-8;x<=8;x+=0.5) for (let y=-1;y<=22;y+=0.5) for (let z=-13;z<=15;z+=0.5) if (fn(x,y,z)<0.6){ bb[0]=Math.min(bb[0],x); bb[1]=Math.min(bb[1],y); bb[2]=Math.min(bb[2],z); bb[3]=Math.max(bb[3],x); bb[4]=Math.max(bb[4],y); bb[5]=Math.max(bb[5],z); }
-    const chave = 'pet|'+tp+'|'+n+'|'+(o.leve?1:0);
-    let geo; const pvR = pv.map(v=>v*R);
-    if (PS2_CACHE[chave]){ geo = PS2_CACHE[chave].clone(); const P = PS2_CACHE[chave].userData.P, nor = geo.attributes.normal.array, col = new Float32Array(P.length);
-      for (let v=0; v<P.length/3; v++){ const c = cor(P[v*3]-nor[v*3]*0.6, P[v*3+1]-nor[v*3+1]*0.6, P[v*3+2]-nor[v*3+2]*0.6); col[v*3]=c[0]; col[v*3+1]=c[1]; col[v*3+2]=c[2]; }
-      geo.setAttribute('color', new THREE.BufferAttribute(col,3)); }
-    else { geo = meshSDF(f2, bb.map(v=>v*R), o.leve ? 1.3 : 0.8, pvR, sc, cor); PS2_CACHE[chave] = geo; geo = geo.clone(); geo.userData.P = PS2_CACHE[chave].userData.P; }
-    pg.add(mk(geo));
-    g.add(pg); parts[n] = pg;
-  }
-  // acessórios (coleira, chapéu...): o que difere do pet sem nada vai na parte mais perto
-  const extra = new Map(); tudo.forEach((c,k)=>{ if (base.get(k)!==c) extra.set(k,c); });
-  if (extra.size){ const porParte = {}; extra.forEach((c,k)=>{ const [x,y,z]=k.split(',').map(Number); let best='torso', bd=1e9; for (const n of nomes){ const d=sdfs[n](x+0.5,y+0.5,z+0.5); if (d<bd){ bd=d; best=n; } } (porParte[best]||(porParte[best]=new Map())).set(k,c); });
-    for (const n in porParte){ const geo = meshBlob(dobraRes(porParte[n],R), D.piv[n].map(v=>v*R), sc, { r:1, n:2, thr:0.4, sil:o.sil }); if (geo) parts[n].add(mk(geo)); } }
-  // olhos: bolinha brilhante (íris + pupila + brilho), na cabeça
-  if (!o.sil){ if (!MAT_OLHO) MAT_OLHO = {};
-    const mat = c=> MAT_OLHO[c] || (MAT_OLHO[c] = new THREE.MeshPhongMaterial({ color:c, shininess:90, specular:0x666666 }));
-    const alvo = parts.head || parts.torso, pv = D.piv[parts.head ? 'head' : 'torso'], olhos = [];
-    D.olhos.forEach(([x,y,z])=>{ const e = new THREE.Group(); e.position.set((x-pv[0])*VS, (y-pv[1])*VS, (z-pv[2])*VS);
-      const b = new THREE.Mesh(new THREE.SphereGeometry(D.olhoR*VS, 14, 10), mat(D.iris)); b.scale.z = 0.7; e.add(b);
-      if (D.fenda){ const p = new THREE.Mesh(new THREE.SphereGeometry(D.olhoR*VS, 10, 8), mat('#101010')); p.scale.set(0.28,0.85,0.72); p.position.z = 0.03; e.add(p); }
-      const br = new THREE.Mesh(new THREE.SphereGeometry(D.olhoR*VS*0.3, 8, 6), mat('#ffffff')); br.position.set(-D.olhoR*VS*0.3, D.olhoR*VS*0.35, D.olhoR*VS*0.6); e.add(br);
-      alvo.add(e); olhos.push(e); });
-    g.userData.olhos = olhos; }
-  g.userData.parts = parts;
-  return g;
-}
-
-/* ---------- cenário PS2: ilha lisa com borda irregular e rocha por baixo; enfeites arredondados ---------- */
-const smax=(a,b,k)=> -smin(-a,-b,k);
-function platformPS2(vm, R){
-  if (!MAT_PS2) MAT_PS2 = matPS2();
-  const chao = new Map(), enf = new Map();
-  vm.parts.torso.forEach((c,k)=>{ const y = +k.split(',')[1]; (y<0 ? chao : enf).set(k,c); });
-  const cor = campoCor([chao]);
-  const fn = (x,y,z)=>{ const r = Math.hypot(x,z), t = Math.atan2(z,x);
-    const Rr = R - 0.7 + 0.35*Math.sin(3*t+1) + 0.22*Math.sin(7*t+2);
-    const u = Math.min(1, r/R), dep = 2.6 + 12.5*Math.pow(Math.max(0,1-u*u),0.75) + 0.9*Math.sin(t*5+1.3)*Math.sin(r*0.5) + 0.6*Math.sin(x*0.7+z*0.4);
-    const rocha = 0.35*Math.sin(x*1.3)*Math.sin(z*1.1)*Math.sin(y*0.9) * Math.min(1, Math.max(0,-y-1)/2);
-    return smax(smax(r - Rr, y, 0.9), -(y + dep), 2.2) + rocha; };
-  const g = new THREE.Group();
-  const geo = meshSDF(fn, [-R-1, -18, -R-1, R+1, 0.6, R+1], 0.5, [0,0,0], VS, cor);
-  const m = new THREE.Mesh(geo, MAT_PS2); m.receiveShadow = true; m.castShadow = true; g.add(m);
-  if (enf.size){ const eg = meshBlob(dobraRes(enf, 2), [0,0,0], VS/2, { r:1, n:1, thr:0.4, st:1 }); if (eg){ const em = new THREE.Mesh(eg, MAT_PS2); em.castShadow = true; em.receiveShadow = true; g.add(em); } }
-  g.userData.parts = { torso:g };
-  return g;
-}
-/* fundo pintado: o desenho em pixel vira imagem macia (desfocada, com névoa e vinheta) */
-function cenarioPS2(url, pronto){
-  const im = new Image(); im.onload = ()=>{
-    const W=1280, H=720, cv=document.createElement('canvas'); cv.width=W; cv.height=H; const g=cv.getContext('2d');
-    g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
-    const m = document.createElement('canvas'); m.width=640; m.height=360; const mg=m.getContext('2d'); mg.imageSmoothingEnabled=true; mg.imageSmoothingQuality='high';
-    mg.filter = 'blur(1.2px)'; mg.drawImage(im,0,0,640,360);
-    g.filter = 'blur(2.5px) saturate(1.08)'; g.drawImage(m,-8,-8,W+16,H+16); g.filter='none';
-    // névoa perto do horizonte e vinheta
-    const nv = g.createLinearGradient(0,H*0.35,0,H); nv.addColorStop(0,'rgba(255,240,220,0)'); nv.addColorStop(0.55,'rgba(210,220,230,0.10)'); nv.addColorStop(1,'rgba(20,24,28,0.25)'); g.fillStyle=nv; g.fillRect(0,0,W,H);
-    const vg = g.createRadialGradient(W/2,H*0.55,H*0.3,W/2,H*0.55,H*0.95); vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,0.35)'); g.fillStyle=vg; g.fillRect(0,0,W,H);
-    pronto(cv.toDataURL('image/jpeg', 0.88)); };
-  im.src = url;
-}
-
-/* roupa e armadura desenhadas em volta do corpo de bloco: cada voxel vai pra mesma distância, só que do corpo liso (abraça a curva) */
-function conforma(map, fn, baseSet){
-  if (!map.size || !baseSet) return map;
-  let x0=1e9,y0=1e9,z0=1e9,x1=-1e9,y1=-1e9,z1=-1e9;
-  map.forEach((c,k)=>{ const a=k.split(','), x=+a[0], y=+a[1], z=+a[2]; if (x<x0)x0=x; if (y<y0)y0=y; if (z<z0)z0=z; if (x>x1)x1=x; if (y>y1)y1=y; if (z>z1)z1=z; });
-  const M=12; x0-=M; y0-=M; z0-=M; x1+=M; y1+=M; z1+=M;
-  const nx=x1-x0+1, ny=y1-y0+1, nz=z1-z0+1, N=nx*ny*nz, NYZ=ny*nz, D=new Uint8Array(N).fill(255);
-  let fila=new Int32Array(N), nf=0;
-  baseSet.forEach(k=>{ const a=k.split(','), x=+a[0]-x0, y=+a[1]-y0, z=+a[2]-z0; if (x<0||y<0||z<0||x>=nx||y>=ny||z>=nz) return; const i=(x*ny+y)*nz+z; if (D[i]){ D[i]=0; fila[nf++]=i; } });
-  if (!nf) return map;
-  let nova=new Int32Array(N);
-  for (let r=1;r<=M && nf;r++){ let nn=0;
-    for (let q=0;q<nf;q++){ const i=fila[q], z=i%nz, y=((i-z)/nz)%ny, x=(i-z-y*nz)/NYZ;
-      for (let dx=-1;dx<=1;dx++){ const a=x+dx; if (a<0||a>=nx) continue; for (let dy=-1;dy<=1;dy++){ const b=y+dy; if (b<0||b>=ny) continue; for (let dz=-1;dz<=1;dz++){ const c=z+dz; if (c<0||c>=nz) continue; const j=(a*ny+b)*nz+c; if (D[j]===255){ D[j]=r; nova[nn++]=j; } } } } }
-    const t=fila; fila=nova; nova=t; nf=nn; }
-  const out = new Map(), e=0.5;
-  map.forEach((c,k)=>{ const a=k.split(','), x=+a[0], y=+a[1], z=+a[2], i=((x-x0)*ny+(y-y0))*nz+(z-z0);
-    const db = D[i]===255 ? M : D[i]; const px=x+0.5, py=y+0.5, pz=z+0.5, ds=fn(px,py,pz);
-    let gx=fn(px+e,py,pz)-fn(px-e,py,pz), gy=fn(px,py+e,pz)-fn(px,py-e,pz), gz=fn(px,py,pz+e)-fn(px,py,pz-e); const l=Math.hypot(gx,gy,gz)||1; gx/=l; gy/=l; gz/=l;
-    const mv = Math.max(-3.5, Math.min(3.5, ds - (db - 0.5)));
-    const qx=px-gx*mv-0.5, qy=py-gy*mv-0.5, qz=pz-gz*mv-0.5;
-    // espalha em 2x2x2 em volta do ponto novo (sem buraco onde o tecido estica)
-    for (const ax of [Math.floor(qx), Math.ceil(qx)]) for (const ay of [Math.floor(qy), Math.ceil(qy)]) for (const az of [Math.floor(qz), Math.ceil(qz)]){ const kk=ax+','+ay+','+az; if (!out.has(kk)) out.set(kk,c); } });
-  return out;
-}
 
 /* ===== Animações extras: 2ª animação de cada herói, golpe de cada arma, 3 brincadeiras por pet e a arena do chefão =====
    Toque no herói reveza: animação 1 da classe, animação 2 da classe, golpe da arma equipada.
@@ -3393,7 +2787,7 @@ const ROSTO_CLASSE = { guerreiro:['bravo','grito'], mago:['mira','surpreso'], ba
     const g = new THREE.Group(), H = 9, gy = -4.75, gz = 0.33;
     const pts = []; for (let i=0;i<=16;i++){ const t = -1 + i/8; pts.push(new V3(0, gy - 0.5 + 2.7*t*t - (Math.abs(t)>0.85 ? (Math.abs(t)-0.85)*3 : 0), gz + H*t)); }
     const mad = new THREE.MeshPhongMaterial({ color:cor||'#7a4a24', shininess:30, specular:0x332211 });
-    const arco = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), RENDER_PS2 ? 40 : 14, 0.32, RENDER_PS2 ? 8 : 4, false), mad); arco.castShadow = true; g.add(arco);
+    const arco = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 14, 0.32, 4, false), mad); arco.castShadow = true; g.add(arco);
     const punho = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 1.6, 10), new THREE.MeshPhongMaterial({ color:'#3a2414' })); punho.rotation.x = Math.PI/2; punho.position.set(0, gy-0.5, gz); g.add(punho);
     const cm = new THREE.MeshBasicMaterial({ color:'#efe8d0' }), cil = ()=> new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1, 5), cm);
     const c1 = cil(), c2 = cil(); g.add(c1); g.add(c2);
@@ -3918,6 +3312,7 @@ const HumorBtn = {
   el(){ let el = document.getElementById('humorBtn');
     if (!el){ const palco = document.querySelector('.palco'); if (!palco) return null;
       el = document.createElement('div'); el.id = 'humorBtn'; el.className = 'humorbtn'; palco.appendChild(el);
+      if (typeof stage!=='undefined' && stage) requestAnimationFrame(()=>stage.resize());   // o palco enquadra o herói abaixo do emoji e dos menus
       el.addEventListener('click', e=>{ e.stopPropagation(); const b = e.target.closest('button'); if (!b) return;
         if (b.dataset.hum) this.escolhe(b.dataset.hum); else if (b.dataset.humtoggle!=null){ Som.sfx('clique'); this.aberto = !this.aberto; this.pinta(); } }); }
     return el; },
@@ -3925,7 +3320,10 @@ const HumorBtn = {
     const el = this.el(); if (!el) return;
     const hm = humorAtual(), cara = hm ? EMOCOES[hm.emo].cara : '🙂';
     el.classList.toggle('vazio', !hm); el.classList.toggle('aberto', this.aberto);
-    el.innerHTML = `<button class="hbtn" data-humtoggle title="Seu humor hoje">${cara}${hm?'':'<i>?</i>'}</button>`+
+    const cen = (S.config&&S.config.cenario)||'castelo', fx = Som.faixa||0;
+    el.innerHTML = `<div class="hcol"><button class="hbtn" data-humtoggle title="Seu humor hoje">${cara}${hm?'':'<i>?</i>'}</button>`+
+      `<div class="hsel"><label><small>Mapa</small><select data-sel="cenario">${CENARIOS.map(([id,n])=>`<option value="${id}" ${id===cen?'selected':''}>${n}</option>`).join('')}</select></label>`+
+      `<label><small>Faixa</small><select data-sel="faixa">${Som.FAIXAS.map((f,i)=>`<option value="${i}" ${i===fx?'selected':''}>${f.nome}</option>`).join('')}</select></label></div></div>`+
       (this.aberto ? `<div class="hpainel moldura"><span>Como você tá hoje?</span><div class="hlista">${Object.entries(EMOCOES).map(([id,e])=>`<button data-hum="${id}" class="${hm&&hm.emo===id?'on':''}" title="${e.nome}"><b>${e.cara}</b><small>${e.nome}</small></button>`).join('')}</div></div>` : '');
   },
   escolhe(id){
@@ -4172,7 +3570,7 @@ const Ambiente = {
       if (p.vida) a = Math.max(0, Math.min(1, (p.y/H)*1.6)) * (0.6+Math.random()*0.4);
       if (p.y>H+3 || p.y<-4 || p.x>W+4 || p.x<-6){ this.ps[i]=this.nova(false); continue; }
       g.globalAlpha=a; g.fillStyle=p.c;
-      if (typeof RENDER_PS2!=='undefined' && RENDER_PS2 && !p.risco){ const rr = (p.s||1)*(p.gira?0.9:0.7); g.beginPath(); g.arc(p.x, p.y, rr, 0, Math.PI*2); g.fill(); if (p.vaga || p.pisca!=null){ g.globalAlpha=a*0.22; g.beginPath(); g.arc(p.x,p.y,rr*2.6,0,Math.PI*2); g.fill(); } continue; }
+      if (false){ const rr = (p.s||1)*(p.gira?0.9:0.7); g.beginPath(); g.arc(p.x, p.y, rr, 0, Math.PI*2); g.fill(); if (p.vaga || p.pisca!=null){ g.globalAlpha=a*0.22; g.beginPath(); g.arc(p.x,p.y,rr*2.6,0,Math.PI*2); g.fill(); } continue; }
       if (p.risco) g.fillRect(Math.round(p.x),Math.round(p.y),3,1);
       else if (p.gira){ const v=Math.sin(p.f*4)>0; g.fillRect(Math.round(p.x),Math.round(p.y), v?2:1, v?1:2); }
       else g.fillRect(Math.round(p.x),Math.round(p.y),p.s,p.s);
@@ -4259,7 +3657,7 @@ const Som = (()=>{
     const comp = ctx.createDynamicsCompressor(); comp.threshold.value=-20; comp.ratio.value=3;
     musicVol = ctx.createGain(); musicBus = ctx.createGain(); musicBus.gain.value=0.9;
     musicBus.connect(lp); lp.connect(comp); comp.connect(musicVol); musicVol.connect(master);
-    const rev = ctx.createConvolver(); rev.buffer = impulse(3.2,2.4); revIn = ctx.createGain(); revIn.gain.value=0.32;
+    const rev = ctx.createConvolver(); rev.buffer = impulse(1.8,2.4); /* era 3.2s: eco longo pesava no celular */ revIn = ctx.createGain(); revIn.gain.value=0.32;
     revIn.connect(rev); rev.connect(lp);
     sfxBus = ctx.createGain(); sfxBus.connect(master); palcoBus = ctx.createGain(); palcoBus.gain.value = 0.38; palcoBus.connect(sfxBus);
     noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate); const nd=noiseBuf.getChannelData(0); for (let i=0;i<nd.length;i++) nd[i]=Math.random()*2-1;
@@ -5034,7 +4432,7 @@ const Nuvem = {
       this.ultimoPull=Date.now(); this.estado='ok'; this.erro='';
       if (!S.herois.ativo && !$('#jogo').hidden && typeof cria!=='undefined' && !cria){ aplicaConfig(); topo(); toast('O jogo foi recomeçado do zero.'); entrar(); }
       else if ((mudouAqui || novasAg) && !$('#jogo').hidden && typeof cria!=='undefined' && !cria){ aplicaConfig(); atualizaPalco(); topo(); render(); if (S.novidades && S.novidades.length && $('#modal').hidden) entrar(); }
-      else if (!$('#titulo').hidden){ $('#btnComecar').textContent = S.herois.ativo ? 'Continuar' : 'Começar'; $('#tData').textContent='Atualizado em '+fmtD(S.hoje); }
+      else if (!$('#titulo').hidden){ pintaMenu(); refazConfig(); }
     } catch(e){
       if (e.token){ this.estado='reconectar'; }
       else { this.estado='erro'; this.erro=String(e.message||e); console.warn(e); }
@@ -5495,7 +4893,7 @@ const icoArea = id=> { const a=AREA[id]; return a && ICOS_AREA.includes(a.ico) ?
 function areasUsadas(s){ const u=new Set(); ['diarias','extras','chefoes','habilidades'].forEach(k=>(s[k]||[]).forEach(x=>x&&x.area&&u.add(x.area))); (s.log||[]).forEach(e=>{ if (e && e.area && (e.xp||e.ouro)) u.add(e.area); }); return u; }
 const ABAS = [
   ['equip','Equipar','armor'], ['atrib','Atributos','star'], ['missoes','Missões','scroll'], ['chefoes','Chefões','skull'],
-  ['loja','Loja','chest'], ['herois','Heróis','helm'], ['conq','Conquistas','trophy'], ['diario','História','book'], ['guia','Guia','mapa'], ['opcoes','Opções','gear']
+  ['loja','Loja','chest'], ['herois','Heróis','helm'], ['conq','Conquistas','trophy'], ['diario','História','book'], ['menu','Menu principal','gear']
 ];
 const custo = L => 50 + 50*L;
 const XP_PET_DIA = 2, XP_PET_CUIDADO = 3, XP_TAREFA = 5;
@@ -5512,7 +4910,9 @@ const esc = s=> String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&g
 
 // pet e tarefa sem área: o XP soma no nível geral, sem área nenhuma
 const areaPet = ()=> AREA.casa ? 'casa' : null;
-function calc(){
+let calcMemo = null, calcFixo = false;
+function calc(){ if (calcFixo){ return calcMemo || (calcMemo = calcConta()); } return calcConta(); }
+function calcConta(){
   const area={}, ultima={}; areasJogo().forEach(a=>{ area[a.id]=0; });
   let ganho=0; const heroi={}; const diasDiaria=new Set(); const porDia={};
   for (const e of S.log){
@@ -5627,6 +5027,34 @@ function trilhaHTML(t, rotulo){
     <div class="tcaminho">${ini?`<span class="pedra base" title="Marco ${ini}">${ico('mapa','pm')}<i>${ini}</i></span>`:''}${pedras}</div>
     <div class="fraco tnota">${ini?`Falhou um ${t.unidade==='semana'?'semana':'dia'}? Volta pro marco ${ini}, não pro zero.`:`Falhou antes do marco 3? Volta pro começo.`} Recorde: ${t.melhor}.</div></div>`;
 }
+/* minimapa da trilha no palco (canto de cima, à direita): do último marco até o baú do próximo; toque abre a trilha */
+const Minimapa = {
+  chave:'',
+  // caminho em zigue-zague (0..100), de baixo pra cima
+  WP:[[14,88],[46,84],[80,74],[70,58],[34,54],[18,40],[34,26],[66,24],[84,12]],
+  ponto(u){ const W=this.WP; if (!this.L){ this.L=[0]; for (let i=1;i<W.length;i++) this.L.push(this.L[i-1]+Math.hypot(W[i][0]-W[i-1][0], W[i][1]-W[i-1][1])); }
+    const L=this.L, alvo=Math.max(0,Math.min(1,u))*L[L.length-1]; let i=1; while (i<L.length-1 && L[i]<alvo) i++;
+    const k=(alvo-L[i-1])/((L[i]-L[i-1])||1); return [W[i-1][0]+(W[i][0]-W[i-1][0])*k, W[i-1][1]+(W[i][1]-W[i-1][1])*k]; },
+  pinta(c){
+    let el=document.getElementById('minimapa');
+    if (!el){ const palco=document.querySelector('.palco'); if (!palco) return; el=document.createElement('button'); el.id='minimapa'; el.className='minimapa moldura'; el.title='Trilha do dia'; el.setAttribute('aria-label','Abrir a trilha do dia'); palco.appendChild(el); this.chave=''; }
+    const t=(c||calc()).trilha, ini=marcoAte(t.pos), fim=marcoDepois(t.pos), aberto=t.hist.length && t.hist[t.hist.length-1].st==='aberto';
+    const chave=[t.pos,ini,fim,aberto,t.precisa,t.feitasHoje].join('|'); if (chave===this.chave) return; this.chave=chave;
+    const n=fim-ini, f2=v=>v.toFixed(1), pts=this.WP.map(p=>p.join(',')).join(' ');
+    const uPos=(t.pos-ini)/n, cut=[]; for (let i=0;i<=40;i++){ const u=i/40*uPos; cut.push(this.ponto(u).map(f2).join(',')); }
+    let nos=''; const passo=Math.max(1, Math.ceil(n/12));
+    for (let i=1;i<n;i++){ if (i%passo) continue; const [x,y]=this.ponto(i/n), ok=ini+i<=t.pos, agora=ini+i===t.pos+1 && aberto;
+      nos+=`<circle cx="${f2(x)}" cy="${f2(y)}" r="${agora?3.6:2.8}" class="${ok?'ok':''} ${agora?'agora':''}"/>`; }
+    const deco=[[8,16,'a'],[24,10,'a'],[92,40,'a'],[86,90,'b'],[56,40,'b'],[6,64,'b'],[94,64,'a']].map(([x,y,k])=>k==='a'
+      ? `<path d="M${x-5} ${y+4}L${x} ${y-5}L${x+5} ${y+4}Z" class="mont"/>` : `<path d="M${x-3.5} ${y+3}L${x} ${y-5}L${x+3.5} ${y+3}Z" class="arv"/><rect x="${x-0.8}" y="${y+3}" width="1.6" height="2" class="tronco"/>`).join('');
+    const [hx,hy]=this.ponto(uPos), [bx,by]=this.ponto(1), [sx,sy]=this.ponto(0);
+    el.innerHTML=`<div class="mmArea"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><rect width="100" height="100" class="chao"/>${deco}
+      <polyline points="${pts}" class="estrada"/><polyline points="${cut.join(' ')}" class="feito"/>${nos}</svg>
+      <img class="px mmIni" src="${pix('mapa')}" alt="" style="left:${sx}%;top:${sy}%"><img class="px mmBau" src="${pix('chest')}" alt="" style="left:${bx}%;top:${by}%">
+      <img class="px mmEu" src="${pix('flame')}" alt="" style="left:${hx}%;top:${hy}%"></div>
+      <span class="mmTxt"><b>${t.pos}</b> ${t.precisa?`· ${fim-t.pos} pro baú`:'· sem diárias'}</span>`;
+  }
+};
 function abreTrilha(id){
   if (id==='dia'){
     const c=calc(), t=c.trilha;
@@ -5803,7 +5231,7 @@ function checaRevelados(c){
   if (novos.length){ marcaSujo(); Som.sfx('nivel'); toast('Lendário revelado: '+novos.join(', ')); }
 }
 function topo(){
-  const c=calc(), g=nivelDe(c.xpTotal); checaMarcos(c);
+  const c=calc(), g=nivelDe(c.xpTotal); checaMarcos(c); Minimapa.pinta(c);
   $('#tNivel').textContent = g.n; $('#tXp').innerHTML = barra(g.r,g.p,'xp');
   $('#tXpTxt').textContent = `${num(g.r)}/${num(g.p)} XP`;
   $('#tOuro').textContent = num(c.ouro); $('#tSeq').textContent = c.seq; $('#tBaus').textContent = S.baus;
@@ -5812,11 +5240,13 @@ function topo(){
 }
 
 /* ---------- abas ---------- */
-function render(){
+function render(){ calcFixo = true; calcMemo = null; try { renderAba(); } finally { calcFixo = false; calcMemo = null; } }
+function renderAba(){
   document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on', b.dataset.aba===aba));
+  if (!ABAS.some(x=>x[0]===aba)) aba = 'equip';
   const fn=$('#folhaNome'), ab=ABAS.find(x=>x[0]===aba); if (fn && ab) fn.textContent=ab[1];
   checaRevelados(calc()); Som.suspense(aba==='chefoes' || !!(stage && stage.arena));
-  const f = { equip:vEquip, atrib:vAtrib, missoes:vMissoes, chefoes:vChefoes, loja:vLoja, herois:vHerois, conq:vConq, diario:vHistoria, guia:vGuia, opcoes:vOpcoes }[aba];
+  const f = { equip:vEquip, atrib:vAtrib, missoes:vMissoes, chefoes:vChefoes, loja:vLoja, herois:vHerois, conq:vConq, diario:vHistoria }[aba];
   $('#conteudo').innerHTML = f();
   if (aba==='diario') requestAnimationFrame(()=>{ const n=document.querySelector('.hno.e-aberto'); if (n && n.scrollIntoView) n.scrollIntoView({ block:'center' }); });
   topo(); Nuvem.pinta();
@@ -6009,21 +5439,14 @@ const GUIA = [
   ['Salvar', `Salva sozinho. Tudo o que você faz fica guardado primeiro no aparelho (funciona sem internet) e depois sobe pro seu Google Drive, numa pasta Daily Legends que o próprio jogo cria. O botão no topo mostra se está tudo na nuvem. Em outro celular ou no computador, é só entrar com a mesma conta Google.`],
   ['Jogar no King Bot', `1. Instale o jogo na tela inicial e entre com Google.<br>2. Crie um agente novo no King Bot e cole o prompt do guia em PDF.<br>3. Conecte o plugin Google Sheets nesse agente (e Todoist, Google Tasks ou Gmail, se quiser lembretes).<br>4. O agente acha a planilha Daily Legends - Save no seu Drive, monta diárias e chefões com você e, todo dia, escreve o que você fez na aba dele. O jogo junta tudo quando você abre.`]
 ];
-function vGuia(){
-  return `<div class="sec"><h3>Guia</h3></div><div class="lista guia">` + GUIA.map(([t,txt],i)=>`<details class="area" ${i===0||i===GUIA.length-1?'open':''}><summary><span class="anome">${t}</span></summary><div class="gtxt">${txt}</div></details>`).join('') + `</div>`;
-}
 
-function vOpcoes(){
+// Configurações: abre do menu principal (som, conta, save, Mestre). Mapa e faixa ficam no palco, embaixo do emoji.
+function vConfig(){
   return `<div class="opc">
-    <div class="outraIA modoMestre"><h3>Mestre do jogo</h3>
-    <p class="fraco">O agente do King Bot escreve sozinho na sua planilha e o jogo junta tudo quando você abre.</p>
-    <button class="btn" data-acao="copiarPrompt">Copiar prompt do Mestre</button></div>
     <label class="sl2"><span>Música</span><input type="range" min="0" max="1" step="0.05" value="${Som.musica}" data-vol="musica"></label>
     <label class="sl2"><span>Som</span><input type="range" min="0" max="1" step="0.05" value="${Som.som}" data-vol="som"></label>
     <label class="sl2"><span>Som do mapa</span><input type="range" min="0" max="1" step="0.05" value="${Som.clima}" data-vol="clima"></label>
     <label class="sl2"><span>Chiado de vinil na música</span><input type="range" min="0" max="1" step="0.05" value="${Som.chiado}" data-vol="chiado"></label>
-    <div class="escolhas"><span class="fraco">Faixa</span>${Som.FAIXAS.map((f,i)=>`<button class="chip ${Som.faixa===i?'on':''}" data-faixa="${i}">${f.nome}</button>`).join('')}</div>
-    <div class="escolhas"><span class="fraco">Cenário</span>${CENARIOS.map(([id,n])=>`<button class="chip ${(S.config.cenario||'castelo')===id?'on':''}" data-cenario="${id}">${n}</button>`).join('')}</div>
     <button class="btn" data-acao="mudo">${Som.mudo?'Ligar música':'Mutar música'}</button>
     <button class="btn" data-acao="testarSom">Testar som</button>
     <p class="fraco tConta"></p>
@@ -6031,10 +5454,25 @@ function vOpcoes(){
     <button class="btn" data-acao="salvar">Baixar cópia do save</button>
     <label class="btn arquivo">Importar save antigo (arquivo)<input type="file" accept=".json,application/json,text/plain" data-acao="carregar"></label>
     <button class="btn" data-acao="colarCodigo">Importar save antigo (código)</button>
-    <button class="btn" data-acao="titulo">Tela inicial</button>
-    <p class="fraco">Dia do jogo ${fmtD(S.hoje)} · versão ${DL_VERSAO}</p>
-    <div class="perigo"><h3>Recomeçar do zero</h3><p class="fraco">Apaga todo o progresso (neste aparelho e no seu Google Drive) e volta pra criação do herói.</p>
-    <button class="btn ruim" data-acao="zerar1">Recomeçar do zero</button></div></div>`;
+    <div class="outraIA modoMestre"><h3>Mestre do jogo</h3>
+    <p class="fraco">O agente do King Bot escreve sozinho na sua planilha e o jogo junta tudo quando você abre.</p>
+    <button class="btn" data-acao="copiarPrompt">Copiar prompt do Mestre</button></div>
+    <p class="fraco">Dia do jogo ${fmtD(S.hoje||hojeReal())} · versão ${DL_VERSAO}</p>
+    <div class="acoes"><button class="btn" data-fecha="1">Fechar</button></div></div>`;
+}
+function abreConfig(){ modal(vConfig(), 'Configurações'); Nuvem.pinta(); }
+function refazConfig(){ const o=document.querySelector('#modal:not([hidden]) .opc'); if (o){ o.outerHTML = vConfig(); Nuvem.pinta(); } }
+function abreGuia(){ modal(`<div class="lista guia">${GUIA.map(([t,x],i)=>`<details class="area" ${i===0?'open':''}><summary><span class="anome">${t}</span></summary><div class="gtxt">${x}</div></details>`).join('')}</div><div class="acoes"><button class="btn ouro" data-fecha="1">Fechar</button></div>`, 'Guia'); }
+// menu principal (a mesma tela de entrada do jogo)
+function vaiMenu(){
+  if (ehMovel() && folha) abreFolha(false);
+  $('#jogo').hidden=true; $('#titulo').hidden=false; pintaMenu();
+}
+function pintaMenu(){
+  $('#btnComecar').textContent = S.herois.ativo ? 'Continuar' : 'Começar';
+  const z=$('#btnZerarT'); if (z) z.hidden = !S.herois.ativo;
+  $('#tData').textContent = S.hoje ? 'Atualizado em '+fmtD(S.hoje) : '';
+  Nuvem.pinta();
 }
 
 /* ---------- ações ---------- */
@@ -6119,8 +5557,8 @@ function carregar(file){
 }
 function aplicaConfig(){ const c=S.config||{}; Som.musica = c.musica!=null?c.musica:0.6; Som.som = c.som!=null?c.som:0.7; Som.chiado = c.chiado!=null?c.chiado:1; Som.clima = c.clima!=null?c.clima:0.6; Som.mudo=!!c.mudo; Som.trocar(c.faixa||0); aplicaCenario(); }
 const CEN_CACHE={};
-function aplicaCenario(){ const id=(S.config&&S.config.cenario)||'castelo'; Ambiente.tema(id); Som.ambiente(id); if (stage && stage.setPlataforma) stage.setPlataforma(id); if (RENDER_PS2){ document.body.classList.add('ps2'); const usa = u=>{ if (((S.config&&S.config.cenario)||'castelo')===id) document.body.style.setProperty('--cen', `url(${u})`); }; if (CEN_CACHE['ps2:'+id]) usa(CEN_CACHE['ps2:'+id]); else cenarioPS2(CEN_CACHE[id] || (CEN_CACHE[id]=cenario(id)), u=>{ CEN_CACHE['ps2:'+id]=u; usa(u); }); }
-  else document.body.style.setProperty('--cen', `url(${CEN_CACHE[id] || (CEN_CACHE[id]=cenario(id))})`); const n=$('#tCen'); if (n) n.textContent=(CENARIOS.find(c=>c[0]===id)||CENARIOS[0])[1]; const f=$('#tFaixa'); if (f) f.textContent=Som.FAIXAS[Som.faixa].nome; }
+function aplicaCenario(){ const id=(S.config&&S.config.cenario)||'castelo'; Ambiente.tema(id); Som.ambiente(id); if (stage && stage.setPlataforma) stage.setPlataforma(id); 
+  document.body.style.setProperty('--cen', `url(${CEN_CACHE[id] || (CEN_CACHE[id]=cenario(id))})`); }
 
 /* ---------- recomeçar do zero (dupla confirmação) ---------- */
 const PALAVRA_ZERAR = 'RECOMEÇAR';
@@ -6265,7 +5703,7 @@ function entrar(){
     // layout largo: a placa do nome fica por cima do palco; o herói é enquadrado acima dela
     stage.livre = (w,h)=>{
       if (ehMovel()){ const c=$('#palco3d').getBoundingClientRect(), r={}; const baixo = folha ? $('.painel') : $('#placa'), pb=baixo.getBoundingClientRect();
-        if (pb.height) r.yb = 1 - 2*((pb.top-c.top)-6)/h; const px=$('#petbox'); if (!folha && px && !px.hidden){ const q=px.getBoundingClientRect(); if (q.height) r.yt = 1 - 2*((q.bottom-c.top)+6)/h; } return r; }
+        if (pb.height) r.yb = 1 - 2*((pb.top-c.top)-6)/h; if (!folha){ let fundo = 0; const px=$('#petbox'), hc=document.querySelector('#humorBtn .hcol'); [px && !px.hidden ? px : null, hc].forEach(e=>{ if (!e) return; const q=e.getBoundingClientRect(); if (q.height) fundo = Math.max(fundo, q.bottom-c.top); }); if (fundo) r.yt = 1 - 2*(fundo+6)/h; } return r; }
       const pl=$('#placa'); if (!pl || getComputedStyle(pl).position!=='absolute') return null; const c=$('#palco3d').getBoundingClientRect(), p=pl.getBoundingClientRect();
       if (!p.height || p.right-c.left < w*0.3) return null; return 1 - 2*((p.top-c.top)-8)/h; };
     stage.onAcerta = ()=>Som.sfx('golpe');
@@ -6285,9 +5723,8 @@ function liga(){
   $('#tIcoOuro').src=pix('coin'); $('#tIcoSeq').src=pix('flame'); $('#tIcoBau').src=pix('chest'); $('#tIcoNota').src=pix('note');
   $('#tabs').innerHTML = ABAS.map(([id,n,i])=>`<button class="tab" data-aba="${id}" title="${n}">${ico(i)}<span>${n}</span></button>`).join('');
   aplicaConfig();
-  $('#volM').value=Som.musica; $('#volS').value=Som.som;
   $('#tData').textContent = 'Atualizado em '+fmtD(S.hoje);
-  $('#btnComecar').textContent = S.herois.ativo ? 'Continuar' : 'Começar';
+  pintaMenu();
   rastreia(true);
 
   document.addEventListener('click', e=>{
@@ -6300,7 +5737,9 @@ function liga(){
     if (d.hvai){ Leitura.vai(+d.hvai); return; }
     if (d.hpular){ Leitura.pular(); return; }
     if (t.id==='btnComecar'){ Som.tocar(); Som.sfx('aba'); entrar(); return; }
-    if (t.id==='btnGuiaT'){ Som.tocar(); Som.sfx('aba'); aba='guia'; entrar(); if (S.herois.ativo){ render(); if (ehMovel()) abreFolha(true); } else { modal(`<div class="lista guia">${GUIA.map(([t,x])=>`<details class="area"><summary><span class="anome">${t}</span></summary><div class="gtxt">${x}</div></details>`).join('')}</div><div class="acoes"><button class="btn ouro" data-acao="escolher">Escolher herói</button></div>`,'Como jogar'); } return; }
+    if (t.id==='btnGuiaT'){ Som.tocar(); Som.sfx('aba'); abreGuia(); return; }
+    if (t.id==='btnConfigT'){ Som.tocar(); Som.sfx('aba'); abreConfig(); return; }
+    if (t.id==='btnZerarT'){ Som.tocar(); Som.sfx('erro'); zerarPasso1(); return; }
     if (d.acao==='escolher'){ fechaModal(); escolha(); return; }
     if (d.criaHeroi){ cria.heroi=d.criaHeroi; cria.passo='confirma'; Som.sfx('clique'); passoCria(); return; }
     if (d.cria){ if (d.cria==='fim'){ fimCria(); return; } if (d.cria==='nome' && $('#criaNome')) {} cria.passo=d.cria; Som.sfx('clique'); passoCria(); return; }
@@ -6312,6 +5751,7 @@ function liga(){
     if (d.arena){ Som.sfx('clique'); abreArena(d.arena); return; }
     if (t.id==='btnSaiArena'){ Som.sfx('clique'); stage && stage.fechaArena(); arenaUI(false); return; }
     if (d.trilha){ Som.sfx('clique'); abreTrilha(d.trilha); return; }
+    if (t.id==='minimapa'){ Som.sfx('clique'); abreTrilha('dia'); return; }
     if (t.id==='btnTrilha'){ Som.sfx('clique'); abreTrilha('dia'); return; }
     if (d.cuidar){ cuidar(d.pet, d.cuidar); return; }
     if (d.dispensar){ petDispensado[d.pet+':'+d.dispensar]=true; petBox(); return; }
@@ -6323,11 +5763,8 @@ function liga(){
     if (d.peteq){ const p=S.pets.possui.find(x=>x.id===d.pet), it=PET_ITEM[d.peteq]; p.equip=p.equip||{}; if (p.equip[it.slot]===it.id) delete p.equip[it.slot]; else p.equip[it.slot]=it.id; Som.sfx('equipar'); marcaSujo(); atualizaPalco(); render(); return; }
     if (d.renomear){ pedeNome('heroi', d.renomear); return; }
     if (d.renomearpet){ pedeNome('pet', d.renomearpet); return; }
-    if (d.faixa!=null){ Som.tocar(); Som.trocar(+d.faixa); S.config.faixa=+d.faixa; marcaSujo(); aplicaCenario(); if (aba==='opcoes') render(); return; }
-    if (d.cenario){ S.config.cenario=d.cenario; Som.sfx('clique'); marcaSujo(); aplicaCenario(); if (aba==='opcoes') render(); return; }
-    if (t.id==='btnFaixaT'){ Som.tocar(); const i=(Som.faixa+1)%Som.FAIXAS.length; Som.trocar(i); S.config.faixa=i; aplicaCenario(); return; }
-    if (t.id==='btnCenT'){ const i=(CENARIOS.findIndex(c=>c[0]===S.config.cenario)+1)%CENARIOS.length; S.config.cenario=CENARIOS[i][0]; Som.sfx('clique'); aplicaCenario(); return; }
     if (d.fecha && !d.acao){ Som.sfx('clique'); fechaModal(); return; }
+    if (d.aba==='menu'){ Som.sfx('aba'); vaiMenu(); return; }
     if (d.aba && ehMovel() && folha && d.aba===aba){ abreFolha(false); Som.sfx('aba'); return; }
     if (d.aba){ const saiu = aba==='loja' && d.aba!=='loja' && Object.keys(prova).length; aba=d.aba; confirmando=null; if (saiu){ prova={}; atualizaPalco(); } Som.sfx('aba'); render(); $('#conteudo').scrollTop=0; if (ehMovel()) abreFolha(true); return; }
     if (d.slot){ filtroSlot = filtroSlot===d.slot ? null : d.slot; const id=eqAtivo()[d.slot]; selItem = id || null; Som.sfx('clique'); render(); return; }
@@ -6343,12 +5780,12 @@ function liga(){
     if (d.usar){ usarHeroi(d.usar); return; }
     if (d.primeiro){ const id=d.primeiro; S.herois.possui=[id]; S.herois.ativo=id; S.herois.equip[id]={}; Som.sfx('nivel'); marcaSujo(); fechaModal(); $('#modal').classList.remove('largo'); entrar(); toast(HEROI[id].nome+' escolhido.'); return; }
     if (t.id==='btnBau'){ abrirBau(); return; }
-    if (t.id==='btnMudo' || d.acao==='mudo'){ Som.tocar(); Som.mudo=!Som.mudo; S.config.mudo=Som.mudo; marcaSujo(); topo(); if (aba==='opcoes') render(); return; }
+    if (t.id==='btnMudo' || d.acao==='mudo'){ Som.tocar(); Som.mudo=!Som.mudo; S.config.mudo=Som.mudo; marcaSujo(); topo(); refazConfig(); return; }
     if (t.id==='btnNuvem'){ Nuvem.tocar(); return; }
     if (t.id==='btnFechaFolha'){ abreFolha(false); Som.sfx('aba'); return; }
     if (t.id==='btnEntrarT' || d.acao==='entrarGoogle'){ fechaModal(); Nuvem.irParaGoogle(false); return; }
     if (d.acao==='sincronizar'){ fechaModal(); Nuvem.sincronizar('botao'); toast('Sincronizando…'); return; }
-    if (d.acao==='sairConta'){ Nuvem.sair(); render(); return; }
+    if (d.acao==='sairConta'){ Nuvem.sair(); if (!$('#jogo').hidden) render(); refazConfig(); return; }
     if (t.id==='avisoVersaoBtn'){ Versao.atualizar(); return; }
     if (d.acao==='colarCodigo'){ modal(`<form class="campo" data-form="codigo"><label for="codImp">Cole o código do save (começa com DL1 ou DL2)</label><textarea id="codImp" class="cod" rows="5"></textarea><div class="acoes"><button type="button" class="btn" data-fecha="1">Cancelar</button><button class="btn ouro">Importar</button></div></form>`,'Importar save'); return; }
     if (d.acao==='copiarPrompt'){ copiarTexto(PROMPTS.agente, 'Prompt copiado. Mande pro King Bot pra criar o agente.'); return; }
@@ -6360,7 +5797,7 @@ function liga(){
     if (d.acao==='equipar'){ equipar(d.id); if (d.fecha) fechaModal(); return; }
     if (d.acao==='remover'){ remover(d.id); return; }
     if (d.acao==='copiar'){ copiarCodigo(); return; }
-    if (d.acao==='titulo'){ $('#jogo').hidden=true; $('#titulo').hidden=false; $('#btnComecar').textContent='Continuar'; return; }
+    if (d.acao==='titulo'){ vaiMenu(); return; }
   });
   document.addEventListener('input', e=>{
     const t=e.target;
@@ -6370,6 +5807,12 @@ function liga(){
       const k = t.dataset.vol || (t.id==='volM'?'musica':'som'); Som[k]=parseFloat(t.value); S.config[k]=Som[k];
       if (k==='som') Som.sfx('clique');
     }
+  });
+  document.addEventListener('change', e=>{
+    const t=e.target; if (!t.dataset || !t.dataset.sel) return;
+    if (t.dataset.sel==='faixa'){ Som.tocar(); Som.trocar(+t.value); S.config.faixa=+t.value; marcaSujo(); aplicaCenario(); }
+    if (t.dataset.sel==='cenario'){ S.config.cenario=t.value; Som.sfx('clique'); marcaSujo(); aplicaCenario(); }
+    t.blur();
   });
   document.addEventListener('submit', e=>{
     const f=e.target; e.preventDefault(); const k=f.dataset.form;

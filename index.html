@@ -556,7 +556,7 @@ const SAVE = {
  "mod": {},
  "rev": 0
 };
-const DL_VERSAO = "2026.10.13-1120";
+const DL_VERSAO = "2026.10.16-1403";
 const DL_RETRATOS = "e79c724d44";
 
 /* ===== Voxel v2: bonecos esculpidos em meia resolução (voxel = 0,5 do mundo) ===== */
@@ -4276,6 +4276,74 @@ function aplicaUma(l, d){
   }
 }
 
+/* ---------- jogar com IA externa (ChatGPT, Gemini…): copiar regras/resumo e colar o que o Mestre mandou ---------- */
+// formato colado: uma linha por comando, "tipo {json}". Linhas soltas, ``` e texto em volta são ignorados.
+// comando igualzinho a um já colado é ignorado (id = hash); diária repetida no dia substitui e tarefa repetida no dia é ignorada (aplicaUma)
+function linhasColadas(txt){
+  const out=[], tipos=/^(registro|tarefa_feita|tarefa|area_remover|area|diaria_remover|diaria|extra|chefao_remover|chefao_derrotado|chefao|habilidade|bau|novidade|capitulo|humor|fala)\b/;
+  String(txt||'').split(/\r?\n/).forEach((bruta,i)=>{
+    let l=bruta.trim().replace(/^[-*•>\d.)\s]+(?=[a-z])/i,'').replace(/^`+|`+$/g,'').trim();
+    const m=l.match(tipos); if (!m) return;
+    let resto=l.slice(m[1].length).trim().replace(/^[:|=\-–]\s*/,'');
+    const a=resto.indexOf('{'), b=resto.lastIndexOf('}');
+    const dados = a>=0 && b>a ? resto.slice(a,b+1) : '';
+    if (!dados && !(m[1]==='bau' && !resto)) return; // texto solto que só começa com a palavra
+    out.push({ id:'cola:'+hashTxt(m[1]+'|'+dados.replace(/\s+/g,'')), tipo:m[1], dados:dados||'{}', linha:i+1 });
+  });
+  return out;
+}
+function colarDoMestre(txt){
+  const ls=linhasColadas(txt); if (!ls.length) return { total:0, novas:0, repetidas:0, erros:[] };
+  const ja=new Set(S.aplicados||[]), vistos=new Set(); const novas=ls.filter(l=>{ if (ja.has(l.id) || vistos.has(l.id)) return false; vistos.add(l.id); return true; });
+  rastreia();
+  aplicaAgente(novas);
+  normaliza(); rastreia(true);
+  const ids=new Set(novas.map(l=>l.id));
+  const erros=(S.agenteErros||[]).filter(e=>ids.has(e.id)).map(e=>({ linha:e.linha, erro:e.erro }));
+  // erro de linha colada fica só na tela, não suja o resumo
+  S.agenteErros=(S.agenteErros||[]).filter(e=>!ids.has(e.id));
+  return { total:ls.length, novas:novas.length, repetidas:ls.length-novas.length, erros };
+}
+function textoResumoIA(){
+  const R=linhasResumo(); R[0]=['DAILY LEGENDS: como estou no jogo agora (copiado do jogo em '+horaLocal()+')'];
+  return R.map(r=>{ const x=(r||[]).map(v=>v==null?'':String(v)); while (x.length && !x[x.length-1]) x.pop(); return x.join(' | '); })
+    .filter((l,i,a)=> l || (a[i-1]||'')).join('\n').replace(/LINHAS DO AGENTE/,'COMANDOS JÁ APLICADOS');
+}
+function textoRegrasIA(){
+  const i=LEIA_ME.indexOf('TIPOS'), f=LEIA_ME.indexOf('RECOMEÇAR DO ZERO');
+  const tipos=LEIA_ME.slice(i,f).filter(l=>!/^save_importar/.test(l)).map(l=>l.replace('(só você cria e marca tarefas: o jogador não tem botão no app.','(só você cria e marca tarefas: eu não tenho botão no app.'));
+  const fim=LEIA_ME.slice(LEIA_ME.findIndex(l=>/^ÁREAS:/.test(l)));
+  return [
+    'DAILY LEGENDS: regras do jogo pro Mestre (versão '+LEIA_VER+')',
+    '',
+    'Eu jogo o Daily Legends, um RPG da minha vida real. Você é o Mestre: monta comigo áreas, diárias, tarefas e chefões e anota o que eu fiz. No app eu não crio nem marco nada: tudo entra por você.',
+    '',
+    'DOIS JEITOS DE ANOTAR',
+    'A) Você edita a minha planilha (ex.: Gemini no modo Tarefa, com o Google Sheets conectado): abra a planilha "Daily Legends - Save" (pasta Daily Legends), leia a aba "leia-me" e escreva SÓ na aba "agente", linha nova no fim: A id único com a data (ex.: 2026-10-12-agua), B quando, C tipo, D só o JSON, E nota. O jogo lê sozinho quando eu abro. Nunca edite nem apague as abas "save" e "resumo", nem linhas antigas.',
+    'B) Você não edita a planilha: me responda com COMANDOS e eu colo no jogo (Colar do Mestre).',
+    '',
+    'COMO MANDAR OS COMANDOS (jeito B)',
+    'Um comando por linha, no formato: tipo {JSON numa linha só, com aspas duplas}',
+    'Mande todos juntos dentro de UM bloco de código, pra eu copiar de uma vez. Fora do bloco, fale normal comigo.',
+    'Exemplo:',
+    '   area {"id":"saude","nome":"Saúde","ico":"heart"}',
+    '   diaria {"id":"agua","area":"saude","nome":"Beber 2 litros de água","minima":"1 litro","tres":"3 litros"}',
+    '   registro {"d":"2026-10-12","area":"saude","txt":"Beber 2 litros de água","xp":10,"estrelas":2,"tipo":"diaria","diaria":"agua"}',
+    'Ponha SEMPRE "d" (o dia, AAAA-MM-DD) em registro, tarefa, bau e chefao_derrotado. O jogo ignora um comando igualzinho a um que já foi colado antes, então o "d" é o que separa um dia do outro.',
+    'Quando eu colar, o jogo me mostra quais comandos deram erro. Se eu te mandar o erro, corrija e mande só o comando corrigido.',
+    '',
+    'SEM DUPLICAR (vale nos dois jeitos)',
+    'Antes de anotar, confira em ÚLTIMOS REGISTROS do resumo (e, no jeito A, na aba agente) se aquele dia daquela diária já foi anotado. Se já foi e nada mudou, não anote de novo. Pra corrigir (estrelas, feito/não feito), mande o registro completo e certo (no jeito A, com id novo, ex.: 2026-10-12-agua-v2): o jogo troca o anterior por ele, não soma. Tarefa com o mesmo texto no mesmo dia é ignorada: antes de criar, veja TAREFAS no resumo e, se já existe, só marque com tarefa_feita usando o id dela. Não crie tarefa pro que já é diária.',
+    '',
+    'RESUMO: pra saber como estou (níveis, diárias, chefões, tarefas, erros), use o resumo. Se você consegue ler o meu Google Drive, abra você mesmo a aba "resumo" da planilha "Daily Legends - Save": ela se atualiza toda vez que eu abro o jogo; confira a hora em "atualizado em". Se não conseguir ou se estiver velha, peça: eu copio em Configurações › Copiar resumo pra IA e colo aqui.',
+    '',
+    ...tipos,
+    'RECOMEÇAR DO ZERO: se o resumo mostrar "recomeçou do zero em", o jogo foi zerado. Monte tudo de novo comigo, com ids novos.',
+    '',
+    ...fim
+  ].join('\n');
+}
+
 /* ---------- importar save antigo (.json, código DL1/DL2 ou linha do agente) ---------- */
 function decodificaCodigo(txt){
   const t=String(txt||'').trim(); const m=t.match(/^DL([12]):([A-Za-z0-9+/=\s]+)$/); if (!m) throw new Error('código inválido');
@@ -4639,9 +4707,10 @@ const Versao = {
   }
 };
 
-// prompt do Mestre (agente do King Bot)
+// prompts do Mestre: agente (King Bot, escreve na planilha) e externa (ChatGPT, Gemini e outras IAs)
 const PROMPTS = {
- "agente": "Cria um agente chamado Mestre do Daily Legends com estas instruções:\n\nVocê é o Mestre do Daily Legends, um RPG da minha vida real pra eu ser mais produtivo, criar bons hábitos e conquistar minhas metas. O jogo é um app que salva numa planilha do meu Google Drive chamada “Daily Legends - Save” (pasta Daily Legends). Use o plugin Google Sheets: procure a planilha por esse nome e leia a aba “leia-me” antes de tudo, porque ela explica o formato. Se não achar a planilha ou o plugin não estiver conectado, me avise e me diga o que conectar.\n\nRegras da planilha: leia a aba “resumo” pra saber como estou. Escreva SÓ na aba “agente”, sempre linha nova no fim (colunas A a E: id único, quando, tipo, dados em JSON, nota). Sem duplicar: registro de diária usa o id AAAA-MM-DD-iddadiaria e, antes de escrever, confira na aba “agente” e nos últimos registros do resumo se aquele dia daquela diária já está anotado; se já está, não escreva de novo. Pra corrigir, mande o registro completo e certo com id novo: o jogo troca o anterior, não soma. No app eu não crio nem marco nada: tarefas, diárias e chefões só entram por você. Antes de criar uma tarefa, veja as tarefas do resumo; se já existe, só marque como feita com o id dela, e não crie tarefa pro que já é diária. Nunca edite nem apague as abas “save” e “resumo”, nem linhas antigas. Se o resumo mostrar ERRO numa linha sua, corrija com uma linha nova.\n\nMontagem: use o que eu já contei pro King Bot (perfil, memória e conversas antigas). Primeiro, me mostre o kit inicial de atributos da leia-me, ajustado a mim, e pergunte o que tirar, trocar ou criar. Depois, faça um quiz por atributo, um de cada vez, com botões: 3 diárias sugeridas (com versão mínima e meta de 3★) e uma opção pra eu escrever outra; posso escolher mais de uma. No fim de cada atributo, pergunte se tem alguma meta grande ali. Você decide o que é diária (se repete), tarefa (uma vez só) ou chefão (meta grande e medível, com uma história de 2 a 3 frases), me mostra e só escreve na aba “agente” depois que eu confirmar.\n\nAvisos: no fim da montagem, pergunte por onde eu quero receber lembretes e avisos, com botões: no chat do King Bot, no celular (Todoist ou Google Tasks), no e-mail (Gmail), só dentro do jogo (as novidades que aparecem quando eu abro) ou nenhum. Posso escolher mais de um. Se o canal precisar de um plugin que não está conectado, me diga qual conectar. Guarde a escolha na sua memória e use só esses canais; se eu pedir pra trocar, troque na hora.\n\nTodo dia: de manhã, pergunte minhas tarefas do dia, escreva cada uma como tarefa e crie os lembretes pelos canais que eu escolhi (se escolhi nenhum, não crie). Durante o dia, anote o que eu contar. À noite, leia minhas conversas com os outros agentes e o resumo, registre o que achou (sem duplicar) e só me pergunte o que você não conseguiu descobrir; o que eu não responder fica aberto, não marque como não feito. Depois feche o dia com os registros e o XP pelas regras do jogo (★ +4, ★★ +10, ★★★ +15, não fez −5, tarefa +5, chefão +300), um baú se fiz todas as diárias e 2 a 4 novidades curtas. Escreva também a página do dia da história (capitulo, 3 a 5 frases curtas). Atualize o progresso dos chefões. Prêmio em ouro (sem XP) é um registro com “ouro”, como explica a leia-me. Se o resumo mostrar que eu recomecei do zero, monte tudo de novo comigo, com linhas novas.\n\nCrie as tarefas agendadas da manhã e da noite.\n\nAlém do agente, cria uma skill chamada “Daily Legends: mandar pro Mestre na hora” e coloca em todos os meus outros agentes: quando eu contar pra qualquer um deles algo que é diária, tarefa ou chefão do jogo (fiz, não fiz, tenho que fazer, uma meta que andou), ele manda pro Mestre do Daily Legends na hora, sem me perguntar nem me avisar, e o Mestre registra no jogo sem duplicar."
+ "agente": "Cria um agente chamado Mestre do Daily Legends com estas instruções:\n\nVocê é o Mestre do Daily Legends, um RPG da minha vida real pra eu ser mais produtivo, criar bons hábitos e conquistar minhas metas. O jogo é um app que salva numa planilha do meu Google Drive chamada “Daily Legends - Save” (pasta Daily Legends). Use o plugin Google Sheets: procure a planilha por esse nome e leia a aba “leia-me” antes de tudo, porque ela explica o formato. Se não achar a planilha ou o plugin não estiver conectado, me avise e me diga o que conectar.\n\nRegras da planilha: leia a aba “resumo” pra saber como estou. Escreva SÓ na aba “agente”, sempre linha nova no fim (colunas A a E: id único, quando, tipo, dados em JSON, nota). Sem duplicar: registro de diária usa o id AAAA-MM-DD-iddadiaria e, antes de escrever, confira na aba “agente” e nos últimos registros do resumo se aquele dia daquela diária já está anotado; se já está, não escreva de novo. Pra corrigir, mande o registro completo e certo com id novo: o jogo troca o anterior, não soma. No app eu não crio nem marco nada: tarefas, diárias e chefões só entram por você. Antes de criar uma tarefa, veja as tarefas do resumo; se já existe, só marque como feita com o id dela, e não crie tarefa pro que já é diária. Nunca edite nem apague as abas “save” e “resumo”, nem linhas antigas. Se o resumo mostrar ERRO numa linha sua, corrija com uma linha nova.\n\nMontagem: use o que eu já contei pro King Bot (perfil, memória e conversas antigas). Primeiro, me mostre o kit inicial de atributos da leia-me, ajustado a mim, e pergunte o que tirar, trocar ou criar. Depois, faça um quiz por atributo, um de cada vez, com botões: 3 diárias sugeridas (com versão mínima e meta de 3★) e uma opção pra eu escrever outra; posso escolher mais de uma. No fim de cada atributo, pergunte se tem alguma meta grande ali. Você decide o que é diária (se repete), tarefa (uma vez só) ou chefão (meta grande e medível, com uma história de 2 a 3 frases), me mostra e só escreve na aba “agente” depois que eu confirmar.\n\nAvisos: no fim da montagem, pergunte por onde eu quero receber lembretes e avisos, com botões: no chat do King Bot, no celular (Todoist ou Google Tasks), no e-mail (Gmail), só dentro do jogo (as novidades que aparecem quando eu abro) ou nenhum. Posso escolher mais de um. Se o canal precisar de um plugin que não está conectado, me diga qual conectar. Guarde a escolha na sua memória e use só esses canais; se eu pedir pra trocar, troque na hora.\n\nTodo dia: de manhã, pergunte minhas tarefas do dia, escreva cada uma como tarefa e crie os lembretes pelos canais que eu escolhi (se escolhi nenhum, não crie). Durante o dia, anote o que eu contar. À noite, leia minhas conversas com os outros agentes e o resumo, registre o que achou (sem duplicar) e só me pergunte o que você não conseguiu descobrir; o que eu não responder fica aberto, não marque como não feito. Depois feche o dia com os registros e o XP pelas regras do jogo (★ +4, ★★ +10, ★★★ +15, não fez −5, tarefa +5, chefão +300), um baú se fiz todas as diárias e 2 a 4 novidades curtas. Escreva também a página do dia da história (capitulo, 3 a 5 frases curtas). Atualize o progresso dos chefões. Prêmio em ouro (sem XP) é um registro com “ouro”, como explica a leia-me. Se o resumo mostrar que eu recomecei do zero, monte tudo de novo comigo, com linhas novas.\n\nCrie as tarefas agendadas da manhã e da noite.\n\nAlém do agente, cria uma skill chamada “Daily Legends: mandar pro Mestre na hora” e coloca em todos os meus outros agentes: quando eu contar pra qualquer um deles algo que é diária, tarefa ou chefão do jogo (fiz, não fiz, tenho que fazer, uma meta que andou), ele manda pro Mestre do Daily Legends na hora, sem me perguntar nem me avisar, e o Mestre registra no jogo sem duplicar.",
+ "externa": "Você é o Mestre do Daily Legends, um RPG da minha vida real pra eu ser mais produtivo, criar bons hábitos e conquistar minhas metas. Eu jogo num app que salva numa planilha do meu Google Drive chamada “Daily Legends - Save” (pasta Daily Legends). No app eu não crio nem marco nada: tarefas, diárias e chefões só entram por você. Logo depois deste prompt, eu vou colar as regras do jogo, com o formato de cada comando. Siga essas regras à risca.\n\nComo anotar: se você consegue editar a minha planilha no Google Sheets (como o Gemini no modo Tarefa), escreva você mesmo, sem me pedir pra colar: leia a aba “leia-me” e escreva SÓ na aba “agente”, sempre linha nova no fim (colunas A a E: id único, quando, tipo, dados em JSON, nota; a coluna D leva só o JSON do comando, sem o nome do tipo). Nunca edite nem apague as abas “save” e “resumo”, nem linhas antigas. Se você não consegue editar a planilha, me mande comandos: todos juntos num único bloco de código, um por linha, pra eu copiar de uma vez e tocar em Colar do Mestre no jogo (em Configurações ou no topo da aba Missões). Fora do bloco, fale comigo normal e curto. Ponha sempre a data (\"d\", AAAA-MM-DD) em registros, tarefas e baús. Se eu colar um erro que o jogo mostrou, mande só o comando corrigido.\n\nSem duplicar: antes de anotar, veja como estou no resumo (aba “resumo” da planilha, se você lê o meu Drive; senão, peça pra eu colar: Configurações › Copiar resumo pra IA) e confira nos últimos registros se aquele dia daquela diária já está anotado; se já está e nada mudou, não anote de novo. Pra corrigir, mande o registro completo e certo (na planilha, com id novo): o jogo troca o anterior, não soma. Antes de criar uma tarefa, veja as tarefas do resumo; se já existe, só marque como feita com o id dela, e não crie tarefa pro que já é diária.\n\nMontagem: use o que você já sabe de mim (memória e conversas antigas, se tiver). Primeiro, me mostre o kit inicial de atributos das regras, ajustado a mim, e pergunte o que tirar, trocar ou criar. Depois, faça um quiz por atributo, um de cada vez: 3 diárias sugeridas (com versão mínima e meta de 3★) e uma opção pra eu escrever outra; posso escolher mais de uma. No fim de cada atributo, pergunte se tem alguma meta grande ali. Você decide o que é diária (se repete), tarefa (uma vez só) ou chefão (meta grande e medível, com uma história de 2 a 3 frases), me mostra e só anota depois que eu confirmar.\n\nAvisos: no fim da montagem, pergunte por onde eu quero ser lembrado: aqui no chat (se você consegue agendar mensagens ou tarefas), pelo app de lembretes ou agenda que você tiver acesso, ou nenhum. Posso escolher mais de um. Use só o que eu escolher; se eu pedir pra trocar, troque.\n\nTodo dia: de manhã, pergunte minhas tarefas do dia e anote cada uma como tarefa. Durante o dia, anote o que eu contar. Pra fechar o dia, veja o resumo (e a hora em “atualizado em”; se estiver velho, peça pra eu colar), registre o que eu contei (sem duplicar) e só me pergunte o que você não conseguiu descobrir; o que eu não responder fica aberto, não marque como não feito. Depois feche o dia com os registros e o XP pelas regras do jogo (★ +4, ★★ +10, ★★★ +15, não fez −5, tarefa +5, chefão +300), um baú se fiz todas as diárias e 2 a 4 novidades curtas. Escreva também a página do dia da história (capitulo, 3 a 5 frases curtas). Atualize o progresso dos chefões. Prêmio em ouro (sem XP) é um registro com \"ouro\", como explicam as regras. Se o resumo mostrar que eu recomecei do zero, monte tudo de novo comigo, com ids novos.\n\nSe você consegue agendar tarefas, crie duas: uma de manhã (perguntar minhas tarefas do dia) e uma à noite (fechar o dia). Se você também consegue editar a planilha, a da noite já escreve o fechamento direto na aba “agente”, sem eu precisar colar nada."
 };
 
 /* ===== História: cada dia é uma página, cada mês é um capítulo, num mapa =====
@@ -5347,7 +5416,8 @@ function vMissoes(){
   const blocoP = cuidados ? `<div class="sec"><h3>Cuidados com os pets</h3></div><div class="lista">${cuidados}</div>` : '';
   const ct=calc().trilha;
   const blocoTr = ct.precisa ? `<button class="trilhaBtn" data-trilha="dia" aria-label="Ver trilha do dia">${trilhaHTML(ct,'dias seguidos')}<span class="fraco tnota">Hoje: ${ct.feitasHoje}/${ct.precisa} diárias pro passo. Toque numa ${ico('flame','st')} pra ver a trilha de cada diária.</span></button>` : '';
-  return blocoTr + blocoT + `<div class="sec"><h3>${DSEM[dt(hoje).getDay()]}, ${fmtD(hoje)}</h3><span class="fraco">${ico('star','st')}+4 &nbsp;${ico('star','st')}${ico('star','st')}+10 &nbsp;${ico('star','st')}${ico('star','st')}${ico('star','st')}+15 &nbsp;${ico('x','st')}−5</span></div>
+  const blocoIA = modoExterna() ? `<div class="iaAtalho"><button class="btn ouro" data-acao="iaColar">Colar do Mestre</button><button class="btn" data-acao="iaResumo">Copiar resumo pra IA</button></div>` : '';
+  return blocoIA + blocoTr + blocoT + `<div class="sec"><h3>${DSEM[dt(hoje).getDay()]}, ${fmtD(hoje)}</h3><span class="fraco">${ico('star','st')}+4 &nbsp;${ico('star','st')}${ico('star','st')}+10 &nbsp;${ico('star','st')}${ico('star','st')}${ico('star','st')}+15 &nbsp;${ico('x','st')}−5</span></div>
     <div class="lista">${linhas || '<p class="fraco">Suas diárias aparecem aqui quando você montar o jogo com o agente.</p>'}</div>${extras?`<div class="sec"><h3>Missões extras</h3></div><div class="lista">${extras}</div>`:''}${blocoP}`;
 }
 
@@ -5463,11 +5533,13 @@ const GUIA = [
   ['Extras', `Trilha: cada dia em que você faz pelo menos 60% das diárias (a mínima vale) é um passo. Nos marcos (3, 7, 14, 30, 60, 100 dias…) tem um baú. Falhou um dia? Volta pro último marco, não pro zero. Cada diária também tem a trilha dela: toque na chama. Baú: fechou o dia com todas as diárias, ganha item surpresa. Conquistas: medalhas por marcos. História: um mapa com o caminho do mês, uma bandeira por dia. Toque num dia pra ler a página dele.`],
   ['História', `Cada dia vira uma página da sua história, escrita com o que você fez e o que deixou de fazer: diárias com estrelas, tarefas, chefões, faltas, a trilha. Cada mês é um capítulo, com um resumo curto no fim (trilha, XP, diárias, tarefas, chefões e faltas). Fica na aba História, num mapa: dourado é dia perfeito, verde é passo na trilha, laranja é dia de luta, vermelho é falha, cinza é dia sem registro. Toque pra ler a página, que aparece uma frase por vez (toque pra seguir). O Mestre do jogo também pode escrever a página do dia com as palavras dele.`],
   ['Salvar', `Salva sozinho. Tudo o que você faz fica guardado primeiro no aparelho (funciona sem internet) e depois sobe pro seu Google Drive, numa pasta Daily Legends que o próprio jogo cria. O botão no topo mostra se está tudo na nuvem. Em outro celular ou no computador, é só entrar com a mesma conta Google.`],
+  ['Jogar com outra IA', `Usa ChatGPT, Gemini ou outra IA? Ela vira o Mestre do jogo:<br>1. Em Menu principal › Configurações › Mestre do jogo, troque pra <b>IA externa</b>.<br>2. Copie o prompt do Mestre e cole numa conversa nova da sua IA. Depois cole as regras (Copiar regras pra IA).<br>3. Se ela edita a sua planilha no Drive (Gemini no modo Tarefa, com agendamento de manhã e à noite), ela escreve sozinha e o jogo junta quando você abre. Se não, ela responde com comandos num bloco: copie e toque em Colar do Mestre (em Configurações ou no topo de Missões). O jogo aplica na hora, ignora o que já foi colado e avisa se algum deu erro.<br>4. Pra ela ver como você está, ela lê a aba resumo da planilha (se lê o seu Drive) ou você cola o resumo (Copiar resumo pra IA).`],
   ['Jogar no King Bot', `1. Instale o jogo na tela inicial e entre com Google.<br>2. Crie um agente novo no King Bot e cole o prompt do guia em PDF.<br>3. Conecte o plugin Google Sheets nesse agente (e Todoist, Google Tasks ou Gmail, se quiser lembretes).<br>4. O agente acha a planilha Daily Legends - Save no seu Drive, monta diárias e chefões com você e, todo dia, escreve o que você fez na aba dele. O jogo junta tudo quando você abre.`]
 ];
 
 // Configurações: abre do menu principal (som, conta, save, Mestre). Mapa e faixa ficam no palco, embaixo do emoji.
 function vConfig(){
+  const ext = modoExterna();
   return `<div class="opc">
     <label class="sl2"><span>Música</span><input type="range" min="0" max="1" step="0.05" value="${Som.musica}" data-vol="musica"></label>
     <label class="sl2"><span>Som</span><input type="range" min="0" max="1" step="0.05" value="${Som.som}" data-vol="som"></label>
@@ -5481,8 +5553,12 @@ function vConfig(){
     <label class="btn arquivo">Importar save antigo (arquivo)<input type="file" accept=".json,application/json,text/plain" data-acao="carregar"></label>
     <button class="btn" data-acao="colarCodigo">Importar save antigo (código)</button>
     <div class="outraIA modoMestre"><h3>Mestre do jogo</h3>
-    <p class="fraco">O agente do King Bot escreve sozinho na sua planilha e o jogo junta tudo quando você abre.</p>
-    <button class="btn" data-acao="copiarPrompt">Copiar prompt do Mestre</button></div>
+    <div class="escolhas"><button class="chip ${ext?'':'on'}" data-modo="agente">Agente na planilha</button><button class="chip ${ext?'on':''}" data-modo="externa">IA externa</button></div>
+    <p class="fraco">${ext ? 'Modo IA externa: o Mestre fica no ChatGPT, no Gemini ou em outra IA. Se ela edita a sua planilha (Gemini no modo Tarefa), escreve sozinha. Se não, ela responde com comandos: copie e toque em Colar do Mestre.' : 'Modo agente: o agente do King Bot escreve sozinho na sua planilha e o jogo junta tudo quando você abre. Usa outra IA (ChatGPT, Gemini…)? Troque pra IA externa.'}</p>
+    <button class="btn" data-acao="copiarPrompt">Copiar prompt do Mestre</button>
+    ${ext ? `<button class="btn" data-acao="iaRegras">Copiar regras pra IA (1ª vez)</button>
+    <button class="btn" data-acao="iaResumo">Copiar resumo pra IA</button>
+    <button class="btn ouro" data-acao="iaColar">Colar do Mestre</button>` : ''}</div>
     <p class="fraco">Dia do jogo ${fmtD(S.hoje||hojeReal())} · versão ${DL_VERSAO}</p>
     <div class="acoes"><button class="btn" data-fecha="1">Fechar</button></div></div>`;
 }
@@ -5565,6 +5641,29 @@ function codigoSave(){
   return 'DL2:' + btoa(unescape(encodeURIComponent(JSON.stringify(S))));
 }
 let tituloNovidades = null;
+function modoExterna(){ return !!(S.config && S.config.mestre==='externa'); }
+// Colar do Mestre em um toque: lê o que a pessoa copiou da IA e aplica direto; sem permissão ou sem comandos, abre a caixa de colar
+function caixaColar(txt, aviso){
+  modal(`${aviso?`<p class="fraco">${aviso}</p>`:''}<form class="campo" data-form="iaColar"><label for="iaTxt">Cole aqui a resposta do Mestre (pode colar a mensagem inteira: o jogo pega só os comandos)</label><textarea id="iaTxt" class="cod" rows="8" placeholder='registro {"d":"2026-10-12","area":"saude","txt":"Beber água","xp":10,"estrelas":2}'>${esc(txt||'')}</textarea><div class="acoes"><button type="button" class="btn" data-fecha="1">Cancelar</button><button class="btn ouro">Aplicar</button></div></form>`,'Colar do Mestre');
+  setTimeout(()=>{ const i=$('#iaTxt'); i && !txt && i.focus(); }, 50);
+}
+function colarDireto(){
+  if (!(navigator.clipboard && navigator.clipboard.readText)){ caixaColar(''); return; }
+  navigator.clipboard.readText().then(txt=>{
+    if (linhasColadas(txt||'').length) aplicaColado(txt);
+    else caixaColar('', 'Não achei comandos no que você copiou. Copie a resposta do Mestre (ou o bloco de código) e toque de novo, ou cole aqui.');
+  }, ()=>caixaColar(''));
+}
+function aplicaColado(txt){
+  const r=colarDoMestre(txt);
+  if (!r.total){ Som.sfx('erro'); toast('Não achei nenhum comando no texto','ruim'); return; }
+  marcaSujo(); Nuvem.salvarLocal(); aplicaConfig(); if (!$('#jogo').hidden){ atualizaPalco(); topo(); render(); }
+  const ok=r.novas-r.erros.length;
+  modal(`<p><b>${ok}</b> comando${ok===1?'':'s'} aplicado${ok===1?'':'s'}${r.repetidas?` · ${r.repetidas} já tinha${r.repetidas===1?'':'m'} sido colado${r.repetidas===1?'':'s'} antes (ignorado${r.repetidas===1?'':'s'})`:''}.</p>`
+    + (r.erros.length ? `<p class="fraco">Com erro (mande isto pra IA corrigir):</p><textarea id="codSave" class="cod" rows="4" readonly>${esc(r.erros.map(e=>'linha '+e.linha+': '+e.erro).join('\n'))}</textarea>` : '')
+    + `<div class="acoes">${r.erros.length?'<button class="btn" data-acao="copiar">Copiar erros</button>':''}<button class="btn ouro" data-acao="iaFim">Bora</button></div>`, 'Colar do Mestre');
+  Som.sfx(r.erros.length && !ok ? 'erro' : 'moeda');
+}
 function copiarTexto(txt, msg){
   const ok=()=>{ Som.sfx('moeda'); toast(msg||'Copiado.'); };
   const manual=()=>modal(`<p class="fraco">Não deu pra copiar sozinho. Segure no texto, selecione tudo e copie.</p><textarea id="codSave" class="cod" readonly rows="8">${esc(txt)}</textarea><div class="acoes"><button class="btn" data-fecha="1">Fechar</button><button class="btn ouro" data-acao="copiar">Tentar copiar</button></div>`, 'Copiar');
@@ -5814,7 +5913,11 @@ function liga(){
     if (d.acao==='sairConta'){ Nuvem.sair(); if (!$('#jogo').hidden) render(); refazConfig(); return; }
     if (t.id==='avisoVersaoBtn'){ Versao.atualizar(); return; }
     if (d.acao==='colarCodigo'){ modal(`<form class="campo" data-form="codigo"><label for="codImp">Cole o código do save (começa com DL1 ou DL2)</label><textarea id="codImp" class="cod" rows="5"></textarea><div class="acoes"><button type="button" class="btn" data-fecha="1">Cancelar</button><button class="btn ouro">Importar</button></div></form>`,'Importar save'); return; }
-    if (d.acao==='copiarPrompt'){ copiarTexto(PROMPTS.agente, 'Prompt copiado. Mande pro King Bot pra criar o agente.'); return; }
+    if (d.modo){ const novo = d.modo==='externa' ? 'externa' : 'agente'; if ((S.config.mestre||'agente')!==novo){ S.config.mestre=novo; marcaSujo(); Som.sfx('clique'); toast(novo==='externa' ? 'Modo IA externa ligado. Comece copiando o prompt e as regras pra IA.' : 'Modo agente na planilha ligado.'); } refazConfig(); if (!$('#jogo').hidden) render(); return; }
+    if (d.acao==='copiarPrompt'){ const ext=modoExterna(); copiarTexto(PROMPTS[ext?'externa':'agente'], ext ? 'Prompt copiado. Cole numa conversa nova da sua IA.' : 'Prompt copiado. Mande pro King Bot pra criar o agente.'); return; }
+    if (d.acao==='iaRegras' || d.acao==='iaResumo'){ copiarTexto(d.acao==='iaRegras' ? textoRegrasIA() : textoResumoIA(), d.acao==='iaRegras' ? 'Regras copiadas. Cole na conversa com a IA.' : 'Resumo copiado. Cole na conversa com a IA.'); return; }
+    if (d.acao==='iaColar'){ colarDireto(); return; }
+    if (d.acao==='iaFim'){ fechaModal(); if (S.novidades && S.novidades.length && !$('#jogo').hidden){ Som.sfx('nivel'); modal(`<ul class="novs">${S.novidades.map(n=>`<li>${esc(n)}</li>`).join('')}</ul><div class="acoes"><button class="btn ouro" data-fecha="1">Bora</button></div>`, 'Novidades do Mestre'); S.novidades=[]; marcaSujo(); } return; }
     if (d.acao==='salvar'){ salvar(); return; }
     if (d.acao==='testarSom'){ Som.tocar(); Som.sfx('moeda'); setTimeout(()=>{ const e=Som.estado; toast(e==='running' ? (Som.mudo ? 'Som ligado (música mutada)' : 'Som ligado. Sem som? Suba o volume do aparelho.') : 'Som travado ('+e+'). Toque de novo.', e==='running'?'':'ruim'); }, 450); return; }
     if (d.acao==='baixarCopia'){ baixarCopia(); toast('Cópia baixada.'); return; }
@@ -5847,6 +5950,7 @@ function liga(){
     if (k==='adotar') fimAdocao();
     if (k==='nome'){ const v=$('#nomeNovo').value.trim(); if (v){ if (f.dataset.tipo==='heroi') S.herois.nomes[f.dataset.id]=v; else S.pets.possui.find(p=>p.id===f.dataset.id).nome=v; marcaSujo(); } fechaModal(); atualizaPalco(); render(); }
     if (k==='zerar'){ if (semAcento($('#zerarTxt').value)!==semAcento(PALAVRA_ZERAR)){ Som.sfx('erro'); toast('Digite '+PALAVRA_ZERAR+' pra confirmar','ruim'); return; } zerarJogo(); return; }
+    if (k==='iaColar'){ aplicaColado($('#iaTxt').value); return; }
     if (k==='codigo'){ try { const d=decodificaCodigo($('#codImp').value); fechaModal(); importaSave(d); } catch(err){ Som.sfx('erro'); toast('Código inválido','ruim'); } return; }
   });
   document.addEventListener('change', e=>{ const t=e.target; if (t.dataset.acao==='carregar' || t.id==='arqTitulo'){ if (t.files[0]) carregar(t.files[0]); t.value=''; } });
